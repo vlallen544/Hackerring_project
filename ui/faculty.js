@@ -343,7 +343,7 @@ async function loadStudentAccounts() {
             <div class="card p-4 flex flex-wrap justify-between items-center gap-3">
                 <div>
                     <p class="font-display text-xl uppercase leading-tight">${esc(s.name)}</p>
-                    <p class="text-xs font-bold uppercase text-gray-500">// ID ${esc(s.id)} · ${esc(s.language)} · ${esc(s.stated_style)} · ${esc(s.pace)} · ${esc(s.target_role)}</p>
+                    <p class="text-xs font-bold uppercase text-gray-500">// ID ${esc(s.id)} · ${esc(s.stated_style)} · ${esc(s.pace)} · ${esc(s.target_role)}</p>
                 </div>
                 <div class="flex flex-wrap items-center gap-2">
                     ${s.login ? `<span class="chip bg-neo-green"><i class="ph-bold ph-key"></i> Login: ${esc(s.login)}</span>`

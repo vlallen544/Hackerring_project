@@ -20,7 +20,7 @@ SECRET_FILE = Path("data/.jwt_secret")  # generated once if JWT_SECRET is not se
 TOKEN_HOURS = 12
 HASH_ITERATIONS = 200_000
 DEFAULT_ADMIN = ("admin", "admin123")  # master faculty login, created on first start
-STUDENT_FIELDS = ("name", "language", "stated_style", "pace", "target_role")
+STUDENT_FIELDS = ("name", "stated_style", "pace", "target_role")
 PROFILE_FIELDS = ("name", "department", "email", "bio", "photo")
 MAX_PHOTO_CHARS = 400_000  # the UI shrinks photos to a small JPEG data URL first
 
@@ -37,7 +37,6 @@ CREATE TABLE IF NOT EXISTS users (
 CREATE TABLE IF NOT EXISTS student_registry (
     id TEXT PRIMARY KEY,             -- students created by faculty, copied into every course database
     name TEXT NOT NULL,
-    language TEXT,
     stated_style TEXT,
     pace TEXT,
     target_role TEXT
@@ -145,8 +144,8 @@ def registered_students():
 
 def register_student(student):
     with _conn() as conn:
-        conn.execute("INSERT OR REPLACE INTO student_registry (id, name, language, stated_style, pace, target_role) "
-                     "VALUES (?,?,?,?,?,?)", (student["id"], *(student[f] for f in STUDENT_FIELDS)))
+        conn.execute("INSERT OR REPLACE INTO student_registry (id, name, stated_style, pace, target_role) "
+                     "VALUES (?,?,?,?,?)", (student["id"], *(student[f] for f in STUDENT_FIELDS)))
 
 
 def create_student_login(student_id, password, created_by):

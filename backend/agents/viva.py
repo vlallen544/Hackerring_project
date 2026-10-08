@@ -28,8 +28,7 @@ For EACH concept given, write ONE opening question:
   Do not presuppose the answer either ("why can't X..." tells the student that X is not possible).
   BAD:  "Why can't we use AVG inside a WHERE clause?"  (reveals that it is not allowed)
   GOOD: "If you want only the groups whose average is above 100, which clause would you use, and why?"
-- Write the question in {language}. If the language is Hindi, use natural Hinglish
-  (Hindi in Roman script, keeping technical terms such as JOIN, primary key or hash table in English).
+- Write the question in clear, simple English.
 Return the questions in the same order as the concepts."""
 
 REVIEW_PROMPT = """You are a strict exam reviewer. Assume every question leaks until you have checked it.
@@ -38,14 +37,13 @@ A question LEAKS if it states, presupposes or hints at any expected point. Examp
   - saying an approach fails or is not allowed ("you put AVG in WHERE but it fails, explain why")
   - narrowing the choice to the right answer ("a specific type of outer join")
   - explaining the reason that the student is supposed to give ("since GROUP BY removes the rows")
-  - asking yes/no about a practice in a way that signals the answer ("kya ... sahi practice hai?")
+  - asking yes/no about a practice in a way that signals the answer ("is it good practice to ...?")
 For each question, FIRST fill gives_away with the exact leaking words (or null), THEN write the question:
 unchanged if nothing leaks, otherwise rewritten as a neutral scenario that tests the same expected points.
-Every question must be in {language} (natural Hinglish in Roman script if Hindi). Translate any that are not.
-Keep the conversational style. Return every concept_id, in the same order."""
+Every question must be in clear, simple English. Keep the conversational style. Return every concept_id, in the same order."""
 
 EVAL_PROMPT = """You are the Viva agent of VidyaPath, evaluating one spoken answer from a student.
-Grade ONLY against the TRUSTED FACTS and expected points. Do not penalise language mistakes or Hinglish.
+Grade ONLY against the TRUSTED FACTS and expected points. Do not penalise grammar or spelling mistakes.
 Verdicts:
 - correct: covers the key points accurately.
 - partial: some key points right, some missing.
@@ -54,7 +52,7 @@ Verdicts:
 If the answer reveals a specific wrong belief (for example "AVG can be used in WHERE"), write it as a misconception.
 If the answer shows the student does not understand a PREREQUISITE concept, give that concept's id.
 For vague or partial answers, write ONE follow-up question that probes the same concept more specifically.
-Write feedback and the follow-up question in {language} (Hinglish in Roman script if Hindi). Be encouraging."""
+Write feedback and the follow-up question in clear, simple English. Be encouraging."""
 
 
 # --------------------------------------------------------------------------- #
@@ -129,13 +127,13 @@ def start_viva(student_id, concepts=None):
     payload = [{"concept_id": c, "concept": kb["concepts"][c]["name"], "trusted_facts": _trusted_facts(kb, c)}
                for c in concepts]
     openers = chat_json(
-        OPENER_PROMPT.format(role=student["target_role"], language=student["language"]),
+        OPENER_PROMPT.format(role=student["target_role"]),
         "CONCEPTS:\n" + json.dumps(payload, ensure_ascii=False, indent=1),
         VivaOpeners,
     )
     by_concept = {q.concept_id: q for q in openers.questions}
     # Second pass: an independent reviewer rewrites any question that gives its answer away
-    reviewed = chat_json(REVIEW_PROMPT.format(language=student["language"]),
+    reviewed = chat_json(REVIEW_PROMPT,
                          json.dumps([q.model_dump() for q in openers.questions], ensure_ascii=False, indent=1),
                          QuestionReviews)
     for r in reviewed.reviews:
@@ -152,7 +150,6 @@ def start_viva(student_id, concepts=None):
                           "expected_points": _trusted_facts(kb, c)[:3], "is_follow_up": False})
     state = {
         "student_id": student_id,
-        "language": student["language"],
         "concepts": [q["concept_id"] for q in queue],
         "concept_names": {c: kb["concepts"][c]["name"] for c in concepts},
         "current": queue[0],
@@ -178,7 +175,7 @@ def answer_viva(session_id, answer, confidence_rating):
     cid = q["concept_id"]
 
     evaluation = chat_json(
-        EVAL_PROMPT.format(language=state["language"]),
+        EVAL_PROMPT,
         json.dumps({
             "concept": kb["concepts"][cid]["name"],
             "trusted_facts": _trusted_facts(kb, cid),

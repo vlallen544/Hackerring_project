@@ -83,7 +83,6 @@ class NewStudent(BaseModel):
     id: str
     name: str
     password: str
-    language: str = "English"
     stated_style: str = "reading"
     pace: str = "medium"
     target_role: str = "Software Engineer"
@@ -184,7 +183,7 @@ def create_student(body: NewStudent, user=Depends(auth.require_faculty)):
         raise HTTPException(400, f"Password must have at least {MIN_PASSWORD} characters")
     if db.rows("SELECT 1 FROM students WHERE id = ?", (student_id,)) or auth.get_user(student_id):
         raise HTTPException(400, f"Student ID '{student_id}' is already taken")
-    db.add_student({"id": student_id, "name": body.name.strip(), "language": body.language,
+    db.add_student({"id": student_id, "name": body.name.strip(),
                     "stated_style": body.stated_style, "pace": body.pace, "target_role": body.target_role})
     auth.create_student_login(student_id, body.password, user["username"])
     return {"id": student_id, "login": student_id, "message": f"Student {body.name.strip()} created. Login: {student_id}"}

@@ -14,7 +14,7 @@ if __name__ == "__main__":
     started = time.time()
     result = chat_json(
         "You are a helpful tutor.",
-        "Greet a DBMS student in Hindi.",
+        "Greet a DBMS student in English.",
         Greeting,
     )
     print(result)
@@ -24,7 +24,7 @@ if __name__ == "__main__":
     print(
         chat_json(
             "You are a helpful tutor.",
-            "Greet a DBMS student in Hindi.",
+            "Greet a DBMS student in English.",
             Greeting,
         )
     )

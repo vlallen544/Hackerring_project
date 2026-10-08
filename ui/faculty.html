@@ -8,6 +8,7 @@
     <script src="theme.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/@phosphor-icons/web@2.1.1"></script>
+    <link rel="icon" href="logo.png" type="image/png">
     <link rel="stylesheet" href="vp.css">
 </head>
 <body class="bg-slate-100 text-neo-black antialiased selection:bg-neo-pink selection:text-white">
@@ -15,11 +16,12 @@
     <!-- Top bar: logo and role switch -->
     <nav class="fixed w-full z-40 bg-white border-b-4 border-black top-0">
         <div class="px-4 flex justify-between h-16 items-center gap-3">
-            <a href="index.html" class="flex items-center gap-2 group">
-                <div class="bg-neo-black text-white p-2 border-2 border-transparent group-hover:bg-neo-yellow group-hover:text-black group-hover:border-black transition-colors">
-                    <i class="ph-bold ph-graduation-cap text-xl"></i>
-                </div>
-                <span class="font-display text-xl tracking-tighter uppercase italic hidden sm:inline">VIDYA<span class="text-neo-pink">_PATH</span></span>
+            <a href="index.html" class="vp-logo flex items-center gap-3" aria-label="VidyaPath home">
+                <img src="logo.png" alt="" class="vp-mark">
+                <span class="vp-word hidden sm:block">
+                    <span class="font-display uppercase">Vidya<span class="vp-path">Path</span></span>
+                    <span class="vp-tagline hidden lg:block">Learn what industry needs</span>
+                </span>
             </a>
             <div class="role-switch flex text-xs">
                 <a href="student.html" class="border-r-0">Student</a><a href="faculty.html" class="on">Faculty</a>
@@ -159,12 +161,8 @@
                             <input name="name" class="field mt-1" required maxlength="80"></label>
                         <label class="block"><span class="font-bold uppercase text-xs">Password (6+ characters)</span>
                             <input name="password" type="text" class="field mt-1" minlength="6" required autocomplete="off"></label>
-                        <div class="grid grid-cols-2 gap-3">
-                            <label class="block"><span class="font-bold uppercase text-xs">Language</span>
-                                <select name="language" class="field mt-1"><option>English</option><option>Hindi</option></select></label>
-                            <label class="block"><span class="font-bold uppercase text-xs">Pace</span>
-                                <select name="pace" class="field mt-1"><option value="slow">Slow</option><option value="medium" selected>Medium</option><option value="fast">Fast</option></select></label>
-                        </div>
+                        <label class="block"><span class="font-bold uppercase text-xs">Pace</span>
+                            <select name="pace" class="field mt-1"><option value="slow">Slow</option><option value="medium" selected>Medium</option><option value="fast">Fast</option></select></label>
                         <label class="block"><span class="font-bold uppercase text-xs">Preferred learning style</span>
                             <select name="stated_style" class="field mt-1">
                                 <option value="reading">Reading</option><option value="listening">Listening</option>

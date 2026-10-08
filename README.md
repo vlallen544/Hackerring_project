@@ -10,7 +10,7 @@
 
 Educators rarely plan teaching at a desk. Ideas come up in staff rooms, on commutes and between classes, often spoken aloud and half-finished. Their material is scattered across lecture notes, PDFs, textbooks, slides and links, and they have very little time to turn it into something that works for every learner.
 
-Learners differ in prior knowledge, language, pace and learning style. Requirements change mid-way: a class falls behind, an exam moves, a new student joins.
+Learners differ in prior knowledge, pace and learning style. Requirements change mid-way: a class falls behind, an exam moves, a new student joins.
 
 **The challenge:** help educators go from scattered resources and rough goals to a learning experience they trust, one that faithfully reflects their own material, adapts to every learner, handles change without starting over, and keeps the educator in control within realistic limits of time, connectivity and cost.
 
@@ -31,7 +31,7 @@ Learners differ in prior knowledge, language, pace and learning style. Requireme
 | User | Value |
 |---|---|
 | **Faculty** (primary) | Material turned into ready-to-use, personalized learning; class insights; hours saved every week |
-| **Students** | Learning in their language, level and style; doubt support; measurable confidence and role readiness |
+| **Students** | Learning at their level and in their style; doubt support; measurable confidence and role readiness |
 | **Placement Officer / HOD** | Batch readiness forecasts per job role; syllabus freshness insights |
 | **College management** (buyer) | Better outcomes, curriculum evidence, accreditation support |
 
@@ -41,8 +41,8 @@ Learners differ in prior knowledge, language, pace and learning style. Requireme
 
 | Objective | How VidyaPath solves it | What you see in the demo |
 |---|---|---|
-| **1. Adaptive content** | Voice Viva diagnoses prior knowledge → student profile → Tutor Agent adapts level, language (incl. code-mixed) and format (text / audio / diagram / practice). Learning style is *learned* from which formats actually improve scores. | Two students, same topic, completely different lessons; content changes after a wrong answer |
-| **2. Gap prediction & proactive redesign** | Risk score per upcoming concept computed from the prerequisite graph, time since practice and pace vs deadline. High risk triggers automatic path redesign with a visible reason chain. | *"Weak in Keys → Joins on Thursday → 74% risk → Hindi audio refresher added Tuesday"* |
+| **1. Adaptive content** | Voice Viva diagnoses prior knowledge → student profile → Tutor Agent adapts level and format (text / audio / diagram / practice). Learning style is *learned* from which formats actually improve scores. | Two students, same topic, completely different lessons; content changes after a wrong answer |
+| **2. Gap prediction & proactive redesign** | Risk score per upcoming concept computed from the prerequisite graph, time since practice and pace vs deadline. High risk triggers automatic path redesign with a visible reason chain. | *"Weak in Keys → Joins on Thursday → 74% risk → audio refresher added Tuesday"* |
 | **3. Conflict & trust resolution** | Source Reconciler compares faculty notes, textbooks and industry job descriptions; trust is scored on recency, authority, cross-source agreement and specificity, then explained. Faculty can override. | Outdated claim detected and resolved with reasons; **Syllabus Freshness Report** |
 
 ---
@@ -63,9 +63,9 @@ Learners differ in prior knowledge, language, pace and learning style. Requireme
 ### 🧑‍🎓 For Students
 - **Adaptive Voice Viva** – spoken, interview-style diagnostic that probes vague answers and detects misconceptions
 - **Confidence Calibration** – compares self-rated confidence with actual performance
-- **Personalized Lessons** – adapted to level, language and learning style
+- **Personalized Lessons** – adapted to level and learning style, with full explanations, diagrams, step-by-step walkthroughs and runnable code
 - **Provenance Highlighting** – 🟩 from faculty material · 🟨 AI-added explanation
-- **Doubt Assistant** – ask by voice or text in any supported language; answers come only from trusted material
+- **Doubt Assistant** – ask by voice or text; answers come only from trusted material
 - **Proactive Refreshers** – inserted before a predicted gap appears
 - **Progress Dashboard** – mastery map, confidence trend, role readiness and what's next
 
@@ -194,7 +194,7 @@ Authority order is configurable by faculty (default: faculty notes > official te
 | **Visualization** | Mermaid (lesson diagrams); risk, trust and mastery bars in the UI |
 | **Backend** | FastAPI (Python) |
 | **Agent orchestration** | FastAPI routes + shared knowledge base / SQLite state (LangGraph planned) |
-| **LLM** | `agnes-3.0-flash` – viva, tutoring, gap messages (interactive, multilingual); `claude-opus-5-5` (optional) – heavy extraction from courses and PDFs, source reconciliation |
+| **LLM** | `agnes-3.0-flash` – viva, practice grading, gap messages (interactive); `claude-opus-5-5` (optional) – heavy extraction from courses and PDFs, source reconciliation, detailed lessons |
 | **Image generation** | `agnes-image-2.5-flash` – planned; diagrams currently use Mermaid |
 | **SDK** | OpenAI-compatible Python SDK pointed at the Agnes API |
 | **Graph logic** | networkx |
@@ -240,7 +240,7 @@ concepts, prerequisites (concept → concept)
 claims (concept, statement, source, page, quote, trust_score, status)
 conflicts (claims, resolution, reason, faculty_override)
 plans (version, items[status: draft/approved/locked/completed])
-students, profiles (language, style, pace)
+students, profiles (style, pace, target role)
 mastery (student, concept, score, last_practiced)
 attempts, vivas (transcript, misconceptions, confidence)
 doubts (student, concept, question, answer, sources)
@@ -258,7 +258,7 @@ What runs today versus what the architecture above still plans.
 | Knowledge Builder (claims with verified quotes, prerequisite graph) | ✅ Built |
 | Source Reconciler + trust engine + Syllabus Freshness Report (Objective 3) | ✅ Built |
 | Viva Agent (adaptive, follow-ups, misconceptions, confidence calibration) | ✅ Built |
-| Tutor Agent (level / format / language in code, provenance, learned style) (Objective 1) | ✅ Built |
+| Tutor Agent (level / format in code, provenance, learned style, diagrams, walkthroughs and code) (Objective 1) | ✅ Built |
 | Gap Predictor (risk score, refreshers, format switch, challenge track, class radar) (Objective 2) | ✅ Built |
 | Web UI (student + faculty, voice input and read-aloud) served by FastAPI | ✅ Built |
 | JWT login: faculty admin, faculty-created student accounts, per-student access control, profile page | ✅ Built |
@@ -329,7 +329,7 @@ Open <http://localhost:8000> for the web UI (student and faculty views). Interac
 
 ### Logins (JWT)
 - **Faculty master login:** `admin` / `admin123`, created on first start. Change the password on the **Profile** page before real use.
-- **Students** are created by faculty on **Faculty → 5. Students** (student ID, name, password, language, learning style, pace, target role). A student logs in with their student ID and only sees their own viva, lessons, path and profile; faculty routes return 403.
+- **Students** are created by faculty on **Faculty → 5. Students** (student ID, name, password, learning style, pace, target role). A student logs in with their student ID and only sees their own viva, lessons, path and profile; faculty routes return 403.
 - The API issues an HS256 JWT valid for 12 hours (`POST /api/auth/login`), sent as `Authorization: Bearer <token>`. Passwords are stored as salted PBKDF2 hashes in `data/auth.db`; the signing key is `JWT_SECRET` in `.env`, or a random key generated in `data/.jwt_secret`. After 5 wrong passwords, a username is locked for 5 minutes for that address.
 - Every user has a **Profile** page (photo, department, email, bio, change password), adapted from the Campus Zero prototype.
 
@@ -372,7 +372,7 @@ CLAUDE_EFFORT=high
 2. Uploads lecture notes, a textbook chapter and two job descriptions → **outdated content detected and resolved** → Syllabus Freshness Report
 3. Student takes a **Voice Viva** → follow-up on a vague answer → misconception + confidence calibration
 4. Two students get **different personalized lessons**, with provenance highlighting
-5. A student asks a **doubt in Hindi** → grounded answer
+5. A student asks a **doubt** → grounded answer
 6. **Gap Radar** flags an at-risk student → refresher added before the topic, with reason chain
 7. Faculty says *"Placement drive moved earlier"* → only affected items re-plan, with diff view
 8. Faculty sees **Next-Lecture Advisor**; placement officer sees **Readiness Forecast**
@@ -403,7 +403,7 @@ CLAUDE_EFFORT=high
 - Accreditation evidence export (NAAC / NBA)
 - Offline learner packs for low-connectivity students
 - Escalation alerts to faculty when a student stays stuck
-- More subjects, roles and regional languages
+- More subjects and roles
 - LMS integrations
 
 ---

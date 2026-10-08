@@ -8,17 +8,19 @@
     <script src="theme.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/@phosphor-icons/web@2.1.1"></script>
+    <link rel="icon" href="logo.png" type="image/png">
     <link rel="stylesheet" href="vp.css">
 </head>
 <body class="bg-slate-100 text-neo-black antialiased selection:bg-neo-pink selection:text-white">
 
     <nav class="fixed w-full z-40 bg-white border-b-4 border-black top-0">
         <div class="max-w-7xl mx-auto px-4 flex justify-between h-20 items-center">
-            <a href="index.html" class="flex items-center gap-2 group">
-                <div class="bg-neo-black text-white p-2 border-2 border-transparent group-hover:bg-neo-yellow group-hover:text-black group-hover:border-black transition-colors">
-                    <i class="ph-bold ph-graduation-cap text-2xl"></i>
-                </div>
-                <span class="font-display text-2xl tracking-tighter uppercase italic">VIDYA<span class="text-neo-pink">_PATH</span></span>
+            <a href="index.html" class="vp-logo flex items-center gap-3" aria-label="VidyaPath home">
+                <img src="logo.png" alt="" class="vp-mark">
+                <span class="vp-word hidden sm:block">
+                    <span class="font-display uppercase">Vidya<span class="vp-path">Path</span></span>
+                    <span class="vp-tagline hidden lg:block">Learn what industry needs</span>
+                </span>
             </a>
             <div class="flex items-center gap-2">
                 <a href="student.html" class="nav-btn">Student</a>
@@ -31,7 +33,7 @@
         <header class="mb-12 border-b-4 border-black pb-6">
             <h1 class="font-display text-5xl md:text-7xl uppercase leading-none mb-4">Learn what<br><span class="text-neo-pink">industry needs.</span></h1>
             <p class="font-bold max-w-2xl">Agents that check your course material against current industry practice, diagnose each student
-                with a spoken viva, teach them in their own language and style, and fix learning gaps before they happen.</p>
+                with a spoken viva, teach them in the style that works for them, and fix learning gaps before they happen.</p>
         </header>
 
         <section class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-12">
@@ -40,7 +42,7 @@
             <div class="border-4 border-black bg-white p-4"><span class="chip bg-neo-yellow mb-2">Step 2</span>
                 <p class="font-display text-xl uppercase">Get your path</p><p class="text-sm">The agents plan your topics and add refreshers before the ones you would struggle with.</p></div>
             <div class="border-4 border-black bg-white p-4"><span class="chip bg-neo-yellow mb-2">Step 3</span>
-                <p class="font-display text-xl uppercase">Learn your way</p><p class="text-sm">Lessons in your language and style, built only from trusted course material.</p></div>
+                <p class="font-display text-xl uppercase">Learn your way</p><p class="text-sm">Lessons in your level and style, built only from trusted course material.</p></div>
         </section>
 
         <!-- Filled by the script: a login prompt, or the logged-in user's entry points -->

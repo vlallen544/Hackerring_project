@@ -18,7 +18,6 @@ SCHEMA = """
 CREATE TABLE IF NOT EXISTS students (
     id TEXT PRIMARY KEY,
     name TEXT NOT NULL,
-    language TEXT,
     stated_style TEXT,
     learned_style TEXT,            -- filled later: the format that actually works best for this student
     pace TEXT,
@@ -72,9 +71,8 @@ CREATE TABLE IF NOT EXISTS lessons (
     concept_id TEXT,
     level TEXT,                    -- foundation / standard / challenge
     format TEXT,                   -- text / audio / visual / practice
-    language TEXT,
     content TEXT,                  -- JSON: segments with provenance, diagram, audio script, practice
-    adaptation TEXT,               -- JSON: why this level/format/language was chosen
+    adaptation TEXT,               -- JSON: why this level and format were chosen
     created_at TEXT DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -118,12 +116,12 @@ def init_db(course=None):
         if conn.execute("SELECT COUNT(*) FROM students").fetchone()[0] == 0 and _students_file(course).exists():
             for s in json.loads(_students_file(course).read_text(encoding="utf-8"))["students"]:
                 conn.execute(
-                    "INSERT INTO students (id, name, language, stated_style, pace, target_role) VALUES (?,?,?,?,?,?)",
-                    (s["id"], s["name"], s["language"], s["stated_style"], s["pace"], s["target_role"]),
+                    "INSERT INTO students (id, name, stated_style, pace, target_role) VALUES (?,?,?,?,?)",
+                    (s["id"], s["name"], s["stated_style"], s["pace"], s["target_role"]),
                 )
         for s in auth.registered_students():  # students created by faculty exist in every course
-            conn.execute("INSERT OR IGNORE INTO students (id, name, language, stated_style, pace, target_role) "
-                         "VALUES (?,?,?,?,?,?)", (s["id"], s["name"], s["language"], s["stated_style"], s["pace"], s["target_role"]))
+            conn.execute("INSERT OR IGNORE INTO students (id, name, stated_style, pace, target_role) "
+                         "VALUES (?,?,?,?,?)", (s["id"], s["name"], s["stated_style"], s["pace"], s["target_role"]))
 
 
 def add_student(student):

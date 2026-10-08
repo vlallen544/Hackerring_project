@@ -18,5 +18,5 @@ SELECT & WHERE → Indexing
 
 ## Faculty voice brief (read aloud in demo)
 "I'm teaching DBMS to third-year CSE, around 60 students. Four weeks before the December
-placement drive. Many students aren't confident in English, some prefer Hindi.
+placement drive. Students have different levels, paces and learning styles.
 Focus on what Data Analyst roles need."

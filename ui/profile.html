@@ -8,6 +8,7 @@
     <script src="theme.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/@phosphor-icons/web@2.1.1"></script>
+    <link rel="icon" href="logo.png" type="image/png">
     <link rel="stylesheet" href="vp.css">
     <style>
         /* Profile inputs from the Campus Zero profile page */
@@ -38,11 +39,12 @@
 
     <nav class="fixed w-full z-40 bg-white border-b-4 border-black top-0">
         <div class="px-4 flex justify-between h-16 items-center gap-3">
-            <a href="index.html" class="flex items-center gap-2 group">
-                <div class="bg-neo-black text-white p-2 border-2 border-transparent group-hover:bg-neo-yellow group-hover:text-black group-hover:border-black transition-colors">
-                    <i class="ph-bold ph-graduation-cap text-xl"></i>
-                </div>
-                <span class="font-display text-xl tracking-tighter uppercase italic hidden sm:inline">VIDYA<span class="text-neo-pink">_PATH</span></span>
+            <a href="index.html" class="vp-logo flex items-center gap-3" aria-label="VidyaPath home">
+                <img src="logo.png" alt="" class="vp-mark">
+                <span class="vp-word hidden sm:block">
+                    <span class="font-display uppercase">Vidya<span class="vp-path">Path</span></span>
+                    <span class="vp-tagline hidden lg:block">Learn what industry needs</span>
+                </span>
             </a>
             <div>
                 <a id="back-link" href="student.html" class="chip bg-neo-yellow !py-1"><i class="ph-bold ph-arrow-u-up-left"></i> My dashboard</a>

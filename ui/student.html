@@ -9,6 +9,9 @@
     <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/@phosphor-icons/web@2.1.1"></script>
     <script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <link rel="icon" href="logo.png" type="image/png">
     <link rel="stylesheet" href="vp.css">
 </head>
 <body class="bg-slate-100 text-neo-black antialiased selection:bg-neo-pink selection:text-white">
@@ -16,18 +19,18 @@
     <!-- Top bar: logo, role switch, student picker -->
     <nav class="fixed w-full z-40 bg-white border-b-4 border-black top-0">
         <div class="px-4 flex justify-between h-16 items-center gap-3">
-            <a href="index.html" class="flex items-center gap-2 group">
-                <div class="bg-neo-black text-white p-2 border-2 border-transparent group-hover:bg-neo-yellow group-hover:text-black group-hover:border-black transition-colors">
-                    <i class="ph-bold ph-graduation-cap text-xl"></i>
-                </div>
-                <span class="font-display text-xl tracking-tighter uppercase italic hidden sm:inline">VIDYA<span class="text-neo-pink">_PATH</span></span>
+            <a href="index.html" class="vp-logo flex items-center gap-3" aria-label="VidyaPath home">
+                <img src="logo.png" alt="" class="vp-mark">
+                <span class="vp-word hidden sm:block">
+                    <span class="font-display uppercase">Vidya<span class="vp-path">Path</span></span>
+                    <span class="vp-tagline hidden lg:block">Learn what industry needs</span>
+                </span>
             </a>
             <div class="flex items-center gap-3">
                 <div class="role-switch flex text-xs">
                     <a href="student.html" class="on">Student</a><a href="faculty.html" class="border-l-0">Faculty</a>
                 </div>
                 <label class="flex items-center gap-2">
-                    <i class="ph-bold ph-user-circle text-2xl hidden sm:inline"></i>
                     <select id="student-select" class="field !w-auto !py-1 font-bold uppercase" aria-label="Student"
                             onchange="location.href='student.html?id='+this.value+location.hash"></select>
                 </label>
@@ -59,7 +62,7 @@
         <div class="mt-8 border-4 border-black p-3 bg-slate-100 text-xs">
             <p class="font-bold uppercase mb-1"><i class="ph-bold ph-lightbulb"></i> How it works</p>
             <p>Take the viva once. The agents then plan your path, warn you about topics you may struggle with,
-                and teach each topic in your language and style.</p>
+                and teach each topic in the style that works for you.</p>
         </div>
     </aside>
 
@@ -100,7 +103,7 @@
             <header class="mb-8 border-b-4 border-black pb-6">
                 <p class="text-xs font-bold uppercase text-gray-500">// Step 1 of 3</p>
                 <h1 class="font-display text-5xl md:text-6xl uppercase leading-none">Viva<span class="text-neo-pink">_</span></h1>
-                <p class="font-bold mt-2 max-w-2xl">A short spoken interview. Answer in your own words, in English or Hinglish. Vague answers get a follow-up question.</p>
+                <p class="font-bold mt-2 max-w-2xl">A short spoken interview. Answer in your own words. Vague answers get a follow-up question.</p>
             </header>
             <div id="viva-start" class="card p-6 max-w-2xl">
                 <ol class="list-decimal pl-6 mb-6 space-y-1">

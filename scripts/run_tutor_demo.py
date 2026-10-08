@@ -19,7 +19,6 @@ for sid in students:
     print(f"{sid.upper()}  |  {lesson['concept_name']}  |  lesson #{lesson['lesson_id']}")
     print(f"  Level   : {a['level']:<11} <- {a['level_reason']}")
     print(f"  Format  : {a['format']:<11} <- {a['format_reason']}")
-    print(f"  Language: {a['language']}")
     if a["targets_misconceptions"]:
         print(f"  Targets : {a['targets_misconceptions']}")
     print(f"  From faculty material: {lesson['material_share_percent']}% of the lesson\n")

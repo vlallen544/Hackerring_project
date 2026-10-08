@@ -112,8 +112,13 @@ h1, h2, h3, button {
     height: 100%;
 }
 
+.diagram {
+    overflow-x: auto;
+}
+
 .diagram svg {
-    max-width: 100%;
+    display: block;
+    margin: 0 auto;   /* centred when narrow; wide diagrams start at the left edge and scroll */
     height: auto;
 }
 
@@ -196,4 +201,50 @@ h1, h2, h3, button {
 .role-switch a.on {
     background: #121212;
     color: #fff;
+}
+
+/* ---------- Brand: round book-and-magnifier emblem + VIDYA [PATH] wordmark ---------- */
+.vp-mark {
+    width: 3.1rem;
+    height: 3.1rem;
+    flex-shrink: 0;
+    transition: transform 0.2s;
+}
+
+.vp-logo:hover .vp-mark {
+    transform: rotate(-8deg) scale(1.05);
+}
+
+.vp-word {
+    line-height: 1;
+}
+
+.vp-word .font-display {
+    font-size: 1.45rem;
+    letter-spacing: -0.03em;
+}
+
+.vp-path {
+    display: inline-block;
+    margin-left: 0.25rem;
+    padding: 0.1rem 0.4rem 0.15rem;
+    background: #121212;
+    color: #fff;
+    border: 2px solid #121212;
+    box-shadow: 3px 3px 0 0 #FFF500;   /* the one accent, from the site palette */
+    transition: box-shadow 0.15s, transform 0.15s;
+}
+
+.vp-logo:hover .vp-path {
+    transform: translate(-1px, -1px);
+    box-shadow: 4px 4px 0 0 #FF00D6;
+}
+
+.vp-tagline {
+    margin-top: 0.35rem;
+    font-size: 0.6rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: #4b5563;
 }

@@ -22,8 +22,8 @@ Mention EVERY change in the list (each refresher and each challenge move). Do no
 A refresher means the student is WEAK in that earlier topic: say clearly it NEEDS more practice before the
 upcoming topic. Never say a refreshed topic is already strong. A challenge move means the student is ready for
 harder, interview-level practice.
-student_message MUST be written in {language}. If the language is Hindi, write natural Hinglish
-(Hindi words in Roman script, e.g. "Agle hafte Joins hai, isliye..."), NOT English and NOT Devanagari."""
+Write student_message in clear, friendly English. Use only the facts given: quote dates as they are given
+(do not turn them into "tomorrow" or weekdays) and do not add durations, times or other details."""
 
 
 def _kb():
@@ -230,9 +230,8 @@ def predict_and_redesign(student_id):
     nudge = None
     if actions:  # the LLM only explains decisions that were already made in code
         nudge = chat_json(
-            NUDGE_PROMPT.format(language=student["language"]),
-            json.dumps({"student": student["name"], "write_in": "Hinglish (Roman script)" if student["language"] == "Hindi"
-                        else student["language"], "changes": actions}, ensure_ascii=False, indent=1),
+            NUDGE_PROMPT,
+            json.dumps({"student": student["name"], "changes": actions}, ensure_ascii=False, indent=1),
             GapNudge,
         ).model_dump()
 

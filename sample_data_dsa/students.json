@@ -3,7 +3,6 @@
     {
       "id": "asha",
       "name": "Asha",
-      "language": "English",
       "stated_style": "reading",
       "pace": "fast",
       "target_role": "Software Engineer",
@@ -12,16 +11,14 @@
     {
       "id": "ravi",
       "name": "Ravi",
-      "language": "Hindi",
       "stated_style": "listening",
       "pace": "medium",
       "target_role": "Software Engineer",
-      "demo_behaviour": "Vague on foreign keys, mixes up candidate key and primary key. Gap Radar should flag Joins and add a Hindi audio refresher on Keys."
+      "demo_behaviour": "Vague on foreign keys, mixes up candidate key and primary key. Gap Radar should flag Joins and add an audio refresher on Keys."
     },
     {
       "id": "meera",
       "name": "Meera",
-      "language": "English",
       "stated_style": "visual",
       "pace": "medium",
       "target_role": "Software Engineer",
@@ -30,7 +27,6 @@
     {
       "id": "arjun",
       "name": "Arjun",
-      "language": "English",
       "stated_style": "practice",
       "pace": "fast",
       "target_role": "Software Engineer",

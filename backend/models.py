@@ -88,7 +88,7 @@ class AnswerEvaluation(BaseModel):
         description="If the answer shows a specific wrong belief, describe it in one short sentence; otherwise null")
     missing_prerequisite: str | None = Field(
         description="concept id of a prerequisite the student clearly does not understand, or null")
-    feedback: str = Field(description="1-2 encouraging sentences for the student, in the student's language")
+    feedback: str = Field(description="1-2 encouraging sentences for the student")
     follow_up_question: str | None = Field(
         description="If verdict is vague or partial: one probing question on the SAME concept. Otherwise null")
 
@@ -98,8 +98,7 @@ class QuestionReview(BaseModel):
     gives_away: str | None = Field(
         description="Quote the exact words that state, presuppose or hint at an expected point "
                     "(including naming the correct choice or saying something fails / is not allowed), or null")
-    question: str = Field(description="The original question if gives_away is null and the language is right, "
-                                      "otherwise the rewritten question")
+    question: str = Field(description="The original question if gives_away is null, otherwise the rewritten question")
 
 
 class QuestionReviews(BaseModel):
@@ -108,30 +107,64 @@ class QuestionReviews(BaseModel):
 
 # ---------- Tutor agent ----------
 class LessonSegment(BaseModel):
-    text: str = Field(description="One short paragraph or bullet of the lesson, in the student's language")
+    heading: str | None = Field(description="Short sub-heading when this segment starts a new part of the lesson "
+                                            "(e.g. 'How it works', 'When to use it'), otherwise null")
+    text: str = Field(description="One full paragraph of explanation (3-6 sentences)")
     origin: Literal["material", "ai"] = Field(
         description="material: restates facts from the given TRUSTED CLAIMS (cite them). "
                     "ai: your own explanation, analogy or example")
     claim_ids: list[str] = Field(description="ids of the trusted claims this segment is based on (empty if origin is ai)")
 
 
+class LessonDiagram(BaseModel):
+    title: str = Field(description="What the diagram shows")
+    mermaid: str = Field(description="Valid Mermaid code starting with 'flowchart TD', 'flowchart LR', 'sequenceDiagram' "
+                                     "or 'stateDiagram-v2'. Put labels with brackets or symbols in quotes: A[\"push(5)\"]")
+    caption: str = Field(description="1-2 sentences explaining the diagram")
+
+
+class WalkthroughStep(BaseModel):
+    step: str = Field(description="What happens in this step")
+    state: str | None = Field(description="The data after this step, e.g. 'stack = [5, 10]' or a small table, or null")
+
+
+class CodeExample(BaseModel):
+    title: str = Field(description="What this example shows, e.g. 'Stack using a Python list'")
+    language: str = Field(description="Code language in lower case: python, sql, java, cpp or javascript")
+    code: str = Field(description="Complete, correct, runnable code (8-40 lines) with short English comments")
+    explanation: str = Field(description="2-4 sentences on how the code works")
+    output: str | None = Field(description="What the code prints or returns when run, or null")
+
+
+class ComplexityRow(BaseModel):
+    operation: str
+    time: str = Field(description="Time complexity in Big-O, e.g. O(1) or O(n log n)")
+    space: str = Field(description="Extra space in Big-O")
+
+
 class PracticeQuestion(BaseModel):
     question: str
-    answer: str = Field(description="Model answer, 1-3 sentences")
+    answer: str = Field(description="Model answer, 1-4 sentences or a short piece of code")
 
 
 class TutorLesson(BaseModel):
     title: str
-    segments: list[LessonSegment] = Field(description="The lesson body, 4-8 segments")
+    overview: str = Field(description="2-3 sentences: what the student will learn and why it matters")
+    segments: list[LessonSegment] = Field(description="The full explanation: 6-12 segments grouped under sub-headings")
+    diagrams: list[LessonDiagram] = Field(description="1-3 diagrams that show how the concept works")
+    walkthrough_title: str = Field(description="Title of the worked example, e.g. 'Pushing 5, 10, 15 and popping twice'")
+    walkthrough: list[WalkthroughStep] = Field(description="Step-by-step trace on a small concrete example (4-8 steps)")
+    code_examples: list[CodeExample] = Field(description="1-3 code examples implementing or using the concept")
+    complexity: list[ComplexityRow] = Field(description="Time/space of the main operations if the topic has them, else empty")
+    common_mistakes: list[str] = Field(description="2-4 typical mistakes students make with this topic")
+    key_points: list[str] = Field(description="4-6 key takeaways to remember")
     misconception_fix: str | None = Field(description="If misconceptions are given: a short correction. Otherwise null")
-    diagram_mermaid: str | None = Field(description="For visual format: a simple Mermaid flowchart. Otherwise null")
     audio_script: str | None = Field(description="For audio format: the lesson as a friendly spoken script. Otherwise null")
-    practice: list[PracticeQuestion] = Field(description="2-3 practice questions")
+    practice: list[PracticeQuestion] = Field(description="3-4 practice questions, from easier to harder")
 
 
 # ---------- Gap Predictor agent ----------
 class GapNudge(BaseModel):
     student_message: str = Field(
-        description="2-3 friendly sentences to the student explaining what was added to their path and why, "
-                    "in the student's language")
+        description="2-3 friendly sentences to the student explaining what was added to their path and why")
     faculty_note: str = Field(description="One sentence for the faculty summarising the predicted gap and action, in English")
