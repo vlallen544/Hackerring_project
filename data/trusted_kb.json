@@ -1,0 +1,729 @@
+{
+  "concepts": {
+    "relational_model": {
+      "id": "relational_model",
+      "name": "Relational Model",
+      "description": "A data model where data is stored in tables (relations) consisting of tuples and attributes."
+    },
+    "keys": {
+      "id": "keys",
+      "name": "Keys",
+      "description": "Attributes or sets of attributes used to uniquely identify tuples and establish relationships between tables."
+    },
+    "constraints": {
+      "id": "constraints",
+      "name": "Integrity Constraints",
+      "description": "Rules that enforce consistency and accuracy of data, such as NOT NULL, UNIQUE, and CHECK."
+    },
+    "basic_queries": {
+      "id": "basic_queries",
+      "name": "Basic SQL Queries",
+      "description": "Fundamental SQL operations including SELECT, FROM, and WHERE to retrieve data."
+    },
+    "aggregation": {
+      "id": "aggregation",
+      "name": "Aggregation and Grouping",
+      "description": "Using functions like COUNT and SUM to combine values, and GROUP BY/HAVING to process groups."
+    },
+    "joins": {
+      "id": "joins",
+      "name": "Joins",
+      "description": "Operations that combine rows from two or more tables based on related columns."
+    },
+    "subqueries": {
+      "id": "subqueries",
+      "name": "Subqueries",
+      "description": "Queries nested inside another query, used for conditional filtering or data manipulation."
+    },
+    "cte": {
+      "id": "cte",
+      "name": "Common Table Expressions",
+      "description": "Named temporary result sets defined with the WITH keyword that improve query readability."
+    },
+    "window_functions": {
+      "id": "window_functions",
+      "name": "Window Functions",
+      "description": "Functions that perform calculations across a set of rows related to the current row without collapsing them."
+    },
+    "normalization": {
+      "id": "normalization",
+      "name": "Normalization",
+      "description": "The process of organizing data to reduce redundancy and dependency, moving through forms like 1NF, 2NF, 3NF, and BCNF."
+    },
+    "indexing": {
+      "id": "indexing",
+      "name": "Indexing",
+      "description": "Data structures that speed up data retrieval at the cost of extra storage and slower writes."
+    },
+    "query_performance": {
+      "id": "query_performance",
+      "name": "Query Performance and Optimization",
+      "description": "Techniques to make queries faster, including using indexes and analyzing execution plans with EXPLAIN."
+    }
+  },
+  "prerequisites": [
+    {
+      "before": "relational_model",
+      "after": "keys",
+      "reason": "Understanding what a tuple and attribute are is required to understand how keys uniquely identify tuples."
+    },
+    {
+      "before": "relational_model",
+      "after": "normalization",
+      "reason": "Normalization is the process of organizing relations, so the relational model is the foundational concept."
+    },
+    {
+      "before": "keys",
+      "after": "joins",
+      "reason": "Joins connect tables through keys, so an understanding of primary and foreign keys is necessary to write effective joins."
+    },
+    {
+      "before": "keys",
+      "after": "constraints",
+      "reason": "Constraint types like PRIMARY KEY and FOREIGN KEY are fundamentally based on key concepts."
+    },
+    {
+      "before": "basic_queries",
+      "after": "aggregation",
+      "reason": "Aggregation builds upon the basic SELECT...FROM structure, adding functions and grouping clauses."
+    },
+    {
+      "before": "basic_queries",
+      "after": "subqueries",
+      "reason": "A subquery is a query nested inside another query, so the basic query structure must be understood first."
+    },
+    {
+      "before": "basic_queries",
+      "after": "joins",
+      "reason": "Joins are an extension of the basic SELECT statement involving multiple tables."
+    },
+    {
+      "before": "aggregation",
+      "after": "window_functions",
+      "reason": "Window functions perform calculations across rows and are often compared to or used alongside GROUP BY aggregation."
+    },
+    {
+      "before": "aggregation",
+      "after": "query_performance",
+      "reason": "Optimizing queries often involves understanding how aggregated data is retrieved and grouped."
+    },
+    {
+      "before": "subqueries",
+      "after": "cte",
+      "reason": "CTEs are an alternative to deeply nested subqueries, making an understanding of subqueries a useful prerequisite."
+    }
+  ],
+  "learning_order": [
+    "relational_model",
+    "basic_queries",
+    "indexing",
+    "keys",
+    "normalization",
+    "aggregation",
+    "subqueries",
+    "joins",
+    "constraints",
+    "window_functions",
+    "query_performance",
+    "cte"
+  ],
+  "sources": [
+    {
+      "id": "faculty_notes_dbms",
+      "file": "sources/faculty_notes_dbms.md",
+      "title": "DBMS Lecture Notes (Prof. R. Sharma)",
+      "type": "faculty_notes",
+      "year": 2019
+    },
+    {
+      "id": "textbook_dbms_2023",
+      "file": "sources/textbook_dbms_2023.md",
+      "title": "Database Systems: Concepts and Practice, 3rd Ed.",
+      "type": "textbook",
+      "year": 2023
+    },
+    {
+      "id": "web_tutorial_sql_2016",
+      "file": "sources/web_tutorial_sql_2016.md",
+      "title": "Quick SQL Revision Guide (blog)",
+      "type": "web_link",
+      "year": 2016
+    },
+    {
+      "id": "jd_data_analyst_fintech",
+      "file": "sources/jd_data_analyst_fintech.md",
+      "title": "JD: Data Analyst, Fintech Startup",
+      "type": "job_description",
+      "year": 2026
+    },
+    {
+      "id": "jd_data_analyst_ecommerce",
+      "file": "sources/jd_data_analyst_ecommerce.md",
+      "title": "JD: Junior Data Analyst, E-commerce",
+      "type": "job_description",
+      "year": 2026
+    }
+  ],
+  "claims": [
+    {
+      "concept_id": "relational_model",
+      "statement": "A relational database stores data in tables called relations, where rows are tuples and columns are attributes.",
+      "quote": "A relational database stores data in tables called relations. Each row is a tuple and each column is an attribute.",
+      "source_id": "faculty_notes_dbms",
+      "page": 1,
+      "claim_type": "definition",
+      "id": "claim_1",
+      "status": "trusted"
+    },
+    {
+      "concept_id": "keys",
+      "statement": "A candidate key is a minimal super key, meaning no attribute can be removed from it without losing uniqueness.",
+      "quote": "A candidate key is a minimal super key, meaning no attribute can be removed from it without losing uniqueness.",
+      "source_id": "faculty_notes_dbms",
+      "page": 1,
+      "claim_type": "definition",
+      "id": "claim_2",
+      "status": "trusted"
+    },
+    {
+      "concept_id": "keys",
+      "statement": "A foreign key is an attribute in one table that refers to the primary key of another table.",
+      "quote": "A foreign key is an attribute in one table that refers to the primary key of another table, and it is used to maintain referential integrity.",
+      "source_id": "faculty_notes_dbms",
+      "page": 1,
+      "claim_type": "definition",
+      "id": "claim_3",
+      "status": "trusted"
+    },
+    {
+      "concept_id": "constraints",
+      "statement": "In MySQL, CHECK constraints are parsed but ignored, so they cannot be used to validate data; triggers should be used instead.",
+      "quote": "MySQL parses CHECK constraints but ignores them, so CHECK cannot be used to validate data in MySQL. Use triggers instead.",
+      "source_id": "faculty_notes_dbms",
+      "page": 2,
+      "claim_type": "fact",
+      "id": "claim_4",
+      "status": "outdated"
+    },
+    {
+      "concept_id": "basic_queries",
+      "statement": "In a SQL SELECT statement, the SELECT clause chooses columns, FROM chooses tables, and WHERE filters rows.",
+      "quote": "SELECT chooses columns, FROM chooses tables and WHERE filters rows.",
+      "source_id": "faculty_notes_dbms",
+      "page": 2,
+      "claim_type": "rule",
+      "id": "claim_5",
+      "status": "trusted"
+    },
+    {
+      "concept_id": "aggregation",
+      "statement": "HAVING is used to filter groups after aggregation, whereas WHERE filters individual rows before grouping occurs.",
+      "quote": "HAVING filters groups after aggregation, while WHERE filters individual rows before grouping.",
+      "source_id": "faculty_notes_dbms",
+      "page": 2,
+      "claim_type": "rule",
+      "id": "claim_6",
+      "status": "trusted"
+    },
+    {
+      "concept_id": "joins",
+      "statement": "A LEFT JOIN returns all rows from the left table and matching rows from the right table, with NULL where no match exists.",
+      "quote": "A LEFT JOIN returns all rows from the left table and matching rows from the right table, with NULL where no match exists.",
+      "source_id": "faculty_notes_dbms",
+      "page": 3,
+      "claim_type": "definition",
+      "id": "claim_7",
+      "status": "trusted"
+    },
+    {
+      "concept_id": "window_functions",
+      "statement": "According to the faculty notes, MySQL does not support window functions, requiring alternative methods for ranking.",
+      "quote": "MySQL does not support window functions, so ranking and running totals must be done using subqueries or in application code.",
+      "source_id": "faculty_notes_dbms",
+      "page": 3,
+      "claim_type": "fact",
+      "id": "claim_8",
+      "status": "outdated"
+    },
+    {
+      "concept_id": "normalization",
+      "statement": "BCNF is stricter than 3NF, requiring that for every functional dependency X → Y, X must be a super key.",
+      "quote": "BCNF is stricter than 3NF: for every functional dependency X → Y, X must be a super key.",
+      "source_id": "faculty_notes_dbms",
+      "page": 4,
+      "claim_type": "definition",
+      "id": "claim_9",
+      "status": "trusted"
+    },
+    {
+      "concept_id": "indexing",
+      "statement": "B+ trees are the most common index structure used in relational databases.",
+      "quote": "B+ trees are the most common index structure in relational databases.",
+      "source_id": "faculty_notes_dbms",
+      "page": 4,
+      "claim_type": "fact",
+      "id": "claim_10",
+      "status": "trusted"
+    },
+    {
+      "concept_id": "constraints",
+      "statement": "Since MySQL version 8.0.16, CHECK constraints are enforced, meaning rows that violate a CHECK condition are rejected.",
+      "quote": "Since MySQL 8.0.16, CHECK constraints are enforced, so a row that violates a CHECK condition is rejected.",
+      "source_id": "textbook_dbms_2023",
+      "page": 1,
+      "claim_type": "fact",
+      "id": "claim_11",
+      "status": "trusted"
+    },
+    {
+      "concept_id": "aggregation",
+      "statement": "Using an aggregate function such as AVG inside a WHERE clause is a common mistake that is not allowed.",
+      "quote": "A common mistake is to use an aggregate function such as AVG inside a WHERE clause, which is not allowed.",
+      "source_id": "textbook_dbms_2023",
+      "page": 2,
+      "claim_type": "rule",
+      "id": "claim_12",
+      "status": "trusted"
+    },
+    {
+      "concept_id": "joins",
+      "statement": "A self join is a type of join that joins a table to itself, often used to find hierarchical relationships.",
+      "quote": "A self join joins a table to itself, for example to find employees and their managers.",
+      "source_id": "textbook_dbms_2023",
+      "page": 2,
+      "claim_type": "definition",
+      "id": "claim_13",
+      "status": "trusted"
+    },
+    {
+      "concept_id": "cte",
+      "statement": "A Common Table Expression (CTE) is a named temporary result defined with the WITH keyword.",
+      "quote": "A Common Table Expression (CTE) is a named temporary result defined with the WITH keyword.",
+      "source_id": "textbook_dbms_2023",
+      "page": 3,
+      "claim_type": "definition",
+      "id": "claim_14",
+      "status": "trusted"
+    },
+    {
+      "concept_id": "window_functions",
+      "statement": "MySQL supports window functions from version 8.0 onwards, and PostgreSQL has supported them for many years.",
+      "quote": "MySQL supports window functions from version 8.0 onwards, and PostgreSQL has supported them for many years.",
+      "source_id": "textbook_dbms_2023",
+      "page": 3,
+      "claim_type": "fact",
+      "id": "claim_15",
+      "status": "trusted"
+    },
+    {
+      "concept_id": "window_functions",
+      "statement": "Window functions require a solid understanding of aggregation and the GROUP BY clause.",
+      "quote": "Window functions require a solid understanding of aggregation and GROUP BY.",
+      "source_id": "textbook_dbms_2023",
+      "page": 3,
+      "claim_type": "opinion",
+      "id": "claim_16",
+      "status": "trusted"
+    },
+    {
+      "concept_id": "normalization",
+      "statement": "According to the web tutorial, 3NF and BCNF are the same thing, so a table in 3NF is already in BCNF.",
+      "quote": "3NF and BCNF are the same thing, so if your table is in 3NF it is already in BCNF.",
+      "source_id": "web_tutorial_sql_2016",
+      "page": 1,
+      "claim_type": "fact",
+      "id": "claim_17",
+      "status": "unreliable"
+    },
+    {
+      "concept_id": "query_performance",
+      "statement": "According to the web tutorial, subqueries are always faster than joins, so subqueries should be preferred in interviews.",
+      "quote": "Subqueries are always faster than joins, so prefer subqueries in interviews.",
+      "source_id": "web_tutorial_sql_2016",
+      "page": 2,
+      "claim_type": "fact",
+      "id": "claim_18",
+      "status": "unreliable"
+    },
+    {
+      "concept_id": "indexing",
+      "statement": "According to the web tutorial, one should always add an index on every column to make queries faster.",
+      "quote": "Always add an index on every column to make queries faster.",
+      "source_id": "web_tutorial_sql_2016",
+      "page": 2,
+      "claim_type": "fact",
+      "id": "claim_19",
+      "status": "unreliable"
+    },
+    {
+      "concept_id": "joins",
+      "statement": "The fintech data analyst job requires a strong command of joins across multiple tables, including LEFT JOIN and self join.",
+      "quote": "Strong command of joins across multiple tables, including LEFT JOIN and self join.",
+      "source_id": "jd_data_analyst_fintech",
+      "page": 1,
+      "claim_type": "requirement",
+      "id": "claim_20",
+      "status": "trusted"
+    },
+    {
+      "concept_id": "window_functions",
+      "statement": "The fintech data analyst job requires daily use of window functions such as ROW_NUMBER, RANK, LAG and running totals.",
+      "quote": "Window functions such as ROW_NUMBER, RANK, LAG and running totals are used daily for cohort and trend analysis.",
+      "source_id": "jd_data_analyst_fintech",
+      "page": 1,
+      "claim_type": "requirement",
+      "id": "claim_21",
+      "status": "trusted"
+    },
+    {
+      "concept_id": "cte",
+      "statement": "The fintech data analyst job requires the use of Common Table Expressions (CTEs) for writing readable multi-step queries.",
+      "quote": "Common Table Expressions (CTEs) for writing readable multi-step queries.",
+      "source_id": "jd_data_analyst_fintech",
+      "page": 1,
+      "claim_type": "requirement",
+      "id": "claim_22",
+      "status": "trusted"
+    },
+    {
+      "concept_id": "aggregation",
+      "statement": "The fintech data analyst job requires knowledge of GROUP BY and HAVING for aggregated reporting.",
+      "quote": "GROUP BY and HAVING for aggregated reporting.",
+      "source_id": "jd_data_analyst_fintech",
+      "page": 1,
+      "claim_type": "requirement",
+      "id": "claim_23",
+      "status": "trusted"
+    },
+    {
+      "concept_id": "query_performance",
+      "statement": "Understanding indexes and reading EXPLAIN output is a good-to-have skill for the fintech data analyst role.",
+      "quote": "Understanding of indexes and reading EXPLAIN output to speed up slow queries.",
+      "source_id": "jd_data_analyst_fintech",
+      "page": 1,
+      "claim_type": "requirement",
+      "id": "claim_24",
+      "status": "trusted"
+    },
+    {
+      "concept_id": "subqueries",
+      "statement": "The e-commerce data analyst job requires knowledge of SQL subqueries, among other skills.",
+      "quote": "SQL: joins, subqueries, CTEs and window functions (RANK, DENSE_RANK, LAG).",
+      "source_id": "jd_data_analyst_ecommerce",
+      "page": 1,
+      "claim_type": "requirement",
+      "id": "claim_25",
+      "status": "trusted"
+    },
+    {
+      "concept_id": "keys",
+      "statement": "The e-commerce data analyst job requires an understanding of data integrity, including primary keys, foreign keys, and constraints.",
+      "quote": "Data integrity: understanding of primary keys, foreign keys and constraints.",
+      "source_id": "jd_data_analyst_ecommerce",
+      "page": 1,
+      "claim_type": "requirement",
+      "id": "claim_26",
+      "status": "trusted"
+    },
+    {
+      "concept_id": "aggregation",
+      "statement": "The e-commerce data analyst job requires the ability to explain the difference between WHERE and HAVING clearly.",
+      "quote": "Ability to explain the difference between WHERE and HAVING clearly.",
+      "source_id": "jd_data_analyst_ecommerce",
+      "page": 1,
+      "claim_type": "requirement",
+      "id": "claim_27",
+      "status": "trusted"
+    }
+  ],
+  "conflicts": [
+    {
+      "id": "conflict_1",
+      "concept_id": "constraints",
+      "topic": "Enforcement of CHECK constraints in MySQL",
+      "type": "outdated",
+      "summary": "The 2019 faculty notes state that CHECK constraints are ignored in MySQL, whereas the 2023 textbook clarifies that they are enforced starting with version 8.0.16.",
+      "sides": [
+        {
+          "label": "MySQL ignores CHECK constraints and they cannot be used for validation",
+          "claim_ids": [
+            "claim_4"
+          ],
+          "is_specific": false,
+          "is_absolute": true,
+          "score": {
+            "factors": {
+              "recency": 0.3,
+              "authority": 0.9,
+              "agreement": 0.5,
+              "specificity": 0.0
+            },
+            "absolute_penalty": true,
+            "sources": [
+              "faculty_notes_dbms"
+            ],
+            "newest_year": 2019,
+            "trust": 0.35
+          }
+        },
+        {
+          "label": "MySQL version 8.0.16 and later enforce CHECK constraints",
+          "claim_ids": [
+            "claim_11"
+          ],
+          "is_specific": true,
+          "is_absolute": false,
+          "score": {
+            "factors": {
+              "recency": 0.7,
+              "authority": 0.85,
+              "agreement": 0.5,
+              "specificity": 1.0
+            },
+            "absolute_penalty": false,
+            "sources": [
+              "textbook_dbms_2023"
+            ],
+            "newest_year": 2023,
+            "trust": 0.725
+          }
+        }
+      ],
+      "decided_by": "agent",
+      "explanation": "Trusted \"MySQL version 8.0.16 and later enforce CHECK constraints\" over \"MySQL ignores CHECK constraints and they cannot be used for validation\" because of: newer source (2023 vs 2019), more specific (gives versions or reasons), the other side makes an absolute 'always/never' claim.",
+      "decision": "resolved",
+      "winner_side": 1,
+      "margin": 0.375
+    },
+    {
+      "id": "conflict_2",
+      "concept_id": "window_functions",
+      "topic": "Support for window functions in MySQL",
+      "type": "outdated",
+      "summary": "The 2019 faculty notes claim MySQL does not support window functions, but the 2023 textbook notes this feature has been available since MySQL 8.0.",
+      "sides": [
+        {
+          "label": "MySQL does not support window functions and requires alternative methods",
+          "claim_ids": [
+            "claim_8"
+          ],
+          "is_specific": false,
+          "is_absolute": true,
+          "score": {
+            "factors": {
+              "recency": 0.3,
+              "authority": 0.9,
+              "agreement": 0.5,
+              "specificity": 0.0
+            },
+            "absolute_penalty": true,
+            "sources": [
+              "faculty_notes_dbms"
+            ],
+            "newest_year": 2019,
+            "trust": 0.35
+          }
+        },
+        {
+          "label": "MySQL supports window functions from version 8.0 onwards",
+          "claim_ids": [
+            "claim_15"
+          ],
+          "is_specific": true,
+          "is_absolute": false,
+          "score": {
+            "factors": {
+              "recency": 0.7,
+              "authority": 0.85,
+              "agreement": 0.5,
+              "specificity": 1.0
+            },
+            "absolute_penalty": false,
+            "sources": [
+              "textbook_dbms_2023"
+            ],
+            "newest_year": 2023,
+            "trust": 0.725
+          }
+        }
+      ],
+      "decided_by": "agent",
+      "explanation": "Trusted \"MySQL supports window functions from version 8.0 onwards\" over \"MySQL does not support window functions and requires alternative methods\" because of: newer source (2023 vs 2019), more specific (gives versions or reasons), the other side makes an absolute 'always/never' claim.",
+      "decision": "resolved",
+      "winner_side": 1,
+      "margin": 0.375
+    },
+    {
+      "id": "conflict_3",
+      "concept_id": "normalization",
+      "topic": "Equivalence of 3NF and BCNF",
+      "type": "unreliable",
+      "summary": "The 2016 web tutorial incorrectly states that 3NF and BCNF are equivalent, which contradicts the standard database definition provided in the faculty notes (claim 9) where BCNF is strictly more restrictive than 3NF.",
+      "sides": [
+        {
+          "label": "3NF and BCNF are the same, meaning any table in 3NF is automatically in BCNF",
+          "claim_ids": [
+            "claim_17"
+          ],
+          "is_specific": false,
+          "is_absolute": true,
+          "score": {
+            "factors": {
+              "recency": 0.0,
+              "authority": 0.4,
+              "agreement": 0.5,
+              "specificity": 0.0
+            },
+            "absolute_penalty": true,
+            "sources": [
+              "web_tutorial_sql_2016"
+            ],
+            "newest_year": 2016,
+            "trust": 0.095
+          }
+        }
+      ],
+      "decision": "flagged_unreliable",
+      "decided_by": "agent",
+      "explanation": "Flagged \"3NF and BCNF are the same, meaning any table in 3NF is automatically in BCNF\": low trust score (0.095) from an old, low-authority or absolute claim."
+    },
+    {
+      "id": "conflict_4",
+      "concept_id": "query_performance",
+      "topic": "Performance comparison between subqueries and joins",
+      "type": "unreliable",
+      "summary": "The 2016 web tutorial over-generalizes that subqueries are always faster than joins, which is not universally true and contradicts modern performance analysis best practices.",
+      "sides": [
+        {
+          "label": "Subqueries are always faster than joins and should always be preferred",
+          "claim_ids": [
+            "claim_18"
+          ],
+          "is_specific": false,
+          "is_absolute": true,
+          "score": {
+            "factors": {
+              "recency": 0.0,
+              "authority": 0.4,
+              "agreement": 0.5,
+              "specificity": 0.0
+            },
+            "absolute_penalty": true,
+            "sources": [
+              "web_tutorial_sql_2016"
+            ],
+            "newest_year": 2016,
+            "trust": 0.095
+          }
+        }
+      ],
+      "decision": "flagged_unreliable",
+      "decided_by": "agent",
+      "explanation": "Flagged \"Subqueries are always faster than joins and should always be preferred\": low trust score (0.095) from an old, low-authority or absolute claim."
+    },
+    {
+      "id": "conflict_5",
+      "concept_id": "indexing",
+      "topic": "Best practices for adding indexes",
+      "type": "unreliable",
+      "summary": "The 2016 web tutorial gives unreliable advice to always add an index on every column, ignoring that too many indexes can severely slow down write operations and increase storage overhead.",
+      "sides": [
+        {
+          "label": "An index should always be added to every column to make queries faster",
+          "claim_ids": [
+            "claim_19"
+          ],
+          "is_specific": false,
+          "is_absolute": true,
+          "score": {
+            "factors": {
+              "recency": 0.0,
+              "authority": 0.4,
+              "agreement": 0.5,
+              "specificity": 0.0
+            },
+            "absolute_penalty": true,
+            "sources": [
+              "web_tutorial_sql_2016"
+            ],
+            "newest_year": 2016,
+            "trust": 0.095
+          }
+        }
+      ],
+      "decision": "flagged_unreliable",
+      "decided_by": "agent",
+      "explanation": "Flagged \"An index should always be added to every column to make queries faster\": low trust score (0.095) from an old, low-authority or absolute claim."
+    }
+  ],
+  "freshness_report": {
+    "score": 54,
+    "skills": [
+      {
+        "skill": "Multi-table joins (LEFT JOIN, self join)",
+        "concept_id": "joins",
+        "demanded_by": [
+          "claim_20",
+          "claim_25"
+        ],
+        "faculty_coverage": "covered",
+        "note": "Faculty notes explain LEFT JOIN (claim 7), and textbook material covers self-joins (claim 13)."
+      },
+      {
+        "skill": "Window functions (ROW_NUMBER, RANK, LAG, running totals)",
+        "concept_id": "window_functions",
+        "demanded_by": [
+          "claim_21",
+          "claim_25"
+        ],
+        "faculty_coverage": "outdated",
+        "note": "Faculty notes incorrectly state MySQL lacks this feature (claim 8) and do not cover the syntax or usage found in modern databases."
+      },
+      {
+        "skill": "Common Table Expressions (CTEs)",
+        "concept_id": "cte",
+        "demanded_by": [
+          "claim_22",
+          "claim_25"
+        ],
+        "faculty_coverage": "missing",
+        "note": "Faculty notes do not mention CTEs; only the 2023 textbook covers this topic (claim 14)."
+      },
+      {
+        "skill": "GROUP BY and HAVING",
+        "concept_id": "aggregation",
+        "demanded_by": [
+          "claim_23",
+          "claim_27"
+        ],
+        "faculty_coverage": "covered",
+        "note": "Faculty notes correctly explain the difference between WHERE and HAVING filters (claim 6)."
+      },
+      {
+        "skill": "Query performance and EXPLAIN plans",
+        "concept_id": "query_performance",
+        "demanded_by": [
+          "claim_24"
+        ],
+        "faculty_coverage": "missing",
+        "note": "Faculty notes cover B+ tree indexing (claim 10) but do not address reading EXPLAIN output or performance tuning."
+      },
+      {
+        "skill": "Data integrity constraints (Primary/Foreign Keys)",
+        "concept_id": "keys",
+        "demanded_by": [
+          "claim_26"
+        ],
+        "faculty_coverage": "covered",
+        "note": "Faculty notes define candidate keys and foreign keys clearly (claims 2, 3)."
+      }
+    ],
+    "missing": [
+      "Common Table Expressions (CTEs)",
+      "Query performance and EXPLAIN plans"
+    ],
+    "outdated": [
+      "Window functions (ROW_NUMBER, RANK, LAG, running totals)"
+    ]
+  }
+}
