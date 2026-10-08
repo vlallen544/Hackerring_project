@@ -297,22 +297,25 @@ vidyapath/
 ### Setup
 ```bash
 # Clone
-git clone https://github.com/<your-username>/vidyapath.git
-cd vidyapath
+git clone https://github.com/vlallen544/Hackerring_project.git
+cd Hackerring_project
 
-# Backend
-cd backend
-python -m venv venv
-source venv/bin/activate        # Windows: venv\Scripts\activate
+# Backend (from the repository root)
+python -m venv .venv
+source .venv/bin/activate        # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
-cp ../.env.example .env         # add your AGNES_API_KEY
-uvicorn main:app --reload
+cp .env.example .env             # add your AGNES_API_KEY
+uvicorn backend.main:app --reload
 
 # Frontend (new terminal)
 cd frontend
 npm install
 npm run dev
 ```
+
+The API health check is at <http://localhost:8000/health>; interactive API docs are at <http://localhost:8000/docs>. The Next.js app runs at <http://localhost:3000>.
+
+To verify the Agnes connection and cached JSON client, run `python scripts/hello_agnes.py` and `python scripts/test_client.py` from the repository root after configuring `.env`.
 
 ### Environment variables
 ```
