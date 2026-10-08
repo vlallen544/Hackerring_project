@@ -51,6 +51,14 @@ CREATE TABLE IF NOT EXISTS path_items (
     scheduled_for TEXT
 );
 
+CREATE TABLE IF NOT EXISTS viva_sessions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    student_id TEXT,
+    status TEXT DEFAULT 'active',  -- active / done
+    state TEXT,                    -- JSON: question queue, answers, transcript
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP
+);
+
 CREATE TABLE IF NOT EXISTS risk_events (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     student_id TEXT,
@@ -88,13 +96,14 @@ def rows(query, params=()):
 
 
 def execute(query, params=()):
+    """Runs a write query. Returns the new row id for INSERTs."""
     with get_conn() as conn:
-        conn.execute(query, params)
+        return conn.execute(query, params).lastrowid
 
 
 def reset_student_progress():
     """Demo helper: wipes progress but keeps students, so you can re-run the demo cleanly."""
     with get_conn() as conn:
-        for table in ("mastery", "attempts", "path_items", "risk_events"):
+        for table in ("mastery", "attempts", "path_items", "risk_events", "viva_sessions"):
             conn.execute(f"DELETE FROM {table}")
         conn.execute("UPDATE students SET learned_style = NULL")

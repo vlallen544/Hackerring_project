@@ -57,3 +57,39 @@ class IndustrySkill(BaseModel):
 class ReconcilerOutput(BaseModel):
     conflicts: list[DetectedConflict]
     industry_skills: list[IndustrySkill]
+
+
+# ---------- Viva agent ----------
+class VivaQuestion(BaseModel):
+    concept_id: str
+    question: str = Field(description="One spoken-style interview question, answerable in 2-4 sentences")
+    expected_points: list[str] = Field(description="2-3 key points a good answer should contain")
+
+
+class VivaOpeners(BaseModel):
+    questions: list[VivaQuestion]
+
+
+class AnswerEvaluation(BaseModel):
+    score: float = Field(description="0.0 (wrong or no answer) to 1.0 (complete and correct)")
+    verdict: Literal["correct", "partial", "vague", "incorrect"]
+    misconception: str | None = Field(
+        description="If the answer shows a specific wrong belief, describe it in one short sentence; otherwise null")
+    missing_prerequisite: str | None = Field(
+        description="concept id of a prerequisite the student clearly does not understand, or null")
+    feedback: str = Field(description="1-2 encouraging sentences for the student, in the student's language")
+    follow_up_question: str | None = Field(
+        description="If verdict is vague or partial: one probing question on the SAME concept. Otherwise null")
+
+
+class QuestionReview(BaseModel):
+    concept_id: str
+    gives_away: str | None = Field(
+        description="Quote the exact words that state, presuppose or hint at an expected point "
+                    "(including naming the correct choice or saying something fails / is not allowed), or null")
+    question: str = Field(description="The original question if gives_away is null and the language is right, "
+                                      "otherwise the rewritten question")
+
+
+class QuestionReviews(BaseModel):
+    reviews: list[QuestionReview]

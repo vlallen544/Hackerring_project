@@ -187,3 +187,45 @@ def demo_reset():
     """Clears all student progress (keeps students and course knowledge). Use before each demo run."""
     db.reset_student_progress()
     return {"status": "reset"}
+
+
+# --------------------------------------------------------------------------- #
+# Student: Viva diagnostic
+# --------------------------------------------------------------------------- #
+class VivaStart(BaseModel):
+    concepts: list[str] | None = None  # optional: force specific concept ids (e.g. for the demo)
+
+
+class VivaAnswer(BaseModel):
+    answer: str
+    confidence: int  # student's self-rating, 1 (not sure) to 5 (very sure)
+
+
+@app.post("/api/viva/{student_id}/start")
+def viva_start(student_id: str, body: VivaStart | None = None):
+    from backend.agents.viva import start_viva
+
+    try:
+        return start_viva(student_id, body.concepts if body else None)
+    except ValueError as err:
+        raise HTTPException(400, str(err))
+
+
+@app.post("/api/viva/session/{session_id}/answer")
+def viva_answer(session_id: int, body: VivaAnswer):
+    from backend.agents.viva import answer_viva
+
+    if not body.answer.strip():
+        raise HTTPException(400, "Answer is empty")
+    try:
+        return answer_viva(session_id, body.answer, body.confidence)
+    except ValueError as err:
+        raise HTTPException(400, str(err))
+
+
+@app.get("/api/viva/session/{session_id}")
+def viva_session(session_id: int):
+    found = db.rows("SELECT * FROM viva_sessions WHERE id = ?", (session_id,))
+    if not found:
+        raise HTTPException(404, "Unknown session")
+    return {**found[0], "state": json.loads(found[0]["state"])}
