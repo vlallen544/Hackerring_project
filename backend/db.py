@@ -99,6 +99,15 @@ CREATE TABLE IF NOT EXISTS doubts (
     created_at TEXT DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE IF NOT EXISTS class_kits (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    concept_id TEXT,
+    class_minutes INTEGER,
+    content TEXT,                  -- JSON: outline, handout, mistakes, quiz, assignment, class insight
+    created_by TEXT,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP
+);
+
 CREATE TABLE IF NOT EXISTS risk_events (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     student_id TEXT,

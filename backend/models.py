@@ -181,3 +181,53 @@ class DoubtAnswer(BaseModel):
     example: str | None = Field(description="A short example (a few lines of code or a worked example) if it helps, else null")
     closest_topic: str | None = Field(description="If not answerable: the closest course concept id to study instead, else null")
     follow_ups: list[str] = Field(description="2-3 short follow-up questions the student could ask next")
+
+
+# ---------- Class-Ready Kit (faculty) ----------
+class OutlinePoint(BaseModel):
+    point: str = Field(description="What to teach at this step, as a short heading")
+    details: str = Field(description="1-2 sentences on how to teach it (example, board work, question to ask)")
+    minutes: int = Field(description="Minutes to spend on this point")
+
+
+class HandoutItem(BaseModel):
+    heading: str | None = Field(description="Short sub-heading when this starts a new part, otherwise null")
+    text: str = Field(description="1-3 sentences for students")
+    origin: Literal["material", "ai"] = Field(
+        description="material: restates trusted facts (list their ids). ai: your own explanation or example")
+    claim_ids: list[str] = Field(description="ids of the trusted facts used (empty if origin is ai)")
+
+
+class ClassMistake(BaseModel):
+    mistake: str = Field(description="A mistake students make with this topic, in their words")
+    correction: str = Field(description="The short correct explanation")
+    from_class_data: bool = Field(description="True if it comes from the CLASS MISCONCEPTIONS given")
+
+
+class QuizQuestion(BaseModel):
+    question: str
+    kind: Literal["mcq", "short"] = Field(description="mcq: multiple choice with 4 options; short: short written answer")
+    options: list[str] = Field(description="4 options for mcq, empty for short answers")
+    answer: str = Field(description="For mcq: exactly one of the options. For short: the model answer")
+    explanation: str = Field(description="One sentence on why this is the answer")
+    difficulty: Literal["easy", "medium", "hard"]
+    targets_misconception: bool = Field(description="True if this question checks one of the class misconceptions")
+
+
+class AssignmentTask(BaseModel):
+    title: str
+    task: str = Field(description="The practical task, interview style, with any data or starter code needed")
+    industry_link: str | None = Field(description="Which industry requirement this reflects, or null")
+    deliverable: str = Field(description="What the student submits")
+    rubric: list[str] = Field(description="3-4 grading criteria")
+    solution_outline: str = Field(description="A short outline of a good solution, for the teacher")
+
+
+class ClassKit(BaseModel):
+    title: str
+    outline: list[OutlinePoint] = Field(description="5-8 teaching points in order")
+    handout_title: str
+    handout: list[HandoutItem] = Field(description="One page for students: 6-10 items")
+    common_mistakes: list[ClassMistake] = Field(description="2-4 mistakes; put the class misconceptions first")
+    quiz: list[QuizQuestion] = Field(description="5-8 questions mixing easy, medium and hard")
+    assignment: list[AssignmentTask] = Field(description="1-2 practical tasks")

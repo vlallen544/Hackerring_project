@@ -518,6 +518,187 @@ async function removeLogin(button, id) {
     });
 }
 
+// --------------------------------------------------------------------------- //
+// Class-Ready Kit
+// --------------------------------------------------------------------------- //
+let KIT = null;
+let KIT_TAB = "outline";
+let KIT_LEVEL = "all";
+let KIT_ANSWERS = false;
+const LEVEL_STYLE = { easy: "bg-neo-green", medium: "bg-neo-yellow", hard: "bg-neo-red text-white" };
+
+async function loadKitPage() {
+    if (COURSE_GRAPH) {
+        const current = $("kit-concept").value;
+        $("kit-concept").innerHTML = COURSE_GRAPH.learning_order.map(id => `<option value="${esc(id)}">${esc(cname(id))}</option>`).join("");
+        if (current) $("kit-concept").value = current;
+    }
+    try {
+        const kits = await api("/api/faculty/kits");
+        setSide("side-kit", kits.length ? `${kits.length} kit${kits.length > 1 ? "s" : ""} made` : "Outline, handout, quiz, assignment");
+        $("kit-recent").innerHTML = kits.length ? `
+            <p class="text-xs font-bold uppercase text-gray-500 mb-2">// Recent kits</p>
+            <div class="flex flex-wrap gap-2">${kits.map(k => `
+                <button class="chip bg-white hover:bg-neo-yellow !py-1" onclick="openKit(${k.id})">${esc(cname(k.concept_id))} · ${k.class_minutes} min · ${esc(k.created_at.slice(0, 10))}</button>`).join("")}</div>` : "";
+    } catch (err) {
+        toast(err.message, "error");
+    }
+}
+
+async function generateKit(event) {
+    event.preventDefault();
+    const concept = $("kit-concept").value;
+    $("kit-body").innerHTML = `<div class="card p-8 text-center font-bold uppercase animate-pulse">
+        <i class="ph-bold ph-sparkle text-4xl"></i><p class="mt-2">Building your ${esc(cname(concept))} class pack...</p>
+        <p class="text-xs normal-case font-normal mt-1">About 20-60 seconds.</p></div>`;
+    await busy($("btn-kit"), "Building...", async () => {
+        KIT = await post("/api/faculty/kit", { concept_id: concept, class_minutes: Number($("kit-minutes").value) });
+        KIT_TAB = "outline"; KIT_LEVEL = "all"; KIT_ANSWERS = false;
+        renderKit();
+        loadKitPage();
+    });
+    if (!KIT || KIT.concept_id !== concept) $("kit-body").innerHTML = emptyState("The kit could not be built. Try again.");
+}
+
+async function openKit(id) {
+    try {
+        KIT = await api(`/api/faculty/kits/${id}`);
+        KIT_TAB = "outline"; KIT_LEVEL = "all"; KIT_ANSWERS = false;
+        renderKit();
+    } catch (err) {
+        toast(err.message, "error");
+    }
+}
+
+function kitSourceChips(item) {
+    return item.origin === "material"
+        ? item.sources.map(s => `<span class="chip bg-white mr-1" title="${esc(s.quote)}">${esc(s.source)} · p.${esc(s.page)}</span>`).join("")
+        : '<span class="chip bg-neo-blue">AI-added</span>';
+}
+
+// Each tab renders twice: on screen (with source chips) and for printing (clean, no buttons)
+function kitSection(tab, forPrint = false) {
+    const k = KIT;
+    if (tab === "outline") {
+        return `<ol class="space-y-3">${k.outline.map((p, i) => `
+            <li class="flex gap-3 border-2 border-black p-3 bg-white">
+                <span class="step-num">${i + 1}</span>
+                <div class="flex-1"><p class="font-bold uppercase">${esc(p.point)}</p><p class="text-sm">${esc(p.details)}</p></div>
+                <span class="chip bg-neo-yellow h-fit">${esc(p.minutes)} min</span>
+            </li>`).join("")}</ol>
+            <p class="font-bold mt-3">Total: ${esc(k.outline_minutes)} of ${esc(k.class_minutes)} minutes</p>`;
+    }
+    if (tab === "handout") {
+        return `<h3 class="font-display text-2xl uppercase mb-3">${esc(k.handout_title)}</h3>
+            <div class="space-y-3">${k.handout.map(h => `
+                ${h.heading ? `<h4 class="font-bold uppercase mt-4">${esc(h.heading)}</h4>` : ""}
+                <div class="${forPrint ? "" : `border-l-8 ${h.origin === "material" ? "border-neo-green" : "border-neo-blue"} pl-3`}">
+                    <p>${esc(h.text)}</p>
+                    ${forPrint ? (h.origin === "material" ? `<p class="src">Source: ${h.sources.map(s => `${esc(s.source)}, p.${esc(s.page)}`).join("; ")}</p>` : "")
+                               : `<div class="mt-1">${kitSourceChips(h)}</div>`}
+                </div>`).join("")}</div>
+            ${k.common_mistakes.length ? `<h4 class="font-bold uppercase mt-6 mb-2">Common mistakes</h4>
+                <ul class="space-y-2">${k.common_mistakes.map(m => `<li class="border-2 border-black p-2 ${forPrint ? "" : "bg-neo-red/10"}">
+                    <b>Mistake:</b> ${esc(m.mistake)}<br><b>Correct:</b> ${esc(m.correction)}
+                    ${m.from_class_data && !forPrint ? '<span class="chip bg-neo-pink text-white ml-1">From your class</span>' : ""}</li>`).join("")}</ul>` : ""}`;
+    }
+    if (tab === "quiz") {
+        const qs = k.quiz.filter(q => KIT_LEVEL === "all" || q.difficulty === KIT_LEVEL);
+        return `<ol class="space-y-4">${qs.map((q, i) => `
+            <li class="border-2 border-black p-3 bg-white">
+                <div class="flex flex-wrap gap-2 mb-1">
+                    <span class="chip ${forPrint ? "bg-white" : LEVEL_STYLE[q.difficulty]}">${esc(q.difficulty)}</span>
+                    ${q.targets_misconception && !forPrint ? '<span class="chip bg-neo-pink text-white">Checks a class misconception</span>' : ""}
+                </div>
+                <p class="font-bold whitespace-pre-wrap">${i + 1}. ${esc(q.question)}</p>
+                ${q.options.length ? `<ol class="list-[upper-alpha] pl-6 mt-1">${q.options.map(o => `<li>${esc(o)}</li>`).join("")}</ol>`
+                                   : (forPrint && !KIT_ANSWERS ? '<div class="answer-space"></div>' : "")}
+                ${KIT_ANSWERS ? `<p class="mt-2 border-t-2 border-dashed border-black pt-2 text-sm"><b>Answer:</b> ${esc(q.answer)}<br>
+                    <span class="text-gray-600">${esc(q.explanation)}</span></p>` : ""}
+            </li>`).join("") || "<li>No questions at this level.</li>"}</ol>`;
+    }
+    if (tab === "assignment") {
+        return k.assignment.map((a, i) => `
+            <div class="border-2 border-black p-4 bg-white mb-4">
+                <h3 class="font-display text-xl uppercase">${i + 1}. ${esc(a.title)}</h3>
+                ${a.industry_link && !forPrint ? `<span class="chip bg-neo-blue mt-1">Industry: ${esc(a.industry_link)}</span>` : ""}
+                <p class="mt-2 whitespace-pre-wrap">${esc(a.task)}</p>
+                <p class="mt-2"><b>Submit:</b> ${esc(a.deliverable)}</p>
+                <p class="mt-2 font-bold">Graded on:</p><ul class="list-disc pl-6">${a.rubric.map(r => `<li>${esc(r)}</li>`).join("")}</ul>
+                ${KIT_ANSWERS ? `<p class="mt-2 border-t-2 border-dashed border-black pt-2 text-sm whitespace-pre-wrap"><b>Solution outline (teacher):</b> ${esc(a.solution_outline)}</p>` : ""}
+            </div>`).join("");
+    }
+    return "";
+}
+
+function renderKit() {
+    const k = KIT, ci = k.class_insight;
+    const tabs = [["outline", "Outline", "ph-list-numbers"], ["handout", "Handout", "ph-file-text"],
+                  ["quiz", `Quiz (${k.quiz.length})`, "ph-question"], ["assignment", "Assignment", "ph-code"]];
+    const insight = ci.students_assessed ? `
+        <div class="border-4 border-black bg-neo-pink text-white p-3 mb-4 font-bold">
+            <i class="ph-bold ph-users-three"></i> Your class on this topic: ${ci.students_assessed} assessed ·
+            ${ci.students_weak} weak · ${ci.students_with_misconceptions} with a misconception · average mastery ${pct(ci.average_mastery)}.
+            ${ci.students_with_misconceptions ? "The kit adds a common-mistakes section and quiz questions for it." : ""}
+        </div>` : `<div class="border-4 border-dashed border-black p-3 mb-4 text-sm font-bold">No students assessed on this topic yet,
+            so the kit uses general common mistakes.</div>`;
+    const controls = KIT_TAB === "quiz" ? `
+        <div class="flex flex-wrap items-center gap-2 mb-4">
+            <span class="text-xs font-bold uppercase">Version:</span>
+            ${["all", "easy", "medium", "hard"].map(l => `<button class="chip !px-3 !py-1 ${KIT_LEVEL === l ? "bg-neo-yellow shadow-brutal-sm" : "bg-white"}"
+                onclick="KIT_LEVEL='${l}'; renderKit()">${l} (${l === "all" ? k.quiz.length : k.quiz.filter(q => q.difficulty === l).length})</button>`).join("")}
+        </div>` : "";
+    const answersToggle = KIT_TAB === "quiz" || KIT_TAB === "assignment" ? `
+        <label class="chip bg-white !py-1 cursor-pointer"><input type="checkbox" ${KIT_ANSWERS ? "checked" : ""}
+            onchange="KIT_ANSWERS=this.checked; renderKit()"> ${KIT_TAB === "quiz" ? "Show answers" : "Show solution outline"}</label>` : "";
+    $("kit-body").innerHTML = `
+        <section class="card p-6 animate-slam">
+            <div class="flex flex-wrap justify-between items-start gap-3 mb-4">
+                <div>
+                    <p class="text-xs font-bold uppercase text-gray-500">// ${esc(k.course)} · ${esc(k.concept_name)} · ${esc(k.class_minutes)}-minute class · kit #${esc(k.id)}</p>
+                    <h2 class="font-display text-3xl uppercase leading-tight">${esc(k.title)}</h2>
+                    <p class="text-xs font-bold uppercase mt-1">Handout: ${esc(k.material_share_percent)}% from your own material · outdated claims left out</p>
+                </div>
+            </div>
+            ${insight}
+            ${k.warnings.length ? `<div class="border-2 border-black bg-neo-yellow p-2 mb-4 text-sm">${k.warnings.map(w => `<p><i class="ph-bold ph-warning"></i> ${esc(w)}</p>`).join("")}</div>` : ""}
+            <div class="flex flex-wrap justify-between items-center gap-2 border-b-4 border-black pb-3 mb-4">
+                <div class="flex flex-wrap gap-2">${tabs.map(([id, label, icon]) => `
+                    <button class="chip !px-3 !py-2 ${KIT_TAB === id ? "bg-neo-black text-white" : "bg-white hover:bg-neo-yellow"}"
+                            onclick="KIT_TAB='${id}'; renderKit()"><i class="ph-bold ${icon}"></i> ${label}</button>`).join("")}</div>
+                <div class="flex flex-wrap items-center gap-2">${answersToggle}
+                    <button class="btn" onclick="printKit()"><i class="ph-bold ph-printer"></i> Print</button></div>
+            </div>
+            ${controls}
+            <div id="kit-section">${kitSection(KIT_TAB)}</div>
+        </section>`;
+}
+
+// Prints the current tab as a clean page (quiz without answers unless "Show answers" is on)
+function printKit() {
+    const titles = { outline: "Lecture outline", handout: "Handout", quiz: KIT_ANSWERS ? "Quiz - answer key" : "Quiz", assignment: "Assignment" };
+    const level = KIT_TAB === "quiz" && KIT_LEVEL !== "all" ? ` (${KIT_LEVEL})` : "";
+    const win = window.open("", "_blank");
+    if (!win) return toast("Allow pop-ups to print the kit.", "error");
+    win.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${esc(KIT.concept_name)} - ${titles[KIT_TAB]}</title>
+        <style>
+            body { font-family: Georgia, serif; max-width: 760px; margin: 32px auto; padding: 0 16px; color: #111; line-height: 1.5; }
+            h1 { font-size: 22px; margin: 0; } .meta { color: #555; font-size: 13px; margin-bottom: 18px; border-bottom: 2px solid #111; padding-bottom: 8px; }
+            h3 { font-size: 18px; margin: 14px 0 6px; } h4 { font-size: 15px; margin: 14px 0 4px; text-transform: uppercase; }
+            ol, ul { padding-left: 22px; } li { margin-bottom: 10px; } .src { color: #555; font-size: 11px; font-style: italic; margin: 2px 0 8px; }
+            .chip { display: inline-block; border: 1px solid #111; padding: 0 6px; font-size: 11px; text-transform: uppercase; margin-right: 4px; }
+            .answer-space { border-bottom: 1px solid #999; height: 56px; } .step-num { font-weight: bold; margin-right: 8px; }
+            .flex { display: flex; gap: 8px; } .flex-1 { flex: 1; } .space-y-3 > *, .space-y-4 > * { margin-top: 8px; } .text-sm { font-size: 13px; }
+            .font-bold { font-weight: bold; } .uppercase { text-transform: uppercase; } .list-\\[upper-alpha\\] { list-style: upper-alpha; }
+            .border-2, .border-l-8 { border: none; padding: 0; } .whitespace-pre-wrap { white-space: pre-wrap; }
+        </style></head><body>
+        <h1>${esc(KIT.concept_name)}: ${titles[KIT_TAB]}${level}</h1>
+        <div class="meta">${esc(KIT.course)} · ${esc(KIT.class_minutes)}-minute class</div>
+        ${kitSection(KIT_TAB, true)}
+        <script>window.onload = () => window.print();<\/script></body></html>`);
+    win.document.close();
+}
+
 const ME = requireRole("faculty");
 
 async function init() {
@@ -533,5 +714,6 @@ function setSide(id, text) {
 
 VIEW_HOOKS.radar = loadClassRadar;
 VIEW_HOOKS.students = loadStudentAccounts;
+VIEW_HOOKS.kit = loadKitPage;
 
 init();

@@ -684,3 +684,40 @@ def list_doubts(student_id: str, user=Depends(auth.current_user)):
     from backend.agents.doubt import doubt_history
 
     return doubt_history(student_id)
+
+
+# --------------------------------------------------------------------------- #
+# Faculty: Class-Ready Kit (outline, handout, quiz, assignment for one topic)
+# --------------------------------------------------------------------------- #
+class KitRequest(BaseModel):
+    concept_id: str
+    class_minutes: int = 50
+
+
+@app.post("/api/faculty/kit")
+def create_kit(body: KitRequest, user=Depends(auth.require_faculty)):
+    from backend.agents.kit import generate_kit
+
+    if not 20 <= body.class_minutes <= 180:
+        raise HTTPException(400, "Class length must be between 20 and 180 minutes")
+    try:
+        return generate_kit(body.concept_id, body.class_minutes, user["username"])
+    except ValueError as err:
+        raise HTTPException(400, str(err))
+
+
+@app.get("/api/faculty/kits")
+def list_class_kits(_=Depends(auth.require_faculty)):
+    from backend.agents.kit import list_kits
+
+    return list_kits()
+
+
+@app.get("/api/faculty/kits/{kit_id}")
+def get_class_kit(kit_id: int, _=Depends(auth.require_faculty)):
+    from backend.agents.kit import get_kit
+
+    try:
+        return get_kit(kit_id)
+    except ValueError as err:
+        raise HTTPException(404, str(err))

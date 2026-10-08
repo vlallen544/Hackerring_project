@@ -268,6 +268,7 @@ What runs today versus what the architecture above still plans.
 | Agents coordinated through FastAPI routes and shared data (`data/*.json` + SQLite) | ✅ Built |
 | LangGraph orchestration, SSE streaming | 🔜 Planned |
 | Doubt Assistant (answers only from trusted facts, with citations; declines when not covered) | ✅ Built |
+| Class-Ready Kit for faculty: lecture outline, sourced handout, multi-level quiz with answer key, industry-based assignment, tuned to class misconceptions, printable | ✅ Built |
 | Brief, Change and Insights agents; placement view | 🔜 Planned |
 | `agnes-image-2.5-flash` visuals (diagrams currently use Mermaid), Supabase hosting | 🔜 Planned |
 
@@ -288,7 +289,8 @@ Hackerring_project/
 │   │   ├── viva.py
 │   │   ├── tutor.py
 │   │   ├── gap_predictor.py
-│   │   └── doubt.py
+│   │   ├── doubt.py
+│   │   └── kit.py
 │   ├── engine/                 # deterministic decisions (no LLM)
 │   │   ├── trust.py            # which source to trust
 │   │   ├── mastery.py          # mastery + confidence calibration

@@ -71,11 +71,15 @@ def _call_agnes(messages: list[dict[str, str]]) -> str:
     return content
 
 
-def chat_text(system: str, user: str) -> str:
+def _cache_file(system: str, user: str) -> Path:
     messages = [{"role": "system", "content": system}, {"role": "user", "content": user}]
     request = json.dumps({"model": MODEL, "messages": messages}, sort_keys=True, ensure_ascii=False)
-    key = hashlib.sha256(request.encode("utf-8")).hexdigest()
-    cache_file = CACHE / f"{key}.txt"
+    return CACHE / f"{hashlib.sha256(request.encode('utf-8')).hexdigest()}.txt"
+
+
+def chat_text(system: str, user: str) -> str:
+    messages = [{"role": "system", "content": system}, {"role": "user", "content": user}]
+    cache_file = _cache_file(system, user)
     if cache_file.exists():
         return cache_file.read_text(encoding="utf-8")
 
@@ -111,4 +115,10 @@ def chat_json(system: str, user: str, schema: type[BaseModel]) -> BaseModel:
             "Return corrected JSON only, matching the schema."
         )
         repaired = chat_text(instruction, repair_prompt)
-        return schema.model_validate(_extract_json(repaired))
+        try:
+            return schema.model_validate(_extract_json(repaired))
+        except (ValueError, ValidationError):
+            # Never keep unusable replies in the cache, or the same request would fail forever
+            _cache_file(instruction, user).unlink(missing_ok=True)
+            _cache_file(instruction, repair_prompt).unlink(missing_ok=True)
+            raise
