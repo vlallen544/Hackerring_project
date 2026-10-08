@@ -1,0 +1,15 @@
+{
+  "authority_defaults": {
+    "faculty_notes": 0.9,
+    "textbook": 0.85,
+    "job_description": 0.7,
+    "web_link": 0.4
+  },
+  "sources": [
+    { "id": "faculty_notes_dbms", "file": "sources/faculty_notes_dbms.md", "title": "DBMS Lecture Notes (Prof. R. Sharma)", "type": "faculty_notes", "year": 2019 },
+    { "id": "textbook_dbms_2023", "file": "sources/textbook_dbms_2023.md", "title": "Database Systems: Concepts and Practice, 3rd Ed.", "type": "textbook", "year": 2023 },
+    { "id": "web_tutorial_sql_2016", "file": "sources/web_tutorial_sql_2016.md", "title": "Quick SQL Revision Guide (blog)", "type": "web_link", "year": 2016 },
+    { "id": "jd_data_analyst_fintech", "file": "sources/jd_data_analyst_fintech.md", "title": "JD: Data Analyst, Fintech Startup", "type": "job_description", "year": 2026 },
+    { "id": "jd_data_analyst_ecommerce", "file": "sources/jd_data_analyst_ecommerce.md", "title": "JD: Junior Data Analyst, E-commerce", "type": "job_description", "year": 2026 }
+  ]
+}
