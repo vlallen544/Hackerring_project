@@ -4,7 +4,8 @@ let STUDENT_ID = params.get("id");
 let STUDENT = null;
 let VIVA_SESSION = null;
 let CURRENT_LESSON = null;
-let LESSON_PATH_ITEM = null;  // path item a lesson was opened from, so it can be marked done afterwards
+let LESSON_PATH_ITEM = null;
+let VIVA_PROGRESS = null;  // {current, total} while a viva is running  // path item a lesson was opened from, so it can be marked done afterwards
 
 if (window.mermaid) mermaid.initialize({ startOnLoad: false, theme: "neutral", securityLevel: "strict" });
 
@@ -57,8 +58,9 @@ const chosen = name => Number(document.querySelector(`input[name="${name}"]:chec
 async function openLesson(conceptId, { format = "", kind = "lesson", pathItemId = null } = {}) {
     go("lessons");
     $("lesson-concept").value = conceptId;
-    $("lesson-format").value = format;
-    const override = { concept_id: conceptId, format };
+    const fmt = kind === "lesson" ? "" : format;  // plain lessons: the agent decides (learned style may have changed)
+    $("lesson-format").value = fmt;
+    const override = { concept_id: conceptId, format: fmt };
     if (kind === "challenge") Object.assign(override, { level: "challenge", reason: "On the challenge track: all prerequisites are strong." });
     if (kind === "refresher") override.reason = "Refresher added by the Gap Predictor before an upcoming topic.";
     LESSON_PATH_ITEM = pathItemId;
@@ -123,7 +125,8 @@ function renderSidebarStatus() {
     const path = STUDENT.path || [];
     const done = path.filter(p => p.status === "done").length;
     const set = (id, text) => { if ($(id)) $(id).textContent = text; };
-    set("side-viva", STUDENT.mastery.length ? `Done · ${STUDENT.mastery.length} topics measured` : "Not taken yet: start here");
+    set("side-viva", VIVA_PROGRESS ? `In progress · ${VIVA_PROGRESS.current} of ${VIVA_PROGRESS.total}`
+        : STUDENT.mastery.length ? `Done · ${STUDENT.mastery.length} topics measured` : "Not taken yet: start here");
     set("side-path", path.length ? `${done} of ${path.length} done` : "Plan it after the viva");
     const next = path.length ? nextPathItem() : null;
     set("side-lessons", next ? `Next: ${cname(next.concept_id)}` : "Learn and practise each topic");
@@ -180,6 +183,8 @@ function showQuestion(q) {
     $("viva-start").classList.add("hidden");
     $("viva-box").classList.remove("hidden");
     $("viva-progress").textContent = `Topic ${q.progress.concept} of ${q.progress.of}`;
+    VIVA_PROGRESS = { current: q.progress.concept, total: q.progress.of };
+    if (STUDENT) renderSidebarStatus();
     $("viva-dots").innerHTML = Array.from({ length: q.progress.of }, (_, i) => `
         <span class="h-3 flex-1 border-2 border-black ${i < q.progress.concept - 1 ? "bg-neo-black" : i === q.progress.concept - 1 ? "bg-neo-yellow" : "bg-white"}"></span>`).join("");
     $("viva-followup").classList.toggle("hidden", !q.is_follow_up);
@@ -223,6 +228,7 @@ async function answerViva(button) {
         $("viva-feedback").insertAdjacentHTML("afterbegin", verdictCard(r.evaluation, r.agent_decision));
         if (r.done) {
             $("viva-box").classList.add("hidden");
+            VIVA_PROGRESS = null;
             renderVivaSummary(r.summary);
             loadStudent();
         } else {
@@ -362,10 +368,12 @@ async function completeItem(id) {
 // --------------------------------------------------------------------------- //
 async function requestLesson(button, override = {}) {
     const body = { concept_id: override.concept_id || $("lesson-concept").value };
-    const fmt = override.format ?? $("lesson-format").value;
+    const fromDropdown = override.format === undefined;  // TEACH ME pressed: use what the student picked
+    const fmt = fromDropdown ? $("lesson-format").value : override.format;
     if (fmt) body.format = fmt;
     if (override.level) body.level = override.level;
     if (override.reason) body.reason = override.reason;
+    else if (fromDropdown && fmt) body.reason = "Chosen by the student";
     if (!override.concept_id) LESSON_PATH_ITEM = null;  // chosen by hand, not from the path
     CURRENT_LESSON = null;
     $("lesson-body").innerHTML = `<div class="card p-8 text-center font-bold uppercase animate-pulse">

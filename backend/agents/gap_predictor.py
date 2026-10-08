@@ -65,6 +65,11 @@ def _a(word):
     return f"an {word}" if word[:1].lower() in "aeiou" else f"a {word}"
 
 
+def _pct(value):
+    """Percent rounded half up (68.5 -> 69), matching the UI. Python's round() would give 68."""
+    return int(value * 100 + 0.5)
+
+
 def _name(kb, cid):
     return kb["concepts"].get(cid, {}).get("name", cid)
 
@@ -123,7 +128,7 @@ def gap_radar(student_id):
         if p_weakest is not None:
             misc = " with an active misconception" if p_factors["misconception"] else ""
             prereq_chain = (f"{_name(kb, p_weakest)} is {status(p_weakest)}{misc} -> {_name(kb, cid)} on "
-                            f"{item['scheduled_for']} -> risk {round(p_risk * 100)}%")
+                            f"{item['scheduled_for']} -> risk {_pct(p_risk)}%")
 
         # The radar shows the BIGGER problem; refreshers are decided from the prerequisite risk alone.
         if own is not None and (p_weakest is None or own[0] > p_risk):
@@ -132,7 +137,7 @@ def gap_radar(student_id):
             misc = " with an active misconception" if factors["misconception"] else ""
             cause, shown_weakest = "own", cid
             chain = (f"{_name(kb, cid)} itself is {status(cid)}{misc} -> lesson on {item['scheduled_for']} "
-                     f"will be taught at {level} level -> risk {round(risk * 100)}%")
+                     f"will be taught at {level} level -> risk {_pct(risk)}%")
         else:
             risk, factors, cause, shown_weakest, chain = p_risk, p_factors, "prerequisite", p_weakest, prereq_chain
 

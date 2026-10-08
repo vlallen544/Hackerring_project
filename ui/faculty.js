@@ -220,7 +220,8 @@ async function loadClassRadar() {
                         <div class="flex justify-between text-sm font-bold"><a class="underline" href="student.html?id=${encodeURIComponent(s.student_id)}">${esc(s.name)}</a>
                             <span>${pct(s.risk)} ${bandChip(s.band)}</span></div>
                         ${meter(s.risk, s.band === "high" ? "bg-neo-red" : s.band === "medium" ? "bg-neo-yellow" : "bg-neo-green")}
-                        <p class="text-xs">weakest: ${esc(cname(s.weakest_prerequisite))}</p>
+                        <p class="text-xs">${s.weakest_prerequisite === e.concept_id
+                            ? "weak in this topic itself" : `weakest: ${esc(cname(s.weakest_prerequisite))}`}</p>
                     </div>`).join("")}
             </section>`).join("");
         $("class-radar").innerHTML = `

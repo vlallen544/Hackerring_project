@@ -87,11 +87,13 @@ function toast(message, kind = "info") {
 }
 
 function meter(value, color = "bg-neo-black") {
-    const pct = Math.round(Math.max(0, Math.min(1, value ?? 0)) * 100);
+    const pct = toPercent(Math.max(0, Math.min(1, value ?? 0)));
     return `<div class="meter"><span class="${color}" style="width:${pct}%"></span></div>`;
 }
 
-const pct = v => (v === null || v === undefined ? "—" : `${Math.round(v * 100)}%`);
+// Percent rounded half up (0.685 -> 69), the same rule the backend uses in its reason text
+const toPercent = v => Math.floor(v * 100 + 0.5);
+const pct = v => (v === null || v === undefined ? "—" : `${toPercent(v)}%`);
 
 function bandChip(band) {
     const color = { high: "bg-neo-red text-white", medium: "bg-neo-yellow", low: "bg-neo-green",

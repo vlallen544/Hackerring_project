@@ -1,6 +1,7 @@
 # Tutor agent: writes a personalised lesson (level, format, language decided in code) from TRUSTED claims only,
 # marks every segment's provenance (faculty material vs AI-added), and adapts again after practice answers.
 import json
+import re
 from datetime import date
 from pathlib import Path
 
@@ -33,6 +34,7 @@ Rules:
 - Each segment: origin "material" if it restates trusted claims (list their ids in claim_ids),
   origin "ai" if it is your own explanation, analogy or example (claim_ids empty).
 - Cite a claim only if it directly states the fact in that segment.
+- Never write claim ids like (claim_5) inside the text; put them only in claim_ids.
 - "ai" segments may explain, give analogies or worked examples, but must NOT introduce new technical facts,
   rules or database-specific behaviour that are not in the trusted claims.
 - INDUSTRY CONTEXT (if given) may be mentioned to show why the topic matters, but never cite it as a fact.
@@ -149,7 +151,7 @@ def generate_lesson(student_id, concept_id, level=None, fmt=None, reason=None):
         ids = [i for i in seg.claim_ids if i in claims_by_id]
         origin = "material" if seg.origin == "material" and ids else "ai"
         segments.append({
-            "text": seg.text,
+            "text": re.sub(r"\s*\((?:claim_\d+(?:,\s*)?)+\)", "", seg.text).strip(),
             "origin": origin,
             "sources": [{
                 "claim_id": i,
