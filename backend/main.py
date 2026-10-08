@@ -1,15 +1,189 @@
-from fastapi import FastAPI
+# FastAPI app entry point: defines the application and API routes
+import json
+import re
+from contextlib import asynccontextmanager
+from pathlib import Path
+
+from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 
-app = FastAPI(title="VidyaPath API")
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+from backend import db
+
+DATA_DIR = Path("sample_data")
+SOURCES_JSON = DATA_DIR / "sources.json"
+KB_FILE = Path("data/knowledge_base.json")
+TRUSTED_FILE = Path("data/trusted_kb.json")
+SOURCE_TYPES = {"faculty_notes", "textbook", "job_description", "web_link"}
 
 
+@asynccontextmanager
+async def lifespan(app):
+    db.init_db()  # create tables + seed demo students on startup
+    yield
+
+
+app = FastAPI(title="VidyaPath API", lifespan=lifespan)
+app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
+
+
+def _load(path):
+    if not path.exists():
+        raise HTTPException(404, f"{path.name} not found. Run POST /api/course/build first.")
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+# --------------------------------------------------------------------------- #
+# Health
+# --------------------------------------------------------------------------- #
 @app.get("/health")
-def health() -> dict[str, str]:
+def health():
     return {"status": "ok"}
+
+
+# --------------------------------------------------------------------------- #
+# Faculty: sources
+# --------------------------------------------------------------------------- #
+@app.get("/api/sources")
+def list_sources():
+    return json.loads(SOURCES_JSON.read_text(encoding="utf-8"))["sources"]
+
+
+@app.post("/api/sources/upload")
+async def upload_source(
+    file: UploadFile = File(...),
+    title: str = Form(...),
+    type: str = Form(...),
+    year: int = Form(...),
+):
+    """Faculty uploads a new source (PDF, PPTX, MD, TXT). Then call POST /api/course/build."""
+    if type not in SOURCE_TYPES:
+        raise HTTPException(400, f"type must be one of {sorted(SOURCE_TYPES)}")
+    suffix = Path(file.filename).suffix.lower()
+    if suffix not in {".pdf", ".pptx", ".md", ".txt"}:
+        raise HTTPException(400, "Only PDF, PPTX, MD or TXT files are supported")
+
+    source_id = re.sub(r"[^a-z0-9]+", "_", Path(file.filename).stem.lower()).strip("_")
+    dest = DATA_DIR / "sources" / f"{source_id}{suffix}"
+    dest.write_bytes(await file.read())
+
+    meta = json.loads(SOURCES_JSON.read_text(encoding="utf-8"))
+    meta["sources"] = [s for s in meta["sources"] if s["id"] != source_id]  # replace if re-uploaded
+    meta["sources"].append(
+        {"id": source_id, "file": f"sources/{dest.name}", "title": title, "type": type, "year": year}
+    )
+    SOURCES_JSON.write_text(json.dumps(meta, indent=2, ensure_ascii=False), encoding="utf-8")
+    return {"id": source_id, "message": "Uploaded. Run POST /api/course/build to update the knowledge base."}
+
+
+# --------------------------------------------------------------------------- #
+# Faculty: build + knowledge base
+# --------------------------------------------------------------------------- #
+@app.post("/api/course/build")
+def build_course():
+    """Runs Knowledge Builder then Source Reconciler. Takes ~1 minute on a fresh run, instant when cached."""
+    from backend.agents.knowledge_builder import build_knowledge
+    from backend.agents.reconciler import reconcile
+
+    kb = build_knowledge(str(DATA_DIR))
+    trusted = reconcile()
+    return {
+        "concepts": len(kb["concepts"]),
+        "claims_verified": len(kb["claims"]),
+        "claims_rejected": len(kb["rejected_claims"]),
+        "conflicts": len(trusted["conflicts"]),
+        "freshness_score": trusted["freshness_report"]["score"],
+    }
+
+
+@app.get("/api/course/graph")
+def course_graph():
+    """Prerequisite graph in a shape React Flow (or any graph library) can use directly."""
+    kb = _load(TRUSTED_FILE)
+    order = {cid: i for i, cid in enumerate(kb["learning_order"])}
+    return {
+        "nodes": [
+            {"id": cid, "label": c["name"], "description": c["description"], "order": order.get(cid, 0)}
+            for cid, c in kb["concepts"].items()
+        ],
+        "edges": [
+            {"id": f"{p['before']}->{p['after']}", "source": p["before"], "target": p["after"], "reason": p["reason"]}
+            for p in kb["prerequisites"]
+        ],
+        "learning_order": kb["learning_order"],
+    }
+
+
+@app.get("/api/course/claims")
+def course_claims(status: str | None = None, concept_id: str | None = None):
+    """Filter with ?status=trusted|outdated|superseded|unreliable|needs_review and/or ?concept_id=..."""
+    claims = _load(TRUSTED_FILE)["claims"]
+    if status:
+        claims = [c for c in claims if c["status"] == status]
+    if concept_id:
+        claims = [c for c in claims if c["concept_id"] == concept_id]
+    return claims
+
+
+@app.get("/api/course/rejected-claims")
+def rejected_claims():
+    """Claims whose quotes could not be found in the sources (hallucinations caught)."""
+    return _load(KB_FILE)["rejected_claims"]
+
+
+@app.get("/api/course/conflicts")
+def course_conflicts():
+    return _load(TRUSTED_FILE)["conflicts"]
+
+
+class Override(BaseModel):
+    winning_side: int
+
+
+@app.post("/api/course/conflicts/{conflict_id}/override")
+def override_conflict(conflict_id: str, body: Override):
+    """Faculty control: choose which side of a conflict is trusted."""
+    from backend.agents.reconciler import reconcile, set_faculty_override
+
+    conflicts = {c["id"]: c for c in _load(TRUSTED_FILE)["conflicts"]}
+    if conflict_id not in conflicts:
+        raise HTTPException(404, "Unknown conflict")
+    if not 0 <= body.winning_side < len(conflicts[conflict_id]["sides"]):
+        raise HTTPException(400, "winning_side out of range")
+    set_faculty_override(conflict_id, body.winning_side)
+    return next(c for c in reconcile()["conflicts"] if c["id"] == conflict_id)
+
+
+@app.get("/api/course/freshness")
+def freshness_report():
+    return _load(TRUSTED_FILE)["freshness_report"]
+
+
+# --------------------------------------------------------------------------- #
+# Students
+# --------------------------------------------------------------------------- #
+@app.get("/api/students")
+def list_students():
+    return db.rows("SELECT * FROM students ORDER BY name")
+
+
+@app.get("/api/students/{student_id}")
+def get_student(student_id: str):
+    found = db.rows("SELECT * FROM students WHERE id = ?", (student_id,))
+    if not found:
+        raise HTTPException(404, "Unknown student")
+    return {
+        **found[0],
+        "mastery": db.rows("SELECT * FROM mastery WHERE student_id = ?", (student_id,)),
+        "path": db.rows("SELECT * FROM path_items WHERE student_id = ? ORDER BY position", (student_id,)),
+        "risk_events": db.rows(
+            "SELECT * FROM risk_events WHERE student_id = ? ORDER BY created_at DESC", (student_id,)
+        ),
+    }
+
+
+@app.post("/api/demo/reset")
+def demo_reset():
+    """Clears all student progress (keeps students and course knowledge). Use before each demo run."""
+    db.reset_student_progress()
+    return {"status": "reset"}
