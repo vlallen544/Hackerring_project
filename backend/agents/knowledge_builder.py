@@ -79,10 +79,11 @@ def build_knowledge(data_dir="sample_data"):
         raise ValueError(f"The sources contain {total_words:,} words; the limit is {limit:,}. "
                          f"Set a page range on the largest source ({biggest}: {sizes[biggest]:,} words) "
                          f"so only the chapters you teach are used.")
-    print(f"Loaded {len(meta['sources'])} sources, {len(chunks)} pages. Calling {heavy_model()} (one large-context call)...")
+    print(f"Loaded {len(meta['sources'])} sources, {len(chunks)} pages. Calling {heavy_model()} (one large-context call)...")  # may fall back to Agnes
 
     extraction = heavy_json(SYSTEM_PROMPT, chunks_to_prompt(chunks), KnowledgeExtraction)
     extracted_with = llm.last_model  # may be Agnes if Claude was unavailable
+    print(f"Extraction answered by {extracted_with}.")
 
     # ---- 1. Concepts ----
     concepts = {c.id: c.model_dump() for c in extraction.concepts}

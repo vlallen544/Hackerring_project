@@ -652,3 +652,35 @@ def class_gap_radar(_=Depends(auth.require_faculty)):
     from backend.agents.gap_predictor import class_radar
 
     return class_radar()
+
+
+# --------------------------------------------------------------------------- #
+# Student: Doubt Assistant (answers only from trusted course facts)
+# --------------------------------------------------------------------------- #
+class DoubtRequest(BaseModel):
+    question: str
+    concept_id: str | None = None  # optional: the topic the student picked
+
+
+@app.post("/api/doubts/{student_id}")
+def ask_doubt(student_id: str, body: DoubtRequest, user=Depends(auth.current_user)):
+    auth.check_student_access(user, student_id)
+    from backend.agents.doubt import answer_doubt
+
+    question = body.question.strip()
+    if not question:
+        raise HTTPException(400, "Please type a question")
+    if len(question) > 1000:
+        raise HTTPException(400, "Please keep the question under 1000 characters")
+    try:
+        return answer_doubt(student_id, question, body.concept_id or None)
+    except ValueError as err:
+        raise HTTPException(400, str(err))
+
+
+@app.get("/api/doubts/{student_id}")
+def list_doubts(student_id: str, user=Depends(auth.current_user)):
+    auth.check_student_access(user, student_id)
+    from backend.agents.doubt import doubt_history
+
+    return doubt_history(student_id)

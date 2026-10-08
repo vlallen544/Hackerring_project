@@ -89,6 +89,16 @@ CREATE TABLE IF NOT EXISTS lesson_checks (
     created_at TEXT DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE IF NOT EXISTS doubts (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    student_id TEXT,
+    concept_id TEXT,
+    question TEXT,
+    answerable INTEGER,            -- 1 if answered from trusted facts, 0 if declined
+    answer TEXT,                   -- JSON: answer, citations, example, follow-ups
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP
+);
+
 CREATE TABLE IF NOT EXISTS risk_events (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     student_id TEXT,
@@ -145,6 +155,6 @@ def execute(query, params=()):
 def reset_student_progress():
     """Demo helper: wipes progress but keeps students, so you can re-run the demo cleanly."""
     with get_conn() as conn:
-        for table in ("mastery", "attempts", "path_items", "risk_events", "viva_sessions", "lessons", "lesson_checks"):
+        for table in ("mastery", "attempts", "path_items", "risk_events", "viva_sessions", "lessons", "lesson_checks", "doubts"):
             conn.execute(f"DELETE FROM {table}")
         conn.execute("UPDATE students SET learned_style = NULL")

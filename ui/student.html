@@ -59,6 +59,11 @@
                 <span>Lessons<span class="side-sub" id="side-lessons">Learn and practise each topic</span></span>
             </a>
         </nav>
+        <p class="text-xs font-bold uppercase text-gray-500 mt-6 mb-2 px-1">// Stuck?</p>
+        <a href="#doubts" data-view="doubts" class="side-item">
+            <span class="step-num"><i class="ph-bold ph-chat-circle-dots"></i></span>
+            <span>Ask a doubt<span class="side-sub">Answers from your course material</span></span>
+        </a>
         <div class="mt-8 border-4 border-black p-3 bg-slate-100 text-xs">
             <p class="font-bold uppercase mb-1"><i class="ph-bold ph-lightbulb"></i> How it works</p>
             <p>Take the viva once. The agents then plan your path, warn you about topics you may struggle with,
@@ -72,6 +77,7 @@
         <a href="#viva" data-view="viva" class="tab-item"><i class="ph-bold ph-microphone text-xl"></i>1 Viva</a>
         <a href="#path" data-view="path" class="tab-item"><i class="ph-bold ph-path text-xl"></i>2 Path</a>
         <a href="#lessons" data-view="lessons" class="tab-item"><i class="ph-bold ph-book-open text-xl"></i>3 Lessons</a>
+        <a href="#doubts" data-view="doubts" class="tab-item"><i class="ph-bold ph-chat-circle-dots text-xl"></i>Doubts</a>
     </nav>
 
     <main class="pt-24 pb-28 px-4 lg:pl-80 lg:pr-8 max-w-[1500px] min-h-screen">
@@ -188,6 +194,27 @@
                     <p class="text-sm">Tip: the easiest way in is <a href="#path" class="underline font-bold">My path</a>, where each topic has a START button.</p>
                 </div>
             </div>
+        </div>
+        <!-- ============================ DOUBTS ============================ -->
+        <div id="view-doubts" class="view-section hidden">
+            <header class="mb-8 border-b-4 border-black pb-6">
+                <p class="text-xs font-bold uppercase text-gray-500">// Doubt assistant</p>
+                <h1 class="font-display text-5xl md:text-6xl uppercase leading-none">Ask a<br><span class="text-neo-pink">doubt.</span></h1>
+                <p class="font-bold mt-2 max-w-2xl">Answers come only from your course's verified material, with the page they came from.
+                    If the material doesn't cover it, the assistant says so instead of guessing.</p>
+            </header>
+            <form class="card p-6 mb-8" onsubmit="askDoubt(event)">
+                <label class="block mb-3"><span class="font-bold uppercase text-sm">Your question</span>
+                    <textarea id="doubt-question" rows="3" class="field mt-1" maxlength="1000" required
+                              placeholder="e.g. Why does a hash table lookup sometimes take longer than O(1)?"></textarea></label>
+                <div class="flex flex-wrap items-end gap-3">
+                    <label class="min-w-[220px] flex-1"><span class="font-bold uppercase text-xs">Topic (optional)</span>
+                        <select id="doubt-concept" class="field mt-1"><option value="">Any topic</option></select></label>
+                    <button type="button" class="btn btn-light" onclick="dictate('doubt-question', this)"><i class="ph-bold ph-microphone"></i> Speak</button>
+                    <button class="btn" id="btn-doubt"><i class="ph-bold ph-paper-plane-tilt"></i> Ask</button>
+                </div>
+            </form>
+            <div id="doubt-list" class="space-y-6"></div>
         </div>
     </main>
 

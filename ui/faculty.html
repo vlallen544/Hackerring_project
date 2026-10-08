@@ -82,6 +82,7 @@
                 </div>
                 <button class="btn" onclick="buildCourse(this)"><i class="ph-bold ph-hammer"></i> Build course</button>
             </header>
+            <div id="course-stats-tiles"></div>
             <div id="build-result"></div>
             <div class="grid grid-cols-1 xl:grid-cols-3 gap-8">
                 <section class="xl:col-span-2 space-y-4" id="source-list"></section>
@@ -176,6 +177,20 @@
             </div>
         </div>
     </main>
+
+    <!-- Details behind a course stat tile (concepts, claims, rejected quotes, conflicts, freshness) -->
+    <div id="detail" class="hidden fixed inset-0 z-50 bg-black/60 p-4 overflow-y-auto" onclick="if (event.target === this) closeDetail()">
+        <div class="card max-w-5xl mx-auto my-8 p-6">
+            <div class="flex justify-between items-start gap-4 mb-4">
+                <div>
+                    <p id="detail-kicker" class="text-xs font-bold uppercase text-gray-500"></p>
+                    <h2 id="detail-title" class="font-display text-3xl uppercase leading-tight"></h2>
+                </div>
+                <button class="btn btn-light" onclick="closeDetail()" aria-label="Close"><i class="ph-bold ph-x"></i></button>
+            </div>
+            <div id="detail-body"></div>
+        </div>
+    </div>
 
     <!-- Preview of the text extracted from a source, page by page -->
     <div id="preview" class="hidden fixed inset-0 z-50 bg-black/60 p-4 overflow-y-auto" onclick="if (event.target === this) closePreview()">

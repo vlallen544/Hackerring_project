@@ -7,6 +7,8 @@ from pathlib import Path
 COURSES = {
     "dbms": {"title": "Database Management Systems", "data_dir": "sample_data", "db": "vidyapath.db"},
     "dsa": {"title": "Data Structures and Algorithms", "data_dir": "sample_data_dsa", "db": "vidyapath_dsa.db"},
+    "os": {"title": "Operating Systems", "data_dir": "sample_data_os", "db": "vidyapath_os.db"},
+    "oop": {"title": "Object-Oriented Programming with Java", "data_dir": "sample_data_oop", "db": "vidyapath_oop.db"},
 }
 DEFAULT_COURSE = "dbms"
 ACTIVE_FILE = Path("data/active_course.json")

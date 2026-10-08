@@ -1,0 +1,32 @@
+{
+  "students": [
+    {
+      "id": "asha",
+      "name": "Asha",
+      "stated_style": "reading",
+      "pace": "fast",
+      "target_role": "Backend Engineer"
+    },
+    {
+      "id": "ravi",
+      "name": "Ravi",
+      "stated_style": "listening",
+      "pace": "medium",
+      "target_role": "Backend Engineer"
+    },
+    {
+      "id": "meera",
+      "name": "Meera",
+      "stated_style": "visual",
+      "pace": "medium",
+      "target_role": "Backend Engineer"
+    },
+    {
+      "id": "arjun",
+      "name": "Arjun",
+      "stated_style": "practice",
+      "pace": "fast",
+      "target_role": "Backend Engineer"
+    }
+  ]
+}

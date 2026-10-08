@@ -43,7 +43,8 @@ class ConflictSide(BaseModel):
     label: str = Field(description="Short summary of this side's position, e.g. 'MySQL supports window functions'")
     claim_ids: list[str] = Field(description="ids of the claims that take this position")
     is_specific: bool = Field(description="True if these claims give versions, dates or reasons")
-    is_absolute: bool = Field(description="True if these claims use absolute words like always, never, every")
+    is_absolute: bool = Field(description="True only for sweeping generalisations (always, never, every, in all cases); "
+                                          "a plain factual statement, even a negative one, is not absolute")
 
 
 class DetectedConflict(BaseModel):
@@ -168,3 +169,15 @@ class GapNudge(BaseModel):
     student_message: str = Field(
         description="2-3 friendly sentences to the student explaining what was added to their path and why")
     faculty_note: str = Field(description="One sentence for the faculty summarising the predicted gap and action, in English")
+
+
+# ---------- Doubt Assistant ----------
+class DoubtAnswer(BaseModel):
+    answerable: bool = Field(description="True only if the TRUSTED FACTS contain what is needed to answer")
+    answer: str = Field(description="If answerable: a clear explanation in 1-3 short paragraphs. "
+                                    "If not: one or two sentences saying it is not covered by the course material")
+    claim_ids: list[str] = Field(description="ids of the trusted facts the answer is based on (empty if not answerable)")
+    concept_id: str | None = Field(description="id of the course concept the question is about, or null")
+    example: str | None = Field(description="A short example (a few lines of code or a worked example) if it helps, else null")
+    closest_topic: str | None = Field(description="If not answerable: the closest course concept id to study instead, else null")
+    follow_ups: list[str] = Field(description="2-3 short follow-up questions the student could ask next")

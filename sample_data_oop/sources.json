@@ -1,0 +1,15 @@
+{
+  "authority_defaults": {
+    "faculty_notes": 0.9,
+    "textbook": 0.85,
+    "job_description": 0.7,
+    "web_link": 0.4
+  },
+  "sources": [
+    { "id": "faculty_notes_oop", "file": "sources/faculty_notes_oop.md", "title": "OOP with Java Lecture Notes (Prof. K. Menon)", "type": "faculty_notes", "year": 2015 },
+    { "id": "textbook_java_2024", "file": "sources/textbook_java_2024.md", "title": "Modern Java: Objects and Beyond, 2nd Ed.", "type": "textbook", "year": 2024 },
+    { "id": "web_java_cheatsheet_2013", "file": "sources/web_java_cheatsheet_2013.md", "title": "Java Interview Cheat Sheet (blog)", "type": "web_link", "year": 2013 },
+    { "id": "jd_java_developer", "file": "sources/jd_java_developer.md", "title": "JD: Java Developer, Fintech Payments", "type": "job_description", "year": 2026 },
+    { "id": "jd_java_backend", "file": "sources/jd_java_backend.md", "title": "JD: Software Engineer (Java Backend), E-commerce", "type": "job_description", "year": 2026 }
+  ]
+}

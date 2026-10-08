@@ -525,7 +525,8 @@ async function renderLesson(L) {
                         <div id="practice-result-${i}"></div>
                     </div>`).join("")}
                 </div>
-                <div class="border-t-4 border-black pt-6 flex flex-wrap gap-3">${finish}</div>
+                <div class="border-t-4 border-black pt-6 flex flex-wrap gap-3">${finish}
+                    <button class="btn btn-light" onclick="doubtAbout('${esc(L.concept_id)}')"><i class="ph-bold ph-chat-circle-dots"></i> Have a doubt?</button></div>
             </article>
         </div>`;
     L.practice.forEach((_, i) => confidencePicker(`pconf-${i}`, `pconf-${i}`));
@@ -594,9 +595,91 @@ async function checkPractice(button, index) {
 }
 
 // --------------------------------------------------------------------------- //
+// Doubt assistant
+// --------------------------------------------------------------------------- //
+let DOUBTS = [];
+
+function doubtCard(d) {
+    const cites = d.citations.map(c => `
+        <span class="chip bg-white mr-1 mt-1" title="${esc(c.quote)}"><i class="ph-bold ph-book-open"></i> ${esc(c.source)} · p.${esc(c.page)}</span>`).join("");
+    const looksLikeCode = d.example && /[;{}()=]|^\s{2,}/m.test(d.example);
+    return `
+        <article class="animate-slam">
+            <div class="flex justify-end mb-2">
+                <p class="max-w-2xl bg-neo-black text-white border-2 border-black px-4 py-2 font-bold">${esc(d.question)}</p>
+            </div>
+            <div class="card p-5 ${d.answerable ? "" : "bg-neo-yellow"}">
+                <div class="flex flex-wrap justify-between items-center gap-2 mb-2">
+                    <span class="flex flex-wrap gap-2">
+                        ${d.answerable ? '<span class="chip bg-neo-green"><i class="ph-bold ph-seal-check"></i> From your course material</span>'
+                                       : '<span class="chip bg-white"><i class="ph-bold ph-prohibit"></i> Not covered in your course</span>'}
+                        ${d.concept_id ? `<span class="chip bg-white">${esc(cname(d.concept_id))}</span>` : ""}
+                    </span>
+                    <button class="chip bg-white hover:bg-neo-blue" onclick="speak(DOUBTS.find(x => x.id === ${d.id}).answer)">
+                        <i class="ph-bold ph-speaker-high"></i> Read aloud</button>
+                </div>
+                <p class="leading-relaxed whitespace-pre-wrap">${esc(d.answer)}</p>
+                ${d.example ? (looksLikeCode
+                    ? `<pre class="mt-3 border-2 border-black"><code class="text-sm">${esc(d.example)}</code></pre>`
+                    : `<p class="mt-3 border-l-8 border-neo-blue pl-3 text-sm"><b>EXAMPLE:</b> ${esc(d.example)}</p>`) : ""}
+                ${cites ? `<div class="mt-3">${cites}</div>` : ""}
+                ${!d.answerable && d.closest_topic ? `<button class="btn btn-light text-sm mt-3" onclick="openLesson('${esc(d.closest_topic)}')">
+                    <i class="ph-bold ph-book-open"></i> Study ${esc(cname(d.closest_topic))} instead</button>` : ""}
+                ${d.follow_ups.length ? `<div class="mt-4 pt-3 border-t-2 border-black border-dashed">
+                    <p class="text-xs font-bold uppercase text-gray-500 mb-2">// Ask next</p>
+                    <div class="flex flex-wrap gap-2">${d.follow_ups.map(f => `
+                        <button class="chip bg-white hover:bg-neo-yellow text-left normal-case !font-normal" onclick="askFollowUp(this)">${esc(f)}</button>`).join("")}</div>
+                </div>` : ""}
+            </div>
+        </article>`;
+}
+
+function renderDoubts() {
+    $("doubt-list").innerHTML = DOUBTS.length ? DOUBTS.map(doubtCard).join("")
+        : emptyState("No doubts yet. Ask anything about your course.");
+    if (window.hljs) document.querySelectorAll("#doubt-list pre code").forEach(el => hljs.highlightElement(el));
+}
+
+async function loadDoubts() {
+    if (!STUDENT_ID) return;
+    try {
+        DOUBTS = await api(`/api/doubts/${sid()}`);
+        renderDoubts();
+    } catch (err) {
+        toast(err.message, "error");
+    }
+}
+
+async function askDoubt(event) {
+    if (event) event.preventDefault();
+    const question = $("doubt-question").value.trim();
+    if (!question) return toast("Type or speak your question first.", "error");
+    await busy($("btn-doubt"), "Thinking...", async () => {
+        const d = await post(`/api/doubts/${sid()}`, { question, concept_id: $("doubt-concept").value || null });
+        DOUBTS.unshift(d);
+        $("doubt-question").value = "";
+        renderDoubts();
+        window.scrollTo({ top: $("doubt-list").offsetTop - 120, behavior: "smooth" });
+    });
+}
+
+function askFollowUp(button) {
+    $("doubt-question").value = button.textContent.trim();
+    askDoubt();
+}
+
+// From a lesson: open the doubt assistant with that topic already chosen
+function doubtAbout(conceptId) {
+    go("doubts");
+    $("doubt-concept").value = conceptId;
+    $("doubt-question").focus();
+}
+
+// --------------------------------------------------------------------------- //
 // Start
 // --------------------------------------------------------------------------- //
 VIEW_HOOKS.path = loadPath;
+VIEW_HOOKS.doubts = loadDoubts;
 
 const ME = requireRole();  // students see only themselves; faculty can open any student
 
@@ -616,6 +699,8 @@ async function init() {
     const graph = await loadConcepts();
     if (graph) {
         $("lesson-concept").innerHTML = graph.learning_order.map(id => `<option value="${esc(id)}">${esc(cname(id))}</option>`).join("");
+        $("doubt-concept").insertAdjacentHTML("beforeend",
+            graph.learning_order.map(id => `<option value="${esc(id)}">${esc(cname(id))}</option>`).join(""));
     }
     await loadStudent();
     initViews("dashboard");

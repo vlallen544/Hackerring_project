@@ -1,0 +1,15 @@
+{
+  "authority_defaults": {
+    "faculty_notes": 0.9,
+    "textbook": 0.85,
+    "job_description": 0.7,
+    "web_link": 0.4
+  },
+  "sources": [
+    { "id": "faculty_notes_os", "file": "sources/faculty_notes_os.md", "title": "Operating Systems Lecture Notes (Prof. S. Rao)", "type": "faculty_notes", "year": 2017 },
+    { "id": "textbook_os_2024", "file": "sources/textbook_os_2024.md", "title": "Modern Operating Systems in Practice, 3rd Ed.", "type": "textbook", "year": 2024 },
+    { "id": "web_os_notes_2014", "file": "sources/web_os_notes_2014.md", "title": "OS Quick Revision Notes (blog)", "type": "web_link", "year": 2014 },
+    { "id": "jd_backend_infra", "file": "sources/jd_backend_infra.md", "title": "JD: Backend Engineer, Cloud Infrastructure", "type": "job_description", "year": 2026 },
+    { "id": "jd_sre_platform", "file": "sources/jd_sre_platform.md", "title": "JD: Site Reliability Engineer, Platform Team", "type": "job_description", "year": 2026 }
+  ]
+}

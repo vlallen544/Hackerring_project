@@ -20,9 +20,15 @@ TASK 1 - CONFLICTS. Find every place where claims disagree or a claim is mislead
     (for example, a software feature that was added in a later version).
   - "unreliable": a single claim that is misleading, over-generalised or bad advice, even if no
     other source directly contradicts it. Put it as ONE side.
-  For each side, set is_specific (gives versions, dates or reasons) and is_absolute (uses always/never/every).
+  For each side, set is_specific (gives versions, dates or reasons) and is_absolute.
+  is_absolute means a sweeping generalisation with words like always, never, every or in all cases
+  ("X is always faster"). A plain factual statement, including a negative one such as "Java does not
+  support X", is NOT absolute.
   IMPORTANT: Do NOT decide who is right. Only group the claims into sides. Trust is calculated separately.
   Job description requirements count as evidence of current industry practice.
+  Compare claims across ALL concepts, not only within one concept: an older claim filed under one concept
+  can be contradicted or made outdated by a newer claim filed under another (for example a general rule in
+  old notes versus a newer language or software feature described elsewhere).
   If a job description requires a feature or skill, include that requirement claim's id
   in the side that says the feature exists or is current. It is supporting evidence.
   Use "unreliable" ONLY when no other claim addresses the same point. If any other source

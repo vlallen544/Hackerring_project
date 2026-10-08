@@ -264,10 +264,11 @@ What runs today versus what the architecture above still plans.
 | JWT login: faculty admin, faculty-created student accounts, per-student access control, profile page | ✅ Built |
 | PDF / PPTX source upload with page ranges, text preview and build tracking | ✅ Built |
 | Claude (`claude-opus-5-5`) for heavy extraction and reconciliation, with automatic fallback to Agnes | ✅ Built (needs Anthropic credits) |
-| Multiple courses (DBMS and DSA demo courses, `scripts/switch_course.py`) | ✅ Built |
+| Multiple courses (DBMS, DSA, Operating Systems and OOP with Java demo courses, switcher in the UI and `scripts/switch_course.py`) | ✅ Built |
 | Agents coordinated through FastAPI routes and shared data (`data/*.json` + SQLite) | ✅ Built |
 | LangGraph orchestration, SSE streaming | 🔜 Planned |
-| Brief, Doubt, Change and Insights agents; placement view | 🔜 Planned |
+| Doubt Assistant (answers only from trusted facts, with citations; declines when not covered) | ✅ Built |
+| Brief, Change and Insights agents; placement view | 🔜 Planned |
 | `agnes-image-2.5-flash` visuals (diagrams currently use Mermaid), Supabase hosting | 🔜 Planned |
 
 ---
@@ -286,7 +287,8 @@ Hackerring_project/
 │   │   ├── reconciler.py
 │   │   ├── viva.py
 │   │   ├── tutor.py
-│   │   └── gap_predictor.py
+│   │   ├── gap_predictor.py
+│   │   └── doubt.py
 │   ├── engine/                 # deterministic decisions (no LLM)
 │   │   ├── trust.py            # which source to trust
 │   │   ├── mastery.py          # mastery + confidence calibration
@@ -296,6 +298,8 @@ Hackerring_project/
 ├── ui/                         # web UI (HTML + Tailwind CDN + vanilla JS)
 ├── sample_data/                # DBMS demo course: sources, students, answer key
 ├── sample_data_dsa/            # DSA demo course: sources, students, answer key
+├── sample_data_os/             # Operating Systems demo course: sources, students, answer key
+├── sample_data_oop/            # OOP with Java demo course: sources, students, answer key
 ├── data/                       # generated knowledge bases (+ local SQLite databases)
 ├── scripts/                    # runners and checks for each agent, course switching
 ├── .env.example
@@ -334,12 +338,14 @@ Open <http://localhost:8000> for the web UI (student and faculty views). Interac
 - Every user has a **Profile** page (photo, department, email, bio, change password), adapted from the Campus Zero prototype.
 
 ### Courses and demo data
-Two demo courses are included, each with planted conflicts and an answer key (`expected_results.md`):
+Four demo courses are included, each with planted conflicts and an answer key (`expected_results.md`):
 
 | Course | Sources | Switch to it |
 |---|---|---|
 | DBMS (default) | `sample_data/` | `python scripts/switch_course.py dbms` |
 | Data Structures and Algorithms | `sample_data_dsa/` | `python scripts/switch_course.py dsa` |
+| Operating Systems | `sample_data_os/` | `python scripts/switch_course.py os` |
+| Object-Oriented Programming with Java | `sample_data_oop/` | `python scripts/switch_course.py oop` |
 
 Each course keeps its own knowledge base, faculty overrides and student progress. A course is built automatically the first time you switch to it (about a minute); you can also press **Build course** on the faculty page. Use **Reset student progress** on the faculty page before a demo.
 

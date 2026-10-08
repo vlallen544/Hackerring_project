@@ -1,0 +1,522 @@
+{
+  "built_at": "2026-10-09T04:43:40",
+  "extracted_with": "agnes-3.0-flash",
+  "built_from": {
+    "faculty_notes_oop": "ca1eecdde9b47c5090efcb32115dbc37f4433a3408197b7865f9206ec586dda0",
+    "textbook_java_2024": "3bc52c1b7e376eac303a572bd2c4cb9638b13e07d55ff335ff612d876a58a6f4",
+    "web_java_cheatsheet_2013": "5b178f7ef0c465c12a834f38ee44d223a74a740d247d63769d720aaf2596adc9",
+    "jd_java_developer": "3223795287624cf8558daca8181a11c39cc6e1f00e81255fb0f8765cde5fa043",
+    "jd_java_backend": "9e340a70efc5f63588fcc73e59c28ca4d8aa4a8f0134a9f31340a2aa5dd4d692"
+  },
+  "sources": [
+    {
+      "id": "faculty_notes_oop",
+      "file": "sources/faculty_notes_oop.md",
+      "title": "OOP with Java Lecture Notes (Prof. K. Menon)",
+      "type": "faculty_notes",
+      "year": 2015
+    },
+    {
+      "id": "textbook_java_2024",
+      "file": "sources/textbook_java_2024.md",
+      "title": "Modern Java: Objects and Beyond, 2nd Ed.",
+      "type": "textbook",
+      "year": 2024
+    },
+    {
+      "id": "web_java_cheatsheet_2013",
+      "file": "sources/web_java_cheatsheet_2013.md",
+      "title": "Java Interview Cheat Sheet (blog)",
+      "type": "web_link",
+      "year": 2013
+    },
+    {
+      "id": "jd_java_developer",
+      "file": "sources/jd_java_developer.md",
+      "title": "JD: Java Developer, Fintech Payments",
+      "type": "job_description",
+      "year": 2026
+    },
+    {
+      "id": "jd_java_backend",
+      "file": "sources/jd_java_backend.md",
+      "title": "JD: Software Engineer (Java Backend), E-commerce",
+      "type": "job_description",
+      "year": 2026
+    }
+  ],
+  "authority_defaults": {
+    "faculty_notes": 0.9,
+    "textbook": 0.85,
+    "job_description": 0.7,
+    "web_link": 0.4
+  },
+  "concepts": {
+    "classes_and_objects": {
+      "id": "classes_and_objects",
+      "name": "Classes and Objects",
+      "description": "Fundamental OOP structure where classes act as blueprints and objects are instances created with the new keyword."
+    },
+    "constructors": {
+      "id": "constructors",
+      "name": "Constructors",
+      "description": "Special methods with the same name as the class that initialize objects and are invoked automatically upon creation."
+    },
+    "encapsulation": {
+      "id": "encapsulation",
+      "name": "Encapsulation",
+      "description": "Hiding internal object state by using private fields and exposing behavior through public getters and setters."
+    },
+    "access_modifiers": {
+      "id": "access_modifiers",
+      "name": "Access Modifiers",
+      "description": "Keywords like public, private, protected, and default that control visibility of class members."
+    },
+    "inheritance": {
+      "id": "inheritance",
+      "name": "Inheritance",
+      "description": "Mechanism where a subclass acquires fields and methods from a superclass using the extends keyword."
+    },
+    "polymorphism": {
+      "id": "polymorphism",
+      "name": "Polymorphism",
+      "description": "The ability of a method to be resolved at compile time (overloading) or runtime (overriding) based on context."
+    },
+    "method_parameter_passing": {
+      "id": "method_parameter_passing",
+      "name": "Method Parameter Passing",
+      "description": "The rules governing how arguments are transferred to methods, specifically that Java is always pass-by-value."
+    },
+    "abstraction": {
+      "id": "abstraction",
+      "name": "Abstraction",
+      "description": "Hiding complex implementation details by using abstract classes or interfaces to define behavior without detailing it."
+    },
+    "interfaces": {
+      "id": "interfaces",
+      "name": "Java Interfaces",
+      "description": "Contracts that historically contained abstract methods but now support default, static, and private methods."
+    },
+    "exception_handling": {
+      "id": "exception_handling",
+      "name": "Exception Handling",
+      "description": "The process of managing errors using checked/unchecked exceptions and control flow blocks like try, catch, and finally."
+    },
+    "resource_management": {
+      "id": "resource_management",
+      "name": "Resource Management",
+      "description": "Techniques for automatically releasing resources like files, including the legacy finalize method and modern try-with-resources."
+    },
+    "collections_and_generics": {
+      "id": "collections_and_generics",
+      "name": "Collections and Generics",
+      "description": "Java's library of data structures and the type system that enforces element types at compile time."
+    },
+    "functional_java": {
+      "id": "functional_java",
+      "name": "Functional Java",
+      "description": "Modern syntax including lambda expressions and the Stream API for processing data declaratively."
+    },
+    "modern_java_features": {
+      "id": "modern_java_features",
+      "name": "Modern Java Features",
+      "description": "Recent language enhancements such as local variable type inference with var, records, and sealed classes."
+    },
+    "composition": {
+      "id": "composition",
+      "name": "Composition",
+      "description": "A design pattern using a has-a relationship to build complex objects from simpler parts, often preferred over inheritance."
+    }
+  },
+  "claims": [
+    {
+      "concept_id": "classes_and_objects",
+      "statement": "In Java, a class serves as a blueprint for its objects, which are instantiated using the new keyword.",
+      "quote": "A class is a blueprint that defines the fields and methods of its objects, and an object is an instance of a class",
+      "source_id": "faculty_notes_oop",
+      "page": 1,
+      "claim_type": "definition",
+      "id": "claim_1"
+    },
+    {
+      "concept_id": "classes_and_objects",
+      "statement": "All local variables in Java must have their data types explicitly declared.",
+      "quote": "In Java, every local variable must be declared with an explicit type, such as int count = 0 or String name",
+      "source_id": "faculty_notes_oop",
+      "page": 1,
+      "claim_type": "fact",
+      "id": "claim_2"
+    },
+    {
+      "concept_id": "constructors",
+      "statement": "Constructors are automatically executed by the system whenever a new object instance is created.",
+      "quote": "A constructor has the same name as the class and runs automatically when an object is created.",
+      "source_id": "faculty_notes_oop",
+      "page": 1,
+      "claim_type": "definition",
+      "id": "claim_3"
+    },
+    {
+      "concept_id": "encapsulation",
+      "statement": "Encapsulation is the practice of keeping object fields private and providing public methods to access or modify them.",
+      "quote": "Encapsulation hides the internal state of an object by making fields private and exposing public getter and setter methods.",
+      "source_id": "faculty_notes_oop",
+      "page": 1,
+      "claim_type": "definition",
+      "id": "claim_4"
+    },
+    {
+      "concept_id": "access_modifiers",
+      "statement": "Java provides four specific access modifiers to control the visibility of class members and methods.",
+      "quote": "Access modifiers in Java are public, protected, default (package-private) and private.",
+      "source_id": "faculty_notes_oop",
+      "page": 1,
+      "claim_type": "fact",
+      "id": "claim_5"
+    },
+    {
+      "concept_id": "inheritance",
+      "statement": "A Java class is restricted to extending only one other class, which prevents multiple inheritance of class implementation.",
+      "quote": "A Java class can extend only one class, so Java does not support multiple inheritance of classes.",
+      "source_id": "faculty_notes_oop",
+      "page": 2,
+      "claim_type": "rule",
+      "id": "claim_6"
+    },
+    {
+      "concept_id": "polymorphism",
+      "statement": "Method overloading, where methods share a name but have different parameters, is a form of static polymorphism resolved by the compiler.",
+      "quote": "Method overloading means several methods in the same class share a name but have different parameter lists, and it is resolved at compile time.",
+      "source_id": "faculty_notes_oop",
+      "page": 2,
+      "claim_type": "definition",
+      "id": "claim_7"
+    },
+    {
+      "concept_id": "method_parameter_passing",
+      "statement": "Java transfers all method arguments by value, which results in a copy of the reference being passed for objects.",
+      "quote": "Java passes arguments by value; for objects, the value passed is a copy of the reference.",
+      "source_id": "faculty_notes_oop",
+      "page": 2,
+      "claim_type": "fact",
+      "id": "claim_8"
+    },
+    {
+      "concept_id": "abstraction",
+      "statement": "An abstract class in Java can contain both method definitions that must be implemented and concrete methods with full bodies.",
+      "quote": "An abstract class can have both abstract methods and concrete methods, and it cannot be instantiated.",
+      "source_id": "faculty_notes_oop",
+      "page": 3,
+      "claim_type": "fact",
+      "id": "claim_9"
+    },
+    {
+      "concept_id": "interfaces",
+      "statement": "According to basic definitions, a Java interface is limited to abstract methods and constants, with no implementation bodies allowed.",
+      "quote": "An interface in Java can contain only abstract methods and constants; it cannot contain any method body.",
+      "source_id": "faculty_notes_oop",
+      "page": 3,
+      "claim_type": "fact",
+      "id": "claim_10"
+    },
+    {
+      "concept_id": "interfaces",
+      "statement": "Implementing multiple interfaces allows a Java class to effectively achieve the benefits of multiple inheritance.",
+      "quote": "A class can implement several interfaces, which is how Java achieves a form of multiple inheritance.",
+      "source_id": "faculty_notes_oop",
+      "page": 3,
+      "claim_type": "fact",
+      "id": "claim_11"
+    },
+    {
+      "concept_id": "exception_handling",
+      "statement": "Checked exceptions must be handled by the programmer either through a catch block or by declaring them in the throws clause.",
+      "quote": "Checked exceptions must be either caught or declared with throws, while unchecked exceptions extend RuntimeException.",
+      "source_id": "faculty_notes_oop",
+      "page": 3,
+      "claim_type": "rule",
+      "id": "claim_12"
+    },
+    {
+      "concept_id": "resource_management",
+      "statement": "The finalize method was traditionally used to ensure resources were released by the garbage collector.",
+      "quote": "To release resources such as files, override the finalize() method so the garbage collector closes them.",
+      "source_id": "faculty_notes_oop",
+      "page": 3,
+      "claim_type": "fact",
+      "id": "claim_13"
+    },
+    {
+      "concept_id": "collections_and_generics",
+      "statement": "Using Java generics in collections allows the compiler to perform type checking and eliminate the need for downcasting.",
+      "quote": "Generics such as List<String> let the compiler check element types and avoid casts.",
+      "source_id": "faculty_notes_oop",
+      "page": 4,
+      "claim_type": "fact",
+      "id": "claim_14"
+    },
+    {
+      "concept_id": "interfaces",
+      "statement": "Java 8 updated the language to allow interfaces to define methods with implementation bodies, known as default methods.",
+      "quote": "Since Java 8, interfaces can contain default methods and static methods with a body, in addition to abstract methods.",
+      "source_id": "textbook_java_2024",
+      "page": 1,
+      "claim_type": "fact",
+      "id": "claim_15"
+    },
+    {
+      "concept_id": "modern_java_features",
+      "statement": "The introduction of the var keyword in Java 10 allows developers to write local variables without explicitly stating their types.",
+      "quote": "Since Java 10, the var keyword lets the compiler infer the type of a local variable, as in var names",
+      "source_id": "textbook_java_2024",
+      "page": 1,
+      "claim_type": "fact",
+      "id": "claim_16"
+    },
+    {
+      "concept_id": "resource_management",
+      "statement": "The finalize method has been deprecated and is slated for removal due to being unpredictable and causing performance issues.",
+      "quote": "The finalize() method was deprecated in Java 9 and deprecated for removal in Java 18, because finalizers are unpredictable and slow.",
+      "source_id": "textbook_java_2024",
+      "page": 2,
+      "claim_type": "fact",
+      "id": "claim_17"
+    },
+    {
+      "concept_id": "composition",
+      "statement": "Designers should prefer composition over inheritance when dealing with has-a relationships between objects.",
+      "quote": "Favour composition over inheritance when classes have a has-a relationship rather than an is-a relationship.",
+      "source_id": "textbook_java_2024",
+      "page": 2,
+      "claim_type": "opinion",
+      "id": "claim_18"
+    },
+    {
+      "concept_id": "method_parameter_passing",
+      "statement": "Java uses pass-by-value, meaning object references are copied to the method scope rather than passed by reference.",
+      "quote": "Java is always pass-by-value: when an object is passed to a method, the method receives a copy of the reference.",
+      "source_id": "textbook_java_2024",
+      "page": 2,
+      "claim_type": "fact",
+      "id": "claim_19"
+    },
+    {
+      "concept_id": "functional_java",
+      "statement": "Lambda expressions, available since Java 8, allow for passing functional logic directly as arguments to methods.",
+      "quote": "Lambda expressions, introduced in Java 8, let you pass behaviour as an argument, for example list.forEach(x -> System.out.println(x)).",
+      "source_id": "textbook_java_2024",
+      "page": 3,
+      "claim_type": "fact",
+      "id": "claim_20"
+    },
+    {
+      "concept_id": "modern_java_features",
+      "statement": "Java records, introduced in Java 16, automatically provide boilerplate code like constructors, accessors, and hashing methods for immutable data.",
+      "quote": "Records, standard since Java 16, are concise immutable data classes that generate the constructor, accessors, equals, hashCode and toString.",
+      "source_id": "textbook_java_2024",
+      "page": 3,
+      "claim_type": "fact",
+      "id": "claim_21"
+    },
+    {
+      "concept_id": "inheritance",
+      "statement": "A source claims that Java allows a single class to inherit from two or more parent classes.",
+      "quote": "Java supports multiple inheritance of classes, so a class can extend two parent classes at once.",
+      "source_id": "web_java_cheatsheet_2013",
+      "page": 1,
+      "claim_type": "opinion",
+      "id": "claim_22"
+    },
+    {
+      "concept_id": "method_parameter_passing",
+      "statement": "A source asserts that Java objects are passed by reference, allowing methods to alter the caller's variable.",
+      "quote": "Java is pass-by-reference for objects, so assigning a new object to a parameter also changes the caller's variable.",
+      "source_id": "web_java_cheatsheet_2013",
+      "page": 1,
+      "claim_type": "opinion",
+      "id": "claim_23"
+    },
+    {
+      "concept_id": "composition",
+      "statement": "A source argues that inheritance is universally superior to composition for code reuse and minimizing the amount of code typed.",
+      "quote": "Inheritance is always better than composition because it lets you reuse code with less typing.",
+      "source_id": "web_java_cheatsheet_2013",
+      "page": 2,
+      "claim_type": "opinion",
+      "id": "claim_24"
+    },
+    {
+      "concept_id": "classes_and_objects",
+      "statement": "A source suggests that string comparisons should use the equals operator due to performance benefits over the equals method.",
+      "quote": "Always compare strings with == because it is faster than equals().",
+      "source_id": "web_java_cheatsheet_2013",
+      "page": 2,
+      "claim_type": "opinion",
+      "id": "claim_25"
+    },
+    {
+      "concept_id": "classes_and_objects",
+      "statement": "Java developers are required to have a strong understanding of fundamental OOP principles like encapsulation, inheritance, and polymorphism.",
+      "quote": "Strong grasp of object-oriented design: encapsulation, inheritance, polymorphism and interfaces.",
+      "source_id": "jd_java_developer",
+      "page": 1,
+      "claim_type": "requirement",
+      "id": "claim_26"
+    },
+    {
+      "concept_id": "functional_java",
+      "statement": "Proficiency in modern Java functional features, such as lambdas and the Stream API, is required for certain roles.",
+      "quote": "Modern Java features, including lambdas, the Stream API and records for immutable data.",
+      "source_id": "jd_java_developer",
+      "page": 1,
+      "claim_type": "requirement",
+      "id": "claim_27"
+    },
+    {
+      "concept_id": "resource_management",
+      "statement": "Candidates must be familiar with handling exceptions and using try-with-resources for safe code execution.",
+      "quote": "Exception handling and safe resource management with try-with-resources.",
+      "source_id": "jd_java_developer",
+      "page": 1,
+      "claim_type": "requirement",
+      "id": "claim_28"
+    },
+    {
+      "concept_id": "collections_and_generics",
+      "statement": "Knowledge of Java's Collections framework and the use of generics is a required skill for backend engineering roles.",
+      "quote": "Good knowledge of the Collections framework and generics.",
+      "source_id": "jd_java_developer",
+      "page": 1,
+      "claim_type": "requirement",
+      "id": "claim_29"
+    },
+    {
+      "concept_id": "composition",
+      "statement": "Engineers are expected to design class hierarchies that utilize interfaces with default methods and prefer composition where applicable.",
+      "quote": "Designing class hierarchies with interfaces, including default methods, and favouring composition where it fits.",
+      "source_id": "jd_java_backend",
+      "page": 1,
+      "claim_type": "requirement",
+      "id": "claim_30"
+    },
+    {
+      "concept_id": "method_parameter_passing",
+      "statement": "It is required that software engineers understand the specific rule that Java passes object references by value.",
+      "quote": "Understanding that Java passes object references by value when debugging method calls.",
+      "source_id": "jd_java_backend",
+      "page": 1,
+      "claim_type": "requirement",
+      "id": "claim_31"
+    },
+    {
+      "concept_id": "modern_java_features",
+      "statement": "Familiarity with current Java syntax, specifically the use of var and records, is a required skill for developers.",
+      "quote": "Familiarity with modern Java syntax such as var and records.",
+      "source_id": "jd_java_backend",
+      "page": 1,
+      "claim_type": "requirement",
+      "id": "claim_32"
+    }
+  ],
+  "rejected_claims": [],
+  "prerequisites": [
+    {
+      "before": "classes_and_objects",
+      "after": "modern_java_features",
+      "reason": "Features like records are syntax enhancements built on top of existing class structures."
+    },
+    {
+      "before": "classes_and_objects",
+      "after": "inheritance",
+      "reason": "Inheritance is a mechanism that links two classes."
+    },
+    {
+      "before": "classes_and_objects",
+      "after": "exception_handling",
+      "reason": "Exceptions in Java are objects, and try-catch blocks manage them within class methods."
+    },
+    {
+      "before": "classes_and_objects",
+      "after": "access_modifiers",
+      "reason": "Access modifiers control the visibility of members within a class."
+    },
+    {
+      "before": "classes_and_objects",
+      "after": "collections_and_generics",
+      "reason": "Collections are class libraries and generics enforce types for object arrays."
+    },
+    {
+      "before": "classes_and_objects",
+      "after": "constructors",
+      "reason": "Constructors are defined within classes and executed when objects are instantiated."
+    },
+    {
+      "before": "classes_and_objects",
+      "after": "abstraction",
+      "reason": "Abstraction is realized using abstract classes and methods."
+    },
+    {
+      "before": "access_modifiers",
+      "after": "encapsulation",
+      "reason": "Encapsulation relies on classes to group fields and requires access modifiers to hide state."
+    },
+    {
+      "before": "inheritance",
+      "after": "polymorphism",
+      "reason": "Runtime polymorphism (method overriding) specifically depends on the inheritance hierarchy."
+    },
+    {
+      "before": "inheritance",
+      "after": "interfaces",
+      "reason": "The concept of interfaces is often taught alongside inheritance to explain how to achieve multiple type implementation."
+    },
+    {
+      "before": "inheritance",
+      "after": "composition",
+      "reason": "Composition is a design alternative that contrasts with inheritance for code reuse."
+    },
+    {
+      "before": "polymorphism",
+      "after": "method_parameter_passing",
+      "reason": "Understanding how object references are passed by value helps explain how method calls are resolved and interact with objects."
+    },
+    {
+      "before": "abstraction",
+      "after": "interfaces",
+      "reason": "Interfaces are a form of abstraction that define contracts for classes to implement."
+    },
+    {
+      "before": "interfaces",
+      "after": "functional_java",
+      "reason": "Lambda expressions implement functional interfaces like Supplier and Consumer."
+    },
+    {
+      "before": "exception_handling",
+      "after": "resource_management",
+      "reason": "Modern resource management using try-with-resources directly relies on exception handling syntax."
+    },
+    {
+      "before": "collections_and_generics",
+      "after": "functional_java",
+      "reason": "The Stream API and many lambda expressions operate directly on collection frameworks, so collections must be understood."
+    }
+  ],
+  "learning_order": [
+    "classes_and_objects",
+    "constructors",
+    "access_modifiers",
+    "encapsulation",
+    "inheritance",
+    "polymorphism",
+    "method_parameter_passing",
+    "abstraction",
+    "interfaces",
+    "exception_handling",
+    "resource_management",
+    "collections_and_generics",
+    "modern_java_features",
+    "composition",
+    "functional_java"
+  ],
+  "removed_cycle_edges": []
+}

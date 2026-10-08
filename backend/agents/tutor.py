@@ -5,7 +5,7 @@ import re
 from datetime import date
 from pathlib import Path
 
-from backend import db
+from backend import courses, db
 from backend.engine.adapt import decide_format, decide_level, learned_style, next_step_after_check
 from backend.engine.mastery import blend, confidence_to_unit
 from backend.models import AnswerEvaluation, TutorLesson
@@ -39,8 +39,9 @@ textbook chapter made for them. Fill every part of the schema:
   ('flowchart TD') for sequences of more than 5 steps, and keep each diagram under about 12 nodes.
 - walkthrough: trace the concept step by step on a small concrete example, showing the data after each step.
 - code_examples: complete, correct, runnable code that implements or uses the concept, with an explanation and the
-  output. Use Python for data structures and algorithms, SQL for database topics, unless the trusted claims use
-  another language. Code comments in English.
+  output. Write code in the language the course is taught in (for example Java for a Java course, as seen in
+  the course name and trusted claims); otherwise use Python for data structures and algorithms, and SQL for
+  database topics. Code comments in English.
 - complexity: time/space of the main operations, if the topic has operations; otherwise an empty list.
 - common_mistakes and key_points.
 Rules for facts:
@@ -149,6 +150,7 @@ def generate_lesson(student_id, concept_id, level=None, fmt=None, reason=None):
         TUTOR_PROMPT.format(level=level, level_guide=LEVEL_GUIDE[level],
                             fmt=fmt, format_guide=FORMAT_GUIDE[fmt]),
         json.dumps({
+            "course": courses.COURSES[courses.active_course()]["title"],
             "concept": kb["concepts"][concept_id]["name"],
             "target_role": student["target_role"],
             "trusted_claims": [{"id": c["id"], "concept": c["concept_id"], "claim": c["statement"]} for c in claims],

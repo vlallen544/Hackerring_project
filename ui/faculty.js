@@ -115,27 +115,149 @@ async function deleteSource(button, id) {
 
 async function buildCourse(button) {
     await busy(button, "Agents at work...", async () => {
-        const r = await post("/api/course/build");
-        const stat = (n, label, color) => `
-            <div class="border-4 border-black ${color} p-4 text-center shadow-brutal-sm">
-                <p class="font-display text-4xl">${esc(n)}</p><p class="text-xs font-bold uppercase">${esc(label)}</p>
-            </div>`;
+        await post("/api/course/build");
+        await loadCourseStats();
         $("build-result").innerHTML = `
-            <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8 animate-slam">
-                ${stat(r.concepts, "concepts", "bg-white")}
-                ${stat(r.claims_verified, "claims verified", "bg-neo-green")}
-                ${stat(r.claims_rejected, "made-up quotes caught", "bg-neo-red text-white")}
-                ${stat(r.conflicts, "conflicts found", "bg-neo-yellow")}
-                ${stat(`${r.freshness_score ?? "—"}%`, "syllabus fresh", "bg-neo-blue")}
-            </div>`;
-        $("build-result").insertAdjacentHTML("beforeend", `
             <div class="border-4 border-black bg-neo-yellow p-4 mb-8 flex flex-wrap justify-between items-center gap-3">
                 <p class="font-bold uppercase">Done. Next: step 2, check what the agent trusted</p>
                 <a href="#conflicts" class="btn inline-block">Review conflicts -></a>
-            </div>`);
-        await Promise.all([loadConflicts(), loadFreshness()]);
+            </div>`;
+        await Promise.all([loadConflicts(), loadFreshness(), loadSources()]);
         toast("Course knowledge base updated.");
     });
+}
+
+// --------------------------------------------------------------------------- //
+// Course stat tiles: each opens the details behind the number
+// --------------------------------------------------------------------------- //
+let COURSE_DATA = null;  // {graph, claims, rejected, conflicts, freshness} of the active course
+
+async function loadCourseStats() {
+    try {
+        const [graph, claims, rejected, conflicts, freshness] = await Promise.all([
+            api("/api/course/graph"), api("/api/course/claims"), api("/api/course/rejected-claims"),
+            api("/api/course/conflicts"), api("/api/course/freshness")]);
+        COURSE_DATA = { graph, claims, rejected, conflicts, freshness };
+    } catch {
+        COURSE_DATA = null;
+        $("course-stats-tiles").innerHTML = "";  // course not built yet
+        return;
+    }
+    const d = COURSE_DATA;
+    const tile = (kind, n, label, color) => `
+        <button class="border-4 border-black ${color} p-4 text-center shadow-brutal-sm hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-all group"
+                onclick="showDetail('${kind}')" title="Show the ${esc(label)}">
+            <p class="font-display text-4xl">${esc(n)}</p>
+            <p class="text-xs font-bold uppercase">${esc(label)}</p>
+            <p class="text-[10px] font-bold uppercase mt-1 opacity-60 group-hover:opacity-100"><i class="ph-bold ph-eye"></i> View</p>
+        </button>`;
+    $("course-stats-tiles").innerHTML = `
+        <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8 animate-slam">
+            ${tile("concepts", d.graph.nodes.length, "concepts", "bg-white")}
+            ${tile("claims", d.claims.length, "claims verified", "bg-neo-green")}
+            ${tile("rejected", d.rejected.length, "made-up quotes caught", "bg-neo-red text-white")}
+            ${tile("conflicts", d.conflicts.length, "conflicts found", "bg-neo-yellow")}
+            ${tile("freshness", `${d.freshness.score ?? "—"}%`, "syllabus fresh", "bg-neo-blue")}
+        </div>`;
+}
+
+const CLAIM_STATUS_STYLE = {
+    trusted: "bg-neo-green", outdated: "bg-neo-pink text-white", superseded: "bg-neo-yellow",
+    unreliable: "bg-neo-red text-white", needs_review: "bg-neo-blue",
+};
+
+function sourceTitle(id) {
+    return (SOURCES[id] || {}).title || id;
+}
+
+function claimCard(c, extra = "") {
+    return `
+        <div class="border-2 border-black p-3 bg-white">
+            <div class="flex flex-wrap gap-2 items-center mb-1">
+                ${c.status ? `<span class="chip ${CLAIM_STATUS_STYLE[c.status] || "bg-white"}">${esc(c.status.replace("_", " "))}</span>` : ""}
+                <span class="chip bg-white">${esc(cname(c.concept_id))}</span>
+                <span class="text-xs font-bold uppercase text-gray-500">${esc(sourceTitle(c.source_id))} · p.${esc(c.page)}</span>
+            </div>
+            <p class="font-bold">${esc(c.statement)}</p>
+            <p class="text-sm italic text-gray-600 mt-1">"${esc(c.quote)}"</p>
+            ${extra}
+        </div>`;
+}
+
+function renderClaimList(filter) {
+    const claims = COURSE_DATA.claims.filter(c => filter === "all" || c.status === filter);
+    const counts = {};
+    COURSE_DATA.claims.forEach(c => { counts[c.status] = (counts[c.status] || 0) + 1; });
+    $("detail-body").innerHTML = `
+        <div class="flex flex-wrap gap-2 mb-4">
+            ${["all", ...Object.keys(counts)].map(k => `
+                <button class="chip !px-3 !py-1 ${filter === k ? "bg-neo-yellow shadow-brutal-sm" : "bg-white"}"
+                        onclick="renderClaimList('${k}')">${esc(k.replace("_", " "))} (${k === "all" ? COURSE_DATA.claims.length : counts[k]})</button>`).join("")}
+        </div>
+        <div class="space-y-3">${claims.map(c => claimCard(c)).join("") || emptyState("No claims in this group")}</div>`;
+}
+
+function showDetail(kind) {
+    if (!COURSE_DATA) return;
+    const d = COURSE_DATA;
+    const open = (kicker, title, body) => {
+        $("detail-kicker").textContent = kicker;
+        $("detail-title").textContent = title;
+        $("detail-body").innerHTML = body;
+        $("detail").classList.remove("hidden");
+    };
+    if (kind === "concepts") {
+        const needs = {};
+        d.graph.edges.forEach(e => { (needs[e.target] = needs[e.target] || []).push(e.source); });
+        const perConcept = {};
+        d.claims.forEach(c => { perConcept[c.concept_id] = (perConcept[c.concept_id] || 0) + 1; });
+        const byId = Object.fromEntries(d.graph.nodes.map(n => [n.id, n]));
+        open("// In learning order", `${d.graph.nodes.length} concepts`, `<ol class="space-y-3">${d.graph.learning_order.map((id, i) => `
+            <li class="border-2 border-black p-3 bg-white flex gap-3">
+                <span class="step-num">${i + 1}</span>
+                <div class="flex-1">
+                    <p class="font-display text-lg uppercase leading-tight">${esc(byId[id] ? byId[id].label : id)}</p>
+                    <p class="text-sm">${esc(byId[id] ? byId[id].description : "")}</p>
+                    <p class="text-xs font-bold uppercase text-gray-500 mt-1">
+                        ${needs[id] ? `Needs: ${needs[id].map(n => esc(cname(n))).join(", ")}` : "Foundational: no prerequisites"}
+                        · ${perConcept[id] || 0} claims</p>
+                </div>
+            </li>`).join("")}</ol>`);
+    } else if (kind === "claims") {
+        open("// Every claim has a quote checked against its source page", `${d.claims.length} claims verified`, "");
+        renderClaimList("all");
+    } else if (kind === "rejected") {
+        open("// Quotes the model wrote that do not exist in the sources", `${d.rejected.length} made-up quotes caught`,
+            d.rejected.length ? `<div class="space-y-3">${d.rejected.map(c => claimCard(c,
+                `<p class="text-xs font-bold uppercase text-neo-red mt-2"><i class="ph-bold ph-x-circle"></i> Rejected: ${esc(c.reject_reason || "quote not found")}</p>`)).join("")}</div>`
+            : emptyState("Nothing caught in this build: every quote was found in its source"));
+    } else if (kind === "conflicts") {
+        open("// Where sources disagree, and what was trusted", `${d.conflicts.length} conflicts found`, `
+            <div class="space-y-3 mb-6">${d.conflicts.map(c => {
+                const [label, color] = DECISION_STYLE[c.decision] || [c.decision, "bg-white"];
+                const winner = c.winner_side !== undefined && c.winner_side !== null ? c.sides[c.winner_side] : null;
+                return `<div class="border-2 border-black p-3 bg-white">
+                    <div class="flex flex-wrap justify-between gap-2 mb-1"><b class="uppercase">${esc(c.topic)}</b>
+                        <span class="flex gap-2"><span class="chip bg-white">${esc(c.type)}</span><span class="chip ${color}">${esc(label)}</span></span></div>
+                    <p class="text-sm">${esc(c.summary)}</p>
+                    ${winner ? `<p class="text-sm mt-1"><b>Trusted:</b> ${esc(winner.label)} (${winner.score.trust.toFixed(2)})</p>` : ""}
+                </div>`; }).join("")}</div>
+            <a href="#conflicts" class="btn inline-block" onclick="closeDetail()">Open the conflicts page -></a>`);
+    } else if (kind === "freshness") {
+        const coverage = { covered: "bg-neo-green", partial: "bg-neo-yellow", outdated: "bg-neo-pink text-white", missing: "bg-neo-red text-white" };
+        open("// How well your notes cover what employers ask for", `${d.freshness.score ?? "—"}% aligned with industry`, `
+            <div class="space-y-3 mb-6">${d.freshness.skills.map(s => `
+                <div class="border-2 border-black p-3 bg-white">
+                    <div class="flex flex-wrap justify-between gap-2"><b class="uppercase">${esc(s.skill)}</b>
+                        <span class="chip ${coverage[s.faculty_coverage] || "bg-white"}">${esc(s.faculty_coverage)}</span></div>
+                    <p class="text-sm mt-1">${esc(s.note)}</p>
+                </div>`).join("")}</div>
+            <a href="#freshness" class="btn inline-block" onclick="closeDetail()">Open the freshness page -></a>`);
+    }
+}
+
+function closeDetail() {
+    $("detail").classList.add("hidden");
 }
 
 async function uploadSource(event) {
@@ -401,7 +523,7 @@ const ME = requireRole("faculty");
 async function init() {
     if (!ME) return;
     await Promise.all([loadSources().catch(err => toast(err.message, "error")), loadConcepts()]);
-    await Promise.all([loadConflicts(), loadFreshness(), loadClassRadar(), loadStudentAccounts()]);
+    await Promise.all([loadConflicts(), loadFreshness(), loadClassRadar(), loadStudentAccounts(), loadCourseStats()]);
     initViews("sources");
 }
 

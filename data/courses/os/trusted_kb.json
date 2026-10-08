@@ -1,0 +1,832 @@
+{
+  "concepts": {
+    "processes": {
+      "id": "processes",
+      "name": "Processes",
+      "description": "A process is a program in execution that owns its own address space, registers, and state information."
+    },
+    "threads": {
+      "id": "threads",
+      "name": "Threads",
+      "description": "Threads are the smallest units of CPU scheduling within a process that share code and data but maintain independent stacks."
+    },
+    "cpu_scheduling": {
+      "id": "cpu_scheduling",
+      "name": "CPU Scheduling",
+      "description": "Algorithms that determine which process or thread receives CPU time, including strategies like FCFS and Round Robin."
+    },
+    "synchronization": {
+      "id": "synchronization",
+      "name": "Process Synchronization",
+      "description": "Mechanisms such as semaphores used to coordinate access to shared resources and prevent race conditions."
+    },
+    "deadlocks": {
+      "id": "deadlocks",
+      "name": "Deadlocks",
+      "description": "A system state where processes wait indefinitely for resources, occurring when specific conditions are met simultaneously."
+    },
+    "memory_management": {
+      "id": "memory_management",
+      "name": "Memory Management",
+      "description": "Techniques like paging that map logical memory to physical memory using fixed-size frames and pages."
+    },
+    "virtual_memory": {
+      "id": "virtual_memory",
+      "name": "Virtual Memory",
+      "description": "A mechanism that allows processes to use more logical memory than physical memory, using demand paging and replacement algorithms."
+    },
+    "system_startup": {
+      "id": "system_startup",
+      "name": "System Startup",
+      "description": "The initialization process of an operating system, starting from the kernel to the first user-space process."
+    },
+    "containers": {
+      "id": "containers",
+      "name": "Containers",
+      "description": "Isolated user-space environments that share a host kernel using namespaces and control groups for resource limits."
+    }
+  },
+  "prerequisites": [
+    {
+      "before": "processes",
+      "after": "system_startup",
+      "reason": "System startup initializes the kernel and creates the first user-space process, building on the concept of a process."
+    },
+    {
+      "before": "processes",
+      "after": "threads",
+      "reason": "A thread is the smallest unit within a process, so one must understand processes first."
+    },
+    {
+      "before": "processes",
+      "after": "memory_management",
+      "reason": "Memory management techniques map the logical memory of a process to physical memory."
+    },
+    {
+      "before": "threads",
+      "after": "containers",
+      "reason": "Containers are essentially isolated collections of processes and threads sharing the host kernel."
+    },
+    {
+      "before": "threads",
+      "after": "synchronization",
+      "reason": "Synchronization mechanisms are used to coordinate access to shared resources between threads within a process."
+    },
+    {
+      "before": "threads",
+      "after": "cpu_scheduling",
+      "reason": "Scheduling algorithms determine which process or thread gets CPU time, requiring understanding of both units."
+    },
+    {
+      "before": "synchronization",
+      "after": "deadlocks",
+      "reason": "Deadlocks occur when synchronization mechanisms (like locks) cause processes to wait indefinitely for resources."
+    },
+    {
+      "before": "memory_management",
+      "after": "virtual_memory",
+      "reason": "Virtual memory extends memory management with demand paging and replacement algorithms to use more logical than physical memory."
+    }
+  ],
+  "learning_order": [
+    "processes",
+    "threads",
+    "cpu_scheduling",
+    "synchronization",
+    "deadlocks",
+    "memory_management",
+    "virtual_memory",
+    "system_startup",
+    "containers"
+  ],
+  "sources": [
+    {
+      "id": "faculty_notes_os",
+      "file": "sources/faculty_notes_os.md",
+      "title": "Operating Systems Lecture Notes (Prof. S. Rao)",
+      "type": "faculty_notes",
+      "year": 2017
+    },
+    {
+      "id": "textbook_os_2024",
+      "file": "sources/textbook_os_2024.md",
+      "title": "Modern Operating Systems in Practice, 3rd Ed.",
+      "type": "textbook",
+      "year": 2024
+    },
+    {
+      "id": "web_os_notes_2014",
+      "file": "sources/web_os_notes_2014.md",
+      "title": "OS Quick Revision Notes (blog)",
+      "type": "web_link",
+      "year": 2014
+    },
+    {
+      "id": "jd_backend_infra",
+      "file": "sources/jd_backend_infra.md",
+      "title": "JD: Backend Engineer, Cloud Infrastructure",
+      "type": "job_description",
+      "year": 2026
+    },
+    {
+      "id": "jd_sre_platform",
+      "file": "sources/jd_sre_platform.md",
+      "title": "JD: Site Reliability Engineer, Platform Team",
+      "type": "job_description",
+      "year": 2026
+    }
+  ],
+  "claims": [
+    {
+      "concept_id": "processes",
+      "statement": "A process consists of a program counter, registers, and its own address space during execution.",
+      "quote": "A process is a program in execution, with its own address space, program counter, registers and open files.",
+      "source_id": "faculty_notes_os",
+      "page": 1,
+      "claim_type": "definition",
+      "id": "claim_1",
+      "status": "trusted"
+    },
+    {
+      "concept_id": "processes",
+      "statement": "The operating system tracks process information using a Process Control Block.",
+      "quote": "The operating system keeps information about each process in a process control block (PCB).",
+      "source_id": "faculty_notes_os",
+      "page": 1,
+      "claim_type": "fact",
+      "id": "claim_2",
+      "status": "trusted"
+    },
+    {
+      "concept_id": "threads",
+      "statement": "Creating a thread is more efficient than a process because it does not require a new address space.",
+      "quote": "Creating a thread is cheaper than creating a process because no new address space is needed.",
+      "source_id": "faculty_notes_os",
+      "page": 1,
+      "claim_type": "fact",
+      "id": "claim_3",
+      "status": "trusted"
+    },
+    {
+      "concept_id": "cpu_scheduling",
+      "statement": "The convoy effect describes how FCFS scheduling forces short jobs to wait behind long ones.",
+      "quote": "First-Come First-Served (FCFS) scheduling can make short jobs wait behind long ones, which is called the convoy effect.",
+      "source_id": "faculty_notes_os",
+      "page": 2,
+      "claim_type": "definition",
+      "id": "claim_4",
+      "status": "trusted"
+    },
+    {
+      "concept_id": "cpu_scheduling",
+      "statement": "The Linux kernel historically utilized an O(1) scheduler for picking tasks in constant time.",
+      "quote": "The Linux kernel uses the O(1) scheduler, which picks the next task in constant time using priority arrays.",
+      "source_id": "faculty_notes_os",
+      "page": 2,
+      "claim_type": "fact",
+      "id": "claim_5",
+      "status": "outdated"
+    },
+    {
+      "concept_id": "synchronization",
+      "statement": "A race condition occurs when thread results depend on the specific order of accessing shared data.",
+      "quote": "A race condition happens when the result depends on the order in which threads access shared data.",
+      "source_id": "faculty_notes_os",
+      "page": 2,
+      "claim_type": "definition",
+      "id": "claim_6",
+      "status": "trusted"
+    },
+    {
+      "concept_id": "synchronization",
+      "statement": "Semaphores are implemented as integer variables manipulated exclusively through atomic wait and signal operations.",
+      "quote": "A semaphore is an integer variable accessed only through the atomic operations wait and signal.",
+      "source_id": "faculty_notes_os",
+      "page": 2,
+      "claim_type": "definition",
+      "id": "claim_7",
+      "status": "trusted"
+    },
+    {
+      "concept_id": "deadlocks",
+      "statement": "Four conditions (mutual exclusion, hold and wait, no preemption, circular wait) must be met simultaneously for deadlock.",
+      "quote": "A deadlock can occur only if four conditions hold at the same time: mutual exclusion, hold and wait, no preemption and circular wait.",
+      "source_id": "faculty_notes_os",
+      "page": 3,
+      "claim_type": "rule",
+      "id": "claim_8",
+      "status": "trusted"
+    },
+    {
+      "concept_id": "memory_management",
+      "statement": "Paging eliminates external fragmentation but leaves internal fragmentation in the final page of a process.",
+      "quote": "Paging removes external fragmentation but can still cause internal fragmentation in the last page.",
+      "source_id": "faculty_notes_os",
+      "page": 3,
+      "claim_type": "fact",
+      "id": "claim_9",
+      "status": "trusted"
+    },
+    {
+      "concept_id": "virtual_memory",
+      "statement": "Belady's anomaly is when increasing the number of frames causes an increase in page faults with FIFO.",
+      "quote": "With FIFO page replacement, adding more frames can sometimes increase the number of page faults; this is called Belady's anomaly.",
+      "source_id": "faculty_notes_os",
+      "page": 4,
+      "claim_type": "definition",
+      "id": "claim_10",
+      "status": "trusted"
+    },
+    {
+      "concept_id": "system_startup",
+      "statement": "Legacy Linux systems started services via SysV init, which ran as the first process with PID 1.",
+      "quote": "Linux runs SysV init as the first process with PID 1, which starts services using runlevel scripts.",
+      "source_id": "faculty_notes_os",
+      "page": 4,
+      "claim_type": "fact",
+      "id": "claim_11",
+      "status": "outdated"
+    },
+    {
+      "concept_id": "threads",
+      "statement": "Threads within a single process share the same address space, meaning one thread's error can corrupt shared data.",
+      "quote": "Threads of the same process share one address space, so a bug in one thread can corrupt data used by the others.",
+      "source_id": "textbook_os_2024",
+      "page": 1,
+      "claim_type": "fact",
+      "id": "claim_12",
+      "status": "trusted"
+    },
+    {
+      "concept_id": "cpu_scheduling",
+      "statement": "The Completely Fair Scheduler (CFS) replaced the O(1) scheduler in Linux kernel version 2.6.23.",
+      "quote": "Linux replaced the O(1) scheduler with the Completely Fair Scheduler (CFS) in kernel 2.6.23, released in 2007.",
+      "source_id": "textbook_os_2024",
+      "page": 1,
+      "claim_type": "fact",
+      "id": "claim_13",
+      "status": "trusted"
+    },
+    {
+      "concept_id": "cpu_scheduling",
+      "statement": "The EEVDF scheduler became the default for normal tasks in Linux kernel 6.6, replacing CFS.",
+      "quote": "Since Linux 6.6, released in 2023, the EEVDF scheduler has replaced CFS as the default scheduler for normal tasks.",
+      "source_id": "textbook_os_2024",
+      "page": 1,
+      "claim_type": "fact",
+      "id": "claim_14",
+      "status": "trusted"
+    },
+    {
+      "concept_id": "deadlocks",
+      "statement": "Disrupting one of the four deadlock conditions, such as using lock ordering to prevent circular wait, is sufficient to prevent deadlock.",
+      "quote": "Breaking any one of the four conditions, for example by ordering locks to prevent circular wait, prevents deadlock.",
+      "source_id": "textbook_os_2024",
+      "page": 2,
+      "claim_type": "rule",
+      "id": "claim_15",
+      "status": "trusted"
+    },
+    {
+      "concept_id": "virtual_memory",
+      "statement": "LRU and the optimal algorithm are stack algorithms that avoid the phenomenon known as Belady's anomaly.",
+      "quote": "Stack algorithms such as LRU and the optimal algorithm never suffer from Belady's anomaly.",
+      "source_id": "textbook_os_2024",
+      "page": 2,
+      "claim_type": "fact",
+      "id": "claim_16",
+      "status": "trusted"
+    },
+    {
+      "concept_id": "system_startup",
+      "statement": "Modern Linux distributions typically utilize systemd as the init system for managing parallel service startup.",
+      "quote": "Most major Linux distributions now use systemd as the init system that runs as PID 1 and starts services in parallel.",
+      "source_id": "textbook_os_2024",
+      "page": 3,
+      "claim_type": "fact",
+      "id": "claim_17",
+      "status": "trusted"
+    },
+    {
+      "concept_id": "containers",
+      "statement": "Linux containers restrict resources and isolate processes by using namespaces and control groups (cgroups).",
+      "quote": "Linux containers isolate processes using namespaces and limit their CPU and memory using control groups (cgroups).",
+      "source_id": "textbook_os_2024",
+      "page": 3,
+      "claim_type": "definition",
+      "id": "claim_18",
+      "status": "trusted"
+    },
+    {
+      "concept_id": "containers",
+      "statement": "Containers have faster startup times than virtual machines because they share the host's kernel rather than booting a new one.",
+      "quote": "A container shares the host kernel, so it starts much faster than a virtual machine that boots its own kernel.",
+      "source_id": "textbook_os_2024",
+      "page": 3,
+      "claim_type": "fact",
+      "id": "claim_19",
+      "status": "trusted"
+    },
+    {
+      "concept_id": "threads",
+      "statement": "Threads of the same process have separate address spaces, making them safer than processes.",
+      "quote": "Threads of the same process have separate address spaces, which is why threads are safer than processes.",
+      "source_id": "web_os_notes_2014",
+      "page": 1,
+      "claim_type": "fact",
+      "id": "claim_20",
+      "status": "superseded"
+    },
+    {
+      "concept_id": "deadlocks",
+      "statement": "Deadlock requires only two conditions to exist: mutual exclusion and hold and wait.",
+      "quote": "Deadlock needs only two conditions: mutual exclusion and hold and wait.",
+      "source_id": "web_os_notes_2014",
+      "page": 1,
+      "claim_type": "fact",
+      "id": "claim_21",
+      "status": "superseded"
+    },
+    {
+      "concept_id": "memory_management",
+      "statement": "Increasing the number of frames in a system always reduces page faults regardless of the replacement algorithm used.",
+      "quote": "Adding more frames to a process always reduces its page faults, whatever replacement algorithm is used.",
+      "source_id": "web_os_notes_2014",
+      "page": 2,
+      "claim_type": "fact",
+      "id": "claim_22",
+      "status": "superseded"
+    },
+    {
+      "concept_id": "cpu_scheduling",
+      "statement": "Round Robin is the optimal scheduling algorithm that students should always choose for exams.",
+      "quote": "Round Robin is always the best scheduling algorithm, so always choose it in exams.",
+      "source_id": "web_os_notes_2014",
+      "page": 2,
+      "claim_type": "opinion",
+      "id": "claim_23",
+      "status": "unreliable"
+    },
+    {
+      "concept_id": "synchronization",
+      "statement": "Backend roles require expertise in concurrency, including specific knowledge of locks and deadlock avoidance techniques.",
+      "quote": "Strong understanding of processes, threads and concurrency, including locks and deadlock avoidance.",
+      "source_id": "jd_backend_infra",
+      "page": 1,
+      "claim_type": "requirement",
+      "id": "claim_24",
+      "status": "trusted"
+    },
+    {
+      "concept_id": "virtual_memory",
+      "statement": "Backend engineers must know how virtual memory and paging mechanisms influence application performance.",
+      "quote": "Knowledge of virtual memory and how paging affects application performance.",
+      "source_id": "jd_backend_infra",
+      "page": 1,
+      "claim_type": "requirement",
+      "id": "claim_25",
+      "status": "trusted"
+    },
+    {
+      "concept_id": "containers",
+      "statement": "Practical experience with Linux containers, specifically namespaces and cgroups, is a required skill for infrastructure roles.",
+      "quote": "Hands-on experience with Linux containers, including namespaces and cgroups.",
+      "source_id": "jd_backend_infra",
+      "page": 1,
+      "claim_type": "requirement",
+      "id": "claim_26",
+      "status": "trusted"
+    },
+    {
+      "concept_id": "cpu_scheduling",
+      "statement": "Proficiency in how the Linux CPU scheduler allocates time between various services is required for this role.",
+      "quote": "Familiarity with how the Linux CPU scheduler shares CPU time between services.",
+      "source_id": "jd_backend_infra",
+      "page": 1,
+      "claim_type": "requirement",
+      "id": "claim_27",
+      "status": "trusted"
+    },
+    {
+      "concept_id": "system_startup",
+      "statement": "SRE roles require managing Linux services specifically using systemd as the process with PID 1.",
+      "quote": "Managing Linux services with systemd, which runs as PID 1 on our servers.",
+      "source_id": "jd_sre_platform",
+      "page": 1,
+      "claim_type": "requirement",
+      "id": "claim_28",
+      "status": "trusted"
+    },
+    {
+      "concept_id": "virtual_memory",
+      "statement": "Site Reliability Engineers must be capable of diagnosing memory pressure, page faults, and swapping on active systems.",
+      "quote": "Diagnosing memory pressure, page faults and swapping on busy machines.",
+      "source_id": "jd_sre_platform",
+      "page": 1,
+      "claim_type": "requirement",
+      "id": "claim_29",
+      "status": "trusted"
+    }
+  ],
+  "conflicts": [
+    {
+      "id": "conflict_1",
+      "concept_id": "threads",
+      "topic": "Thread address space sharing",
+      "type": "contradiction",
+      "summary": "One source states threads share an address space, while another claims they have separate address spaces.",
+      "sides": [
+        {
+          "label": "Threads share the same address space, which is a vulnerability",
+          "claim_ids": [
+            "claim_3",
+            "claim_12"
+          ],
+          "is_specific": true,
+          "is_absolute": false,
+          "score": {
+            "factors": {
+              "recency": 0.8,
+              "authority": 0.9,
+              "agreement": 0.67,
+              "specificity": 1.0
+            },
+            "absolute_penalty": false,
+            "sources": [
+              "faculty_notes_os",
+              "textbook_os_2024"
+            ],
+            "newest_year": 2024,
+            "trust": 0.817
+          }
+        },
+        {
+          "label": "Threads have separate address spaces, making them safer",
+          "claim_ids": [
+            "claim_20"
+          ],
+          "is_specific": false,
+          "is_absolute": true,
+          "score": {
+            "factors": {
+              "recency": 0.0,
+              "authority": 0.4,
+              "agreement": 0.33,
+              "specificity": 0.0
+            },
+            "absolute_penalty": true,
+            "sources": [
+              "web_os_notes_2014"
+            ],
+            "newest_year": 2014,
+            "trust": 0.053
+          }
+        }
+      ],
+      "decided_by": "agent",
+      "explanation": "Trusted \"Threads share the same address space, which is a vulnerability\" over \"Threads have separate address spaces, making them safer\" because of: newer source (2024 vs 2014), 2 sources agree vs 1, higher-authority source, more specific (gives versions or reasons), the other side makes an absolute 'always/never' claim.",
+      "decision": "resolved",
+      "winner_side": 0,
+      "margin": 0.764
+    },
+    {
+      "id": "conflict_2",
+      "concept_id": "deadlocks",
+      "topic": "Number of conditions required for deadlock",
+      "type": "contradiction",
+      "summary": "Sources disagree on whether four or only two conditions must be met to create a deadlock.",
+      "sides": [
+        {
+          "label": "Four conditions (mutual exclusion, hold and wait, no preemption, circular wait) are required",
+          "claim_ids": [
+            "claim_8",
+            "claim_15"
+          ],
+          "is_specific": true,
+          "is_absolute": false,
+          "score": {
+            "factors": {
+              "recency": 0.8,
+              "authority": 0.9,
+              "agreement": 0.67,
+              "specificity": 1.0
+            },
+            "absolute_penalty": false,
+            "sources": [
+              "faculty_notes_os",
+              "textbook_os_2024"
+            ],
+            "newest_year": 2024,
+            "trust": 0.817
+          }
+        },
+        {
+          "label": "Only two conditions (mutual exclusion and hold and wait) are needed",
+          "claim_ids": [
+            "claim_21"
+          ],
+          "is_specific": true,
+          "is_absolute": false,
+          "score": {
+            "factors": {
+              "recency": 0.0,
+              "authority": 0.4,
+              "agreement": 0.33,
+              "specificity": 1.0
+            },
+            "absolute_penalty": false,
+            "sources": [
+              "web_os_notes_2014"
+            ],
+            "newest_year": 2014,
+            "trust": 0.303
+          }
+        }
+      ],
+      "decided_by": "agent",
+      "explanation": "Trusted \"Four conditions (mutual exclusion, hold and wait, no preemption, circular wait) are required\" over \"Only two conditions (mutual exclusion and hold and wait) are needed\" because of: newer source (2024 vs 2014), 2 sources agree vs 1, higher-authority source.",
+      "decision": "resolved",
+      "winner_side": 0,
+      "margin": 0.514
+    },
+    {
+      "id": "conflict_3",
+      "concept_id": "memory_management",
+      "topic": "Effect of increasing frames on page faults",
+      "type": "contradiction",
+      "summary": "One source explains that increasing frames can increase faults (Belady's anomaly), while another claims more frames always reduce faults.",
+      "sides": [
+        {
+          "label": "Belady's anomaly shows adding frames can increase page faults in FIFO",
+          "claim_ids": [
+            "claim_10",
+            "claim_16"
+          ],
+          "is_specific": true,
+          "is_absolute": false,
+          "score": {
+            "factors": {
+              "recency": 0.8,
+              "authority": 0.9,
+              "agreement": 0.67,
+              "specificity": 1.0
+            },
+            "absolute_penalty": false,
+            "sources": [
+              "faculty_notes_os",
+              "textbook_os_2024"
+            ],
+            "newest_year": 2024,
+            "trust": 0.817
+          }
+        },
+        {
+          "label": "Adding more frames always reduces page faults regardless of algorithm",
+          "claim_ids": [
+            "claim_22"
+          ],
+          "is_specific": false,
+          "is_absolute": true,
+          "score": {
+            "factors": {
+              "recency": 0.0,
+              "authority": 0.4,
+              "agreement": 0.33,
+              "specificity": 0.0
+            },
+            "absolute_penalty": true,
+            "sources": [
+              "web_os_notes_2014"
+            ],
+            "newest_year": 2014,
+            "trust": 0.053
+          }
+        }
+      ],
+      "decided_by": "agent",
+      "explanation": "Trusted \"Belady's anomaly shows adding frames can increase page faults in FIFO\" over \"Adding more frames always reduces page faults regardless of algorithm\" because of: newer source (2024 vs 2014), 2 sources agree vs 1, higher-authority source, more specific (gives versions or reasons), the other side makes an absolute 'always/never' claim.",
+      "decision": "resolved",
+      "winner_side": 0,
+      "margin": 0.764
+    },
+    {
+      "id": "conflict_4",
+      "concept_id": "system_startup",
+      "topic": "Current init system on Linux",
+      "type": "outdated",
+      "summary": "The faculty notes describe SysV init as the active PID 1, but newer sources and job descriptions indicate systemd has taken over this role on modern systems.",
+      "sides": [
+        {
+          "label": "SysV init runs as PID 1 and starts services via runlevel scripts",
+          "claim_ids": [
+            "claim_11"
+          ],
+          "is_specific": true,
+          "is_absolute": false,
+          "score": {
+            "factors": {
+              "recency": 0.1,
+              "authority": 0.9,
+              "agreement": 0.33,
+              "specificity": 1.0
+            },
+            "absolute_penalty": false,
+            "sources": [
+              "faculty_notes_os"
+            ],
+            "newest_year": 2017,
+            "trust": 0.488
+          }
+        },
+        {
+          "label": "Modern distributions use systemd as PID 1 for parallel service startup",
+          "claim_ids": [
+            "claim_17",
+            "claim_28"
+          ],
+          "is_specific": true,
+          "is_absolute": false,
+          "score": {
+            "factors": {
+              "recency": 1.0,
+              "authority": 0.85,
+              "agreement": 0.67,
+              "specificity": 1.0
+            },
+            "absolute_penalty": false,
+            "sources": [
+              "jd_sre_platform",
+              "textbook_os_2024"
+            ],
+            "newest_year": 2026,
+            "trust": 0.872
+          }
+        }
+      ],
+      "decided_by": "agent",
+      "explanation": "Trusted \"Modern distributions use systemd as PID 1 for parallel service startup\" over \"SysV init runs as PID 1 and starts services via runlevel scripts\" because of: newer source (2026 vs 2017), 2 sources agree vs 1.",
+      "decision": "resolved",
+      "winner_side": 1,
+      "margin": 0.384
+    },
+    {
+      "id": "conflict_5",
+      "concept_id": "cpu_scheduling",
+      "topic": "Default Linux scheduler version",
+      "type": "outdated",
+      "summary": "The faculty notes claim Linux uses the O(1) scheduler, which was replaced by CFS years ago and more recently by EEVDF.",
+      "sides": [
+        {
+          "label": "Linux uses the O(1) scheduler for constant-time task picking",
+          "claim_ids": [
+            "claim_5"
+          ],
+          "is_specific": false,
+          "is_absolute": false,
+          "score": {
+            "factors": {
+              "recency": 0.1,
+              "authority": 0.9,
+              "agreement": 0.5,
+              "specificity": 0.0
+            },
+            "absolute_penalty": false,
+            "sources": [
+              "faculty_notes_os"
+            ],
+            "newest_year": 2017,
+            "trust": 0.43
+          }
+        },
+        {
+          "label": "CFS replaced O(1) in kernel 2.6.23, and EEVDF replaced CFS in kernel 6.6",
+          "claim_ids": [
+            "claim_13",
+            "claim_14"
+          ],
+          "is_specific": true,
+          "is_absolute": false,
+          "score": {
+            "factors": {
+              "recency": 0.8,
+              "authority": 0.85,
+              "agreement": 0.5,
+              "specificity": 1.0
+            },
+            "absolute_penalty": false,
+            "sources": [
+              "textbook_os_2024"
+            ],
+            "newest_year": 2024,
+            "trust": 0.76
+          }
+        }
+      ],
+      "decided_by": "agent",
+      "explanation": "Trusted \"CFS replaced O(1) in kernel 2.6.23, and EEVDF replaced CFS in kernel 6.6\" over \"Linux uses the O(1) scheduler for constant-time task picking\" because of: newer source (2024 vs 2017), more specific (gives versions or reasons).",
+      "decision": "resolved",
+      "winner_side": 1,
+      "margin": 0.33
+    },
+    {
+      "id": "conflict_6",
+      "concept_id": "cpu_scheduling",
+      "topic": "Choice of optimal scheduling algorithm",
+      "type": "unreliable",
+      "summary": "A web source claims Round Robin is universally the best choice for exams, which is misleading and over-generalized given that no single algorithm is optimal for all scenarios.",
+      "sides": [
+        {
+          "label": "Round Robin is always the best algorithm to choose in exams",
+          "claim_ids": [
+            "claim_23"
+          ],
+          "is_specific": false,
+          "is_absolute": true,
+          "score": {
+            "factors": {
+              "recency": 0.0,
+              "authority": 0.4,
+              "agreement": 0.5,
+              "specificity": 0.0
+            },
+            "absolute_penalty": true,
+            "sources": [
+              "web_os_notes_2014"
+            ],
+            "newest_year": 2014,
+            "trust": 0.095
+          }
+        }
+      ],
+      "decision": "flagged_unreliable",
+      "decided_by": "agent",
+      "explanation": "Flagged \"Round Robin is always the best algorithm to choose in exams\": low trust score (0.095) from an old, low-authority or absolute claim."
+    }
+  ],
+  "freshness_report": {
+    "score": 50,
+    "skills": [
+      {
+        "skill": "Locks and deadlock avoidance",
+        "concept_id": "deadlocks",
+        "demanded_by": [
+          "jd_backend_infra"
+        ],
+        "faculty_coverage": "covered",
+        "note": "Faculty notes cover the four deadlock conditions and synchronization primitives."
+      },
+      {
+        "skill": "Virtual memory and paging performance impact",
+        "concept_id": "virtual_memory",
+        "demanded_by": [
+          "jd_backend_infra"
+        ],
+        "faculty_coverage": "covered",
+        "note": "Faculty notes explain paging, internal fragmentation, and Belady's anomaly."
+      },
+      {
+        "skill": "Linux namespaces and cgroups",
+        "concept_id": "containers",
+        "demanded_by": [
+          "jd_backend_infra"
+        ],
+        "faculty_coverage": "missing",
+        "note": "The faculty notes do not contain any claims about containers, namespaces, or cgroups."
+      },
+      {
+        "skill": "Linux CPU scheduler behavior",
+        "concept_id": "cpu_scheduling",
+        "demanded_by": [
+          "jd_backend_infra"
+        ],
+        "faculty_coverage": "outdated",
+        "note": "The notes discuss the O(1) scheduler, which was replaced by CFS and then EEVDF."
+      },
+      {
+        "skill": "Service management with systemd",
+        "concept_id": "system_startup",
+        "demanded_by": [
+          "jd_sre_platform"
+        ],
+        "faculty_coverage": "outdated",
+        "note": "The notes focus on legacy SysV init, while the required skill is for the modern systemd system."
+      },
+      {
+        "skill": "Diagnosing memory pressure, faults, and swapping",
+        "concept_id": "virtual_memory",
+        "demanded_by": [
+          "jd_sre_platform"
+        ],
+        "faculty_coverage": "partial",
+        "note": "The notes cover the concepts of page faults and memory pressure but do not apply them to live system diagnosis."
+      }
+    ],
+    "missing": [
+      "Linux namespaces and cgroups"
+    ],
+    "outdated": [
+      "Linux CPU scheduler behavior",
+      "Service management with systemd"
+    ]
+  }
+}
