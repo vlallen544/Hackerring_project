@@ -281,3 +281,56 @@ def tutor_check(lesson_id: int, body: PracticeAnswer):
         return check_practice(lesson_id, body.question_index, body.answer, body.confidence)
     except ValueError as err:
         raise HTTPException(400, str(err))
+
+
+# --------------------------------------------------------------------------- #
+# Gap prediction + proactive path redesign (Objective 2)
+# --------------------------------------------------------------------------- #
+@app.get("/api/students/{student_id}/path")
+def student_path(student_id: str):
+    from backend.agents.gap_predictor import build_path
+
+    try:
+        return build_path(student_id)
+    except ValueError as err:
+        raise HTTPException(404, str(err))
+
+
+@app.get("/api/students/{student_id}/gap-radar")
+def student_gap_radar(student_id: str):
+    """Risk for every upcoming concept with its factors and reason chain. Read-only, instant."""
+    from backend.agents.gap_predictor import gap_radar
+
+    try:
+        return gap_radar(student_id)
+    except ValueError as err:
+        raise HTTPException(404, str(err))
+
+
+@app.post("/api/students/{student_id}/predict")
+def student_predict(student_id: str):
+    """Predicts gaps and redesigns the path. Call after a viva or a practice check."""
+    from backend.agents.gap_predictor import predict_and_redesign
+
+    try:
+        return predict_and_redesign(student_id)
+    except ValueError as err:
+        raise HTTPException(404, str(err))
+
+
+@app.post("/api/students/{student_id}/path/{item_id}/complete")
+def student_complete_item(student_id: str, item_id: int):
+    from backend.agents.gap_predictor import complete_item
+
+    try:
+        return complete_item(student_id, item_id)
+    except ValueError as err:
+        raise HTTPException(404, str(err))
+
+
+@app.get("/api/class/gap-radar")
+def class_gap_radar():
+    """Faculty view: which upcoming concepts put which students at risk."""
+    from backend.agents.gap_predictor import class_radar
+
+    return class_radar()

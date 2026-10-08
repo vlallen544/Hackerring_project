@@ -116,3 +116,11 @@ class TutorLesson(BaseModel):
     diagram_mermaid: str | None = Field(description="For visual format: a simple Mermaid flowchart. Otherwise null")
     audio_script: str | None = Field(description="For audio format: the lesson as a friendly spoken script. Otherwise null")
     practice: list[PracticeQuestion] = Field(description="2-3 practice questions")
+
+
+# ---------- Gap Predictor agent ----------
+class GapNudge(BaseModel):
+    student_message: str = Field(
+        description="2-3 friendly sentences to the student explaining what was added to their path and why, "
+                    "in the student's language")
+    faculty_note: str = Field(description="One sentence for the faculty summarising the predicted gap and action, in English")
