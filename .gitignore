@@ -9,3 +9,6 @@ node_modules/
 .streamlit/secrets.toml
 # Which course is active on this machine (scripts/switch_course.py)
 data/active_course.json
+
+# JWT signing secret (generated on first start when JWT_SECRET is not set)
+data/.jwt_secret

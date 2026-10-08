@@ -26,8 +26,8 @@ def data_dir():
     return Path(COURSES[active_course()]["data_dir"])
 
 
-def db_path():
-    return Path("data") / COURSES[active_course()]["db"]
+def db_path(course=None):
+    return Path("data") / COURSES[course or active_course()]["db"]
 
 
 def is_built():

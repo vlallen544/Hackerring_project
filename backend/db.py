@@ -4,14 +4,14 @@ import json
 import sqlite3
 from pathlib import Path
 
-from backend import courses
+from backend import auth, courses
 
 DEFAULT_STUDENTS_FILE = Path("sample_data/students.json")
 
 
-def _students_file():
-    """The active course may have its own students.json (e.g. a different target role); else the default one."""
-    own = courses.data_dir() / "students.json"
+def _students_file(course=None):
+    """A course may have its own students.json (e.g. a different target role); else the default one."""
+    own = Path(courses.COURSES[course or courses.active_course()]["data_dir"]) / "students.json"
     return own if own.exists() else DEFAULT_STUDENTS_FILE
 
 SCHEMA = """
@@ -103,24 +103,34 @@ CREATE TABLE IF NOT EXISTS risk_events (
 """
 
 
-def get_conn():
-    path = courses.db_path()  # each course keeps its own student progress
+def get_conn(course=None):
+    path = courses.db_path(course)  # each course keeps its own student progress
     path.parent.mkdir(exist_ok=True)
     conn = sqlite3.connect(path)
     conn.row_factory = sqlite3.Row  # rows behave like dicts
     return conn
 
 
-def init_db():
-    """Creates tables (safe to call every startup) and seeds demo students once."""
-    with get_conn() as conn:
+def init_db(course=None):
+    """Creates tables (safe to call every startup), seeds demo students once and adds faculty-created students."""
+    with get_conn(course) as conn:
         conn.executescript(SCHEMA)
-        if conn.execute("SELECT COUNT(*) FROM students").fetchone()[0] == 0 and _students_file().exists():
-            for s in json.loads(_students_file().read_text(encoding="utf-8"))["students"]:
+        if conn.execute("SELECT COUNT(*) FROM students").fetchone()[0] == 0 and _students_file(course).exists():
+            for s in json.loads(_students_file(course).read_text(encoding="utf-8"))["students"]:
                 conn.execute(
                     "INSERT INTO students (id, name, language, stated_style, pace, target_role) VALUES (?,?,?,?,?,?)",
                     (s["id"], s["name"], s["language"], s["stated_style"], s["pace"], s["target_role"]),
                 )
+        for s in auth.registered_students():  # students created by faculty exist in every course
+            conn.execute("INSERT OR IGNORE INTO students (id, name, language, stated_style, pace, target_role) "
+                         "VALUES (?,?,?,?,?,?)", (s["id"], s["name"], s["language"], s["stated_style"], s["pace"], s["target_role"]))
+
+
+def add_student(student):
+    """Faculty creates a student: registered once, then added to every course's database."""
+    auth.register_student(student)
+    for course in courses.COURSES:
+        init_db(course)
 
 
 def rows(query, params=()):

@@ -47,6 +47,10 @@
                 <span class="step-num">4</span>
                 <span>Class radar<span class="side-sub" id="side-radar">Students at risk, ahead of time</span></span>
             </a>
+            <a href="#students" data-view="students" class="side-item">
+                <span class="step-num">5</span>
+                <span>Students<span class="side-sub" id="side-students">Accounts and logins</span></span>
+            </a>
         </nav>
         <div class="mt-8 border-4 border-black p-3 bg-slate-100 text-xs">
             <p class="font-bold uppercase mb-1"><i class="ph-bold ph-lightbulb"></i> How it works</p>
@@ -61,6 +65,7 @@
         <a href="#conflicts" data-view="conflicts" class="tab-item"><i class="ph-bold ph-scales text-xl"></i>2 Conflicts</a>
         <a href="#freshness" data-view="freshness" class="tab-item"><i class="ph-bold ph-plant text-xl"></i>3 Fresh</a>
         <a href="#radar" data-view="radar" class="tab-item"><i class="ph-bold ph-crosshair text-xl"></i>4 Radar</a>
+        <a href="#students" data-view="students" class="tab-item"><i class="ph-bold ph-users text-xl"></i>5 Students</a>
     </nav>
 
     <main class="pt-24 pb-28 px-4 lg:pl-80 lg:pr-8 max-w-[1500px] min-h-screen">
@@ -79,9 +84,10 @@
             <div class="grid grid-cols-1 xl:grid-cols-3 gap-8">
                 <section class="xl:col-span-2 space-y-4" id="source-list"></section>
                 <section class="card p-6 h-fit">
-                    <h2 class="font-display text-2xl uppercase mb-4">Add a source</h2>
+                    <h2 class="font-display text-2xl uppercase mb-1">Add a source</h2>
+                    <p class="text-xs font-bold uppercase text-gray-500 mb-4">// Notes or a book as PDF (or PPTX, MD, TXT)</p>
                     <form id="upload-form" class="space-y-3" onsubmit="uploadSource(event)">
-                        <input type="file" name="file" accept=".pdf,.pptx,.md,.txt" class="field" required>
+                        <input type="file" name="file" accept=".pdf,.pptx,.md,.txt" class="field" required onchange="suggestTitle(this)">
                         <input type="text" name="title" placeholder="Title" class="field" required>
                         <select name="type" class="field">
                             <option value="faculty_notes">Faculty notes</option>
@@ -89,9 +95,13 @@
                             <option value="web_link">Web article</option>
                             <option value="job_description">Job description</option>
                         </select>
-                        <input type="number" name="year" placeholder="Year" min="1990" max="2100" class="field" required>
+                        <input type="number" name="year" placeholder="Year of the material" min="1990" max="2100" class="field" required>
+                        <label class="block"><span class="font-bold uppercase text-xs">Pages to use (optional)</span>
+                            <input type="text" name="page_range" placeholder="e.g. 12-40 or 1-5,9" class="field mt-1" pattern="[0-9 ,\-]*">
+                            <span class="text-xs">For a whole book, pick only the chapters you teach.</span></label>
                         <button class="btn w-full" id="btn-upload">Upload -></button>
                     </form>
+                    <div id="upload-result" class="mt-4"></div>
                     <p class="text-xs font-bold uppercase text-gray-500 mt-4">// Then press BUILD COURSE to update the knowledge base</p>
                     <hr class="border-2 border-black my-6">
                     <button class="btn btn-light w-full" onclick="resetDemo(this)"><i class="ph-bold ph-trash"></i> Reset student progress</button>
@@ -131,7 +141,58 @@
             </header>
             <div id="class-radar"></div>
         </div>
+        <!-- ============================ 5. STUDENTS ============================ -->
+        <div id="view-students" class="view-section hidden">
+            <header class="mb-8 border-b-4 border-black pb-6">
+                <p class="text-xs font-bold uppercase text-gray-500">// Step 5 of 5</p>
+                <h1 class="font-display text-5xl md:text-6xl uppercase leading-none">Student<br><span class="text-neo-pink">accounts.</span></h1>
+                <p class="font-bold mt-2 max-w-2xl">Create a student ID and password for each student. They log in with that ID and only see their own viva, lessons and path.</p>
+            </header>
+            <div class="grid grid-cols-1 xl:grid-cols-3 gap-8">
+                <section class="xl:col-span-2 space-y-3" id="student-accounts"></section>
+                <section class="card p-6 h-fit">
+                    <h2 class="font-display text-2xl uppercase mb-4">Add a student</h2>
+                    <form id="student-form" class="space-y-3" onsubmit="createStudent(event)">
+                        <label class="block"><span class="font-bold uppercase text-xs">Student ID (their login)</span>
+                            <input name="id" class="field mt-1" placeholder="e.g. cse21_045" pattern="[A-Za-z0-9_]{2,32}" required></label>
+                        <label class="block"><span class="font-bold uppercase text-xs">Full name</span>
+                            <input name="name" class="field mt-1" required maxlength="80"></label>
+                        <label class="block"><span class="font-bold uppercase text-xs">Password (6+ characters)</span>
+                            <input name="password" type="text" class="field mt-1" minlength="6" required autocomplete="off"></label>
+                        <div class="grid grid-cols-2 gap-3">
+                            <label class="block"><span class="font-bold uppercase text-xs">Language</span>
+                                <select name="language" class="field mt-1"><option>English</option><option>Hindi</option></select></label>
+                            <label class="block"><span class="font-bold uppercase text-xs">Pace</span>
+                                <select name="pace" class="field mt-1"><option value="slow">Slow</option><option value="medium" selected>Medium</option><option value="fast">Fast</option></select></label>
+                        </div>
+                        <label class="block"><span class="font-bold uppercase text-xs">Preferred learning style</span>
+                            <select name="stated_style" class="field mt-1">
+                                <option value="reading">Reading</option><option value="listening">Listening</option>
+                                <option value="visual">Visual</option><option value="practice">Practice</option></select></label>
+                        <label class="block"><span class="font-bold uppercase text-xs">Target role</span>
+                            <input name="target_role" class="field mt-1" value="Software Engineer" maxlength="60"></label>
+                        <button class="btn w-full" id="btn-student"><i class="ph-bold ph-user-plus"></i> Create student</button>
+                    </form>
+                    <div id="student-result" class="mt-4"></div>
+                </section>
+            </div>
+        </div>
     </main>
+
+    <!-- Preview of the text extracted from a source, page by page -->
+    <div id="preview" class="hidden fixed inset-0 z-50 bg-black/60 p-4 overflow-y-auto" onclick="if (event.target === this) closePreview()">
+        <div class="card max-w-4xl mx-auto my-8 p-6">
+            <div class="flex justify-between items-start gap-4 mb-2">
+                <div>
+                    <p class="text-xs font-bold uppercase text-gray-500">// What the agents read from this source</p>
+                    <h2 id="preview-title" class="font-display text-2xl uppercase leading-tight"></h2>
+                </div>
+                <button class="btn btn-light" onclick="closePreview()"><i class="ph-bold ph-x"></i></button>
+            </div>
+            <div id="preview-pages" class="flex flex-wrap gap-1 mb-4"></div>
+            <pre id="preview-text" class="border-4 border-black bg-slate-50 p-4 whitespace-pre-wrap text-sm max-h-[60vh] overflow-y-auto"></pre>
+        </div>
+    </div>
 
     <script src="vp.js"></script>
     <script src="faculty.js"></script>

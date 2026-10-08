@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VidyaPath Login</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="theme.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web@2.1.1"></script>
+    <link rel="stylesheet" href="vp.css">
+</head>
+<body class="bg-slate-100 text-neo-black antialiased selection:bg-neo-pink selection:text-white">
+
+    <nav class="fixed w-full z-40 bg-white border-b-4 border-black top-0">
+        <div class="max-w-7xl mx-auto px-4 flex justify-between h-16 items-center">
+            <a href="index.html" class="flex items-center gap-2 group">
+                <div class="bg-neo-black text-white p-2 border-2 border-transparent group-hover:bg-neo-yellow group-hover:text-black group-hover:border-black transition-colors">
+                    <i class="ph-bold ph-graduation-cap text-xl"></i>
+                </div>
+                <span class="font-display text-xl tracking-tighter uppercase italic">VIDYA<span class="text-neo-pink">_PATH</span></span>
+            </a>
+            <div></div>
+        </div>
+    </nav>
+
+    <main class="pt-32 pb-24 px-4 max-w-md mx-auto min-h-screen animate-slam">
+        <h1 class="font-display text-5xl uppercase leading-none mb-2">Identify<br><span class="text-neo-pink">yourself.</span></h1>
+        <p class="font-bold mb-8">Faculty log in with their admin account. Students use the ID and password their faculty gave them.</p>
+
+        <form id="login-form" class="card p-6 space-y-4" onsubmit="doLogin(event)">
+            <label class="block"><span class="font-bold uppercase text-xs">Username or student ID</span>
+                <input name="username" autocomplete="username" class="field mt-1" required autofocus></label>
+            <label class="block"><span class="font-bold uppercase text-xs">Password</span>
+                <input name="password" type="password" autocomplete="current-password" class="field mt-1" required></label>
+            <div id="login-error"></div>
+            <button class="btn w-full" id="btn-login"><i class="ph-bold ph-sign-in"></i> Log in -></button>
+        </form>
+        <p class="text-xs font-bold uppercase text-gray-500 mt-6">// No account? Ask your faculty to create one.</p>
+    </main>
+
+    <script src="vp.js"></script>
+    <script>
+        // Only redirect back to one of our own pages after login
+        function nextPage(user) {
+            const next = new URLSearchParams(location.search).get("next") || "";
+            const page = next.split(/[?#]/)[0];
+            const allowed = user.role === "faculty" ? ["faculty.html", "student.html", "profile.html", "index.html"]
+                                                    : ["student.html", "profile.html", "index.html"];
+            return allowed.includes(page) ? next : homeFor(user);
+        }
+
+        async function doLogin(event) {
+            event.preventDefault();
+            const form = event.target;
+            $("login-error").innerHTML = "";
+            await busy($("btn-login"), "Checking...", async () => {
+                const res = await fetch("/api/auth/login", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ username: form.username.value.trim(), password: form.password.value }),
+                });
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok) {
+                    $("login-error").innerHTML = `<div class="border-4 border-black bg-neo-red text-white p-3 font-bold">${esc(data.detail || "Login failed")}</div>`;
+                    return;
+                }
+                setAuth({ token: data.token, user: data.user });
+                location.href = nextPage(data.user);
+            });
+        }
+
+        // Already logged in: go straight to the right page
+        const existing = getAuth();
+        if (existing && existing.token) {
+            api("/api/auth/me").then(user => { setAuth({ ...existing, user }); location.href = nextPage(user); }).catch(() => clearAuth());
+        }
+    </script>
+</body>
+</html>

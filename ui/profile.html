@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VidyaPath Profile</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="theme.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web@2.1.1"></script>
+    <link rel="stylesheet" href="vp.css">
+    <style>
+        /* Profile inputs from the Campus Zero profile page */
+        .brutal-input {
+            width: 100%;
+            background: #fff;
+            border: 4px solid #000;
+            padding: 0.5rem;
+            font-weight: bold;
+            font-family: 'Space Mono', monospace;
+            transition: all 0.2s;
+        }
+        .brutal-input:focus {
+            outline: none;
+            background-color: #FFF500;
+            box-shadow: 4px 4px 0px 0px #000;
+        }
+        .brutal-input:disabled {
+            background-color: #f1f5f9;
+            color: #666;
+            cursor: not-allowed;
+            border-style: dashed;
+        }
+        #file-upload { display: none; }
+    </style>
+</head>
+<body class="bg-slate-100 text-neo-black antialiased selection:bg-neo-pink selection:text-white">
+
+    <nav class="fixed w-full z-40 bg-white border-b-4 border-black top-0">
+        <div class="px-4 flex justify-between h-16 items-center gap-3">
+            <a href="index.html" class="flex items-center gap-2 group">
+                <div class="bg-neo-black text-white p-2 border-2 border-transparent group-hover:bg-neo-yellow group-hover:text-black group-hover:border-black transition-colors">
+                    <i class="ph-bold ph-graduation-cap text-xl"></i>
+                </div>
+                <span class="font-display text-xl tracking-tighter uppercase italic hidden sm:inline">VIDYA<span class="text-neo-pink">_PATH</span></span>
+            </a>
+            <div>
+                <a id="back-link" href="student.html" class="chip bg-neo-yellow !py-1"><i class="ph-bold ph-arrow-u-up-left"></i> My dashboard</a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="pt-28 pb-24 px-4 max-w-6xl mx-auto min-h-screen">
+        <header class="mb-8 animate-slam">
+            <p class="text-xs font-bold uppercase text-gray-500">// Your account</p>
+            <h1 class="font-display text-5xl md:text-7xl uppercase leading-none"><span id="title-role">Student</span>_<br><span class="text-neo-pink bg-black px-2">Profile</span></h1>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- ID card with live preview -->
+            <div class="lg:col-span-1 animate-slam">
+                <div class="bg-white border-4 border-black shadow-brutal p-6 relative overflow-hidden group">
+                    <div class="absolute top-4 right-4 z-10">
+                        <i class="ph-fill ph-seal-check text-4xl text-neo-blue drop-shadow-[2px_2px_0px_rgba(0,0,0,1)]"></i>
+                    </div>
+                    <div class="w-full aspect-square border-4 border-black mb-6 relative bg-neo-yellow group">
+                        <img id="profile-img-preview" alt="" class="w-full h-full object-cover hidden">
+                        <div id="profile-img-empty" class="w-full h-full flex items-center justify-center">
+                            <i class="ph-bold ph-user text-8xl"></i>
+                        </div>
+                        <div class="absolute bottom-0 left-0 bg-black text-white px-2 py-1 font-bold text-xs uppercase" id="card-id">ID: —</div>
+                        <label for="file-upload" class="absolute inset-0 bg-black/50 flex items-center justify-center cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity">
+                            <span class="bg-white border-2 border-black px-3 py-1 font-bold text-xs uppercase hover:bg-neo-pink hover:text-white">Change photo</span>
+                        </label>
+                        <input id="file-upload" type="file" accept="image/*" onchange="loadPhoto(event)">
+                    </div>
+                    <div class="text-center mb-6">
+                        <h2 id="card-name" class="font-display text-3xl uppercase leading-none mb-1 break-words">YOUR_NAME</h2>
+                        <span id="card-role" class="inline-block bg-neo-pink border-2 border-black px-3 py-1 font-bold text-sm uppercase transform -rotate-2">Student</span>
+                    </div>
+                    <div class="mt-4 bg-neo-black text-white border-4 border-black p-4 grid grid-cols-2 gap-4 text-center">
+                        <div>
+                            <span id="stat-1" class="block font-display text-3xl text-neo-yellow">0</span>
+                            <span id="stat-1-label" class="text-xs font-bold uppercase text-gray-400">Topics</span>
+                        </div>
+                        <div>
+                            <span id="stat-2" class="block font-display text-3xl text-neo-blue">—</span>
+                            <span id="stat-2-label" class="text-xs font-bold uppercase text-gray-400">Avg mastery</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="lg:col-span-2 space-y-8 animate-slam">
+                <!-- Editable personal data -->
+                <div class="bg-white border-4 border-black shadow-brutal p-6">
+                    <div class="flex items-center gap-3 mb-6 border-b-4 border-black pb-4">
+                        <div class="bg-neo-yellow p-2 border-2 border-black"><i class="ph-bold ph-identification-card text-2xl"></i></div>
+                        <h3 class="font-display text-2xl uppercase">Personal Data</h3>
+                    </div>
+                    <form id="profile-form" class="grid grid-cols-1 md:grid-cols-2 gap-6" onsubmit="event.preventDefault()">
+                        <div class="col-span-1 md:col-span-2">
+                            <label class="block font-bold uppercase text-xs mb-1">Full Name</label>
+                            <input type="text" id="input-name" placeholder="ENTER YOUR FULL NAME" class="brutal-input" maxlength="80" oninput="updateCard()">
+                        </div>
+                        <div>
+                            <label class="block font-bold uppercase text-xs mb-1">Login ID <span class="normal-case font-normal">(set by faculty)</span></label>
+                            <input type="text" id="input-id" class="brutal-input" disabled>
+                        </div>
+                        <div>
+                            <label class="block font-bold uppercase text-xs mb-1">Department</label>
+                            <select id="input-dept" class="brutal-input appearance-none" onchange="updateCard()">
+                                <option value="">Select Dept...</option>
+                                <option value="Computer Science">Computer Science</option>
+                                <option value="Information Technology">Information Technology</option>
+                                <option value="Electronics">Electronics</option>
+                                <option value="Mechanical">Mechanical</option>
+                                <option value="Business">Business</option>
+                            </select>
+                        </div>
+                        <div class="col-span-1 md:col-span-2">
+                            <label class="block font-bold uppercase text-xs mb-1">Email Address</label>
+                            <div class="relative">
+                                <input type="email" id="input-email" placeholder="you@college.edu" class="brutal-input" maxlength="120">
+                                <i class="ph-bold ph-pencil-simple absolute right-3 top-3 text-neo-black" id="email-icon"></i>
+                            </div>
+                        </div>
+                        <div class="col-span-1 md:col-span-2">
+                            <label class="block font-bold uppercase text-xs mb-1">Bio</label>
+                            <textarea id="input-bio" placeholder="A line about you..." class="brutal-input h-24 resize-none" maxlength="600"></textarea>
+                        </div>
+                    </form>
+                    <div class="mt-6 border-t-4 border-black pt-4 flex flex-wrap justify-between items-center gap-3">
+                        <span id="save-status" class="text-xs font-bold uppercase text-gray-500"></span>
+                        <button id="main-action-btn" onclick="toggleEditState()" class="bg-[#00FF41] text-black px-6 py-3 font-display uppercase border-2 border-black shadow-brutal-sm hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all">
+                            Save Data
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Learning backpack (students) / course at a glance (faculty) -->
+                <div class="bg-neo-blue border-4 border-black shadow-brutal p-6">
+                    <h3 id="backpack-title" class="font-display text-2xl uppercase mb-4">Learning Backpack</h3>
+                    <div id="backpack" class="grid grid-cols-2 md:grid-cols-4 gap-4"></div>
+                </div>
+
+                <!-- Password -->
+                <div class="bg-white border-4 border-black shadow-brutal p-6">
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="bg-neo-pink text-white p-2 border-2 border-black"><i class="ph-bold ph-lock-key text-2xl"></i></div>
+                        <h3 class="font-display text-2xl uppercase">Change password</h3>
+                    </div>
+                    <form class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end" onsubmit="changePassword(event)">
+                        <label><span class="block font-bold uppercase text-xs mb-1">Current</span>
+                            <input name="current" type="password" autocomplete="current-password" class="brutal-input" required></label>
+                        <label><span class="block font-bold uppercase text-xs mb-1">New (6+ characters)</span>
+                            <input name="next" type="password" autocomplete="new-password" minlength="6" class="brutal-input" required></label>
+                        <button class="btn" id="btn-password">Update</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="vp.js"></script>
+    <script>
+        const ME = requireRole();
+        const fields = {
+            name: $("input-name"),
+            department: $("input-dept"),
+            email: $("input-email"),
+            bio: $("input-bio"),
+        };
+        let editing = true;
+        let photo = null;
+
+        function updateCard() {
+            $("card-name").textContent = fields.name.value || "YOUR_NAME";
+            $("card-role").textContent = fields.department.value || (ME.role === "faculty" ? "Faculty" : "Student");
+        }
+
+        function showPhoto() {
+            $("profile-img-preview").classList.toggle("hidden", !photo);
+            $("profile-img-empty").classList.toggle("hidden", Boolean(photo));
+            if (photo) $("profile-img-preview").src = photo;
+        }
+
+        // Shrink the chosen image to a 256px square JPEG so it can be stored with the profile
+        function loadPhoto(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const img = new Image();
+            img.onload = () => {
+                const size = 256, canvas = document.createElement("canvas");
+                canvas.width = canvas.height = size;
+                const side = Math.min(img.width, img.height);
+                canvas.getContext("2d").drawImage(img, (img.width - side) / 2, (img.height - side) / 2, side, side, 0, 0, size, size);
+                URL.revokeObjectURL(img.src);
+                photo = canvas.toDataURL("image/jpeg", 0.8);
+                showPhoto();
+                if (!editing) toggleEditState();  // unlock so the new photo can be saved
+                $("save-status").textContent = "New photo: press Save Data";
+            };
+            img.src = URL.createObjectURL(file);
+        }
+
+        function setLocked(locked) {
+            Object.values(fields).forEach(field => { field.disabled = locked; });
+            $("file-upload").disabled = false;
+            const btn = $("main-action-btn"), icon = $("email-icon");
+            btn.textContent = locked ? "EDIT DATA" : "SAVE DATA";
+            btn.classList.toggle("bg-white", locked);
+            btn.classList.toggle("bg-[#00FF41]", !locked);
+            icon.classList.toggle("ph-lock", locked);
+            icon.classList.toggle("ph-pencil-simple", !locked);
+            icon.classList.toggle("text-gray-400", locked);
+            editing = !locked;
+        }
+
+        async function toggleEditState() {
+            if (!editing) return setLocked(false);
+            const btn = $("main-action-btn");
+            btn.textContent = "SAVING...";
+            try {
+                const saved = await api("/api/profile", { method: "PUT", body: {
+                    ...Object.fromEntries(Object.entries(fields).map(([k, f]) => [k, f.value])), photo } });
+                setAuth({ ...getAuth(), user: { ...getAuth().user, name: saved.display_name } });
+                $("save-status").textContent = "Saved";
+                setLocked(true);
+            } catch (err) {
+                btn.textContent = "SAVE DATA";
+                toast(err.message, "error");
+            }
+        }
+
+        async function changePassword(event) {
+            event.preventDefault();
+            const form = event.target;
+            await busy($("btn-password"), "Updating...", async () => {
+                const r = await api("/api/auth/password", { method: "POST",
+                    body: { current_password: form.current.value, new_password: form.next.value } });
+                form.reset();
+                toast(r.message);
+            });
+        }
+
+        const tile = (title, sub, color = "bg-white") => `
+            <div class="${color} border-2 border-black p-3 h-32 flex flex-col justify-between">
+                <span class="font-bold uppercase text-sm leading-tight">${esc(title)}</span>
+                <span class="text-xs font-bold">${esc(sub)}</span>
+            </div>`;
+        const emptySlot = label => `<div class="bg-black/10 border-2 border-black border-dashed p-3 flex items-center justify-center h-32 text-center">
+            <span class="text-xs font-bold opacity-60">${esc(label)}</span></div>`;
+
+        async function loadStats() {
+            if (ME.role === "faculty") {
+                $("stat-1-label").textContent = "Students";
+                $("stat-2-label").textContent = "Sources";
+                $("backpack-title").textContent = "Your course at a glance";
+                const [students, sources, course] = await Promise.all([api("/api/faculty/students"), api("/api/sources"), api("/api/course")]);
+                $("stat-1").textContent = students.length;
+                $("stat-2").textContent = sources.length;
+                const withLogin = students.filter(s => s.login).length;
+                $("backpack").innerHTML = tile(course.title, "Active course", "bg-neo-yellow")
+                    + tile(`${withLogin} of ${students.length}`, "Students with a login")
+                    + tile(`${sources.filter(s => s.status === "in_build").length} built`, "Sources in knowledge base")
+                    + `<a href="faculty.html#students" class="bg-neo-pink text-white border-2 border-black p-3 h-32 flex flex-col justify-between hover:bg-black">
+                        <span class="font-bold uppercase text-sm">Manage students</span><span class="text-xs font-bold">-></span></a>`;
+                return;
+            }
+            const [student] = await Promise.all([api(`/api/students/${encodeURIComponent(ME.student_id)}`), loadConcepts()]);
+            const mastery = student.mastery;
+            $("stat-1").textContent = mastery.length;
+            $("stat-2").textContent = mastery.length ? pct(mastery.reduce((a, m) => a + m.score, 0) / mastery.length) : "—";
+            const strong = mastery.filter(m => m.score >= 0.75).sort((a, b) => b.score - a.score);
+            const slots = strong.slice(0, 4).map(m => tile(cname(m.concept_id), `Mastered · ${pct(m.score)}`, "bg-neo-green"));
+            while (slots.length < 4) slots.push(emptySlot(slots.length === strong.length && !mastery.length ? "Take the viva to fill your backpack" : "Master a topic to earn this slot"));
+            $("backpack").innerHTML = slots.join("");
+        }
+
+        async function init() {
+            if (!ME) return;
+            $("title-role").textContent = ME.role === "faculty" ? "Faculty" : "Student";
+            $("back-link").href = homeFor(ME);
+            const profile = await api("/api/profile");
+            $("input-id").value = profile.username;
+            $("card-id").textContent = `ID: ${profile.username}`;
+            fields.name.value = profile.name || profile.display_name || "";
+            fields.department.value = profile.department || "";
+            fields.email.value = profile.email || "";
+            fields.bio.value = profile.bio || "";
+            photo = profile.photo || null;
+            showPhoto();
+            updateCard();
+            setLocked(Boolean(profile.name || profile.email || profile.bio));  // a filled profile opens locked
+            loadStats().catch(err => toast(err.message, "error"));
+        }
+
+        init();
+    </script>
+</body>
+</html>

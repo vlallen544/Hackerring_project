@@ -1,25 +1,32 @@
 # FastAPI app entry point: defines the application and API routes
+import hashlib
 import json
 import re
+import time
 from contextlib import asynccontextmanager
+from datetime import datetime
 from pathlib import Path
 
-from fastapi import FastAPI, File, Form, HTTPException, UploadFile
+from fastapi import Depends, FastAPI, File, Form, HTTPException, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from backend import courses, db
+from backend import auth, courses, db
+from backend.tools.parsers import SUPPORTED_SUFFIXES, file_sha256, inspect_file, page_texts
 
 KB_FILE = Path("data/knowledge_base.json")
 TRUSTED_FILE = Path("data/trusted_kb.json")
 SOURCE_TYPES = {"faculty_notes", "textbook", "job_description", "web_link"}
+MAX_UPLOAD_MB = 30
+LARGE_SOURCE_WORDS = 8000  # above this, suggest a page range (the whole course must stay under the build limit)
 UI_DIR = Path("ui")
 
 
 @asynccontextmanager
 async def lifespan(app):
+    auth.init_auth()  # accounts + the master faculty login
     db.init_db()  # create tables + seed demo students on startup
     yield
 
@@ -55,6 +62,162 @@ def _sources_json():
     return courses.data_dir() / "sources.json"
 
 
+# --------------------------------------------------------------------------- #
+# Authentication (JWT) and profiles
+# --------------------------------------------------------------------------- #
+class Login(BaseModel):
+    username: str
+    password: str
+
+
+class PasswordChange(BaseModel):
+    current_password: str
+    new_password: str
+
+
+class NewPassword(BaseModel):
+    password: str
+
+
+class NewStudent(BaseModel):
+    id: str
+    name: str
+    password: str
+    language: str = "English"
+    stated_style: str = "reading"
+    pace: str = "medium"
+    target_role: str = "Software Engineer"
+
+
+STYLES = {"reading", "listening", "visual", "practice"}
+PACES = {"slow", "medium", "fast"}
+MIN_PASSWORD = 6
+
+
+def _check_owner(user, table, row_id):
+    """A student may only touch their own viva sessions and lessons."""
+    found = db.rows(f"SELECT student_id FROM {table} WHERE id = ?", (row_id,))
+    if found:
+        auth.check_student_access(user, found[0]["student_id"])
+
+
+def _display_name(user):
+    profile_name = auth.get_profile(user["username"])["name"]
+    if profile_name:
+        return profile_name
+    if user["student_id"]:
+        found = db.rows("SELECT name FROM students WHERE id = ?", (user["student_id"],))
+        if found:
+            return found[0]["name"]
+    return "Faculty admin" if user["role"] == "faculty" else user["username"]
+
+
+LOGIN_MAX_FAILURES = 5
+LOGIN_LOCK_SECONDS = 300
+_failed_logins = {}  # (client ip, username) -> recent failure times; slows down password guessing
+
+
+@app.post("/api/auth/login")
+def login(body: Login, request: Request):
+    key = (request.client.host if request.client else "?", body.username.strip().lower())
+    now = time.time()
+    recent = [t for t in _failed_logins.get(key, []) if now - t < LOGIN_LOCK_SECONDS]
+    if len(recent) >= LOGIN_MAX_FAILURES:
+        minutes = -(-int(LOGIN_LOCK_SECONDS - (now - recent[0])) // 60)  # round up
+        raise HTTPException(429, f"Too many wrong passwords. Try again in {max(minutes, 1)} minute(s).")
+    user = auth.authenticate(body.username, body.password)
+    if not user:
+        _failed_logins[key] = recent + [now]
+        raise HTTPException(401, "Wrong username or password")
+    _failed_logins.pop(key, None)
+    return {"token": auth.create_token(user), "token_type": "bearer", "expires_in_hours": auth.TOKEN_HOURS,
+            "user": {**user, "name": _display_name(user)}}
+
+
+@app.get("/api/auth/me")
+def me(user=Depends(auth.current_user)):
+    return {**user, "name": _display_name(user)}
+
+
+@app.post("/api/auth/password")
+def change_password(body: PasswordChange, user=Depends(auth.current_user)):
+    if not auth.authenticate(user["username"], body.current_password):
+        raise HTTPException(400, "Current password is wrong")
+    if len(body.new_password) < MIN_PASSWORD:
+        raise HTTPException(400, f"New password must have at least {MIN_PASSWORD} characters")
+    auth.set_password(user["username"], body.new_password)
+    return {"message": "Password changed"}
+
+
+@app.get("/api/profile")
+def get_profile(user=Depends(auth.current_user)):
+    return {**auth.get_profile(user["username"]), **user, "display_name": _display_name(user)}
+
+
+@app.put("/api/profile")
+def put_profile(body: dict, user=Depends(auth.current_user)):
+    try:
+        saved = auth.save_profile(user["username"], body)
+    except ValueError as err:
+        raise HTTPException(400, str(err))
+    return {**saved, **user, "display_name": _display_name(user)}
+
+
+@app.get("/api/faculty/students")
+def faculty_students(_=Depends(auth.require_faculty)):
+    """Students of the active course, with their login (if any)."""
+    logins = auth.student_logins()
+    return [{**s, "login": logins.get(s["id"])} for s in db.rows("SELECT * FROM students ORDER BY name")]
+
+
+@app.post("/api/faculty/students")
+def create_student(body: NewStudent, user=Depends(auth.require_faculty)):
+    """Faculty creates a student (added to every course) and the student's login (username = student id)."""
+    student_id = body.id.strip().lower()
+    if not re.fullmatch(r"[a-z0-9_]{2,32}", student_id):
+        raise HTTPException(400, "Student ID: 2-32 characters, letters, digits or _")
+    if not body.name.strip():
+        raise HTTPException(400, "Name is required")
+    if body.stated_style not in STYLES or body.pace not in PACES:
+        raise HTTPException(400, f"Learning style must be one of {sorted(STYLES)}, pace one of {sorted(PACES)}")
+    if len(body.password) < MIN_PASSWORD:
+        raise HTTPException(400, f"Password must have at least {MIN_PASSWORD} characters")
+    if db.rows("SELECT 1 FROM students WHERE id = ?", (student_id,)) or auth.get_user(student_id):
+        raise HTTPException(400, f"Student ID '{student_id}' is already taken")
+    db.add_student({"id": student_id, "name": body.name.strip(), "language": body.language,
+                    "stated_style": body.stated_style, "pace": body.pace, "target_role": body.target_role})
+    auth.create_student_login(student_id, body.password, user["username"])
+    return {"id": student_id, "login": student_id, "message": f"Student {body.name.strip()} created. Login: {student_id}"}
+
+
+@app.post("/api/faculty/students/{student_id}/password")
+def set_student_password(student_id: str, body: NewPassword, user=Depends(auth.require_faculty)):
+    """Creates a login for an existing student, or resets the password of an existing login."""
+    if not db.rows("SELECT 1 FROM students WHERE id = ?", (student_id,)):
+        raise HTTPException(404, "Unknown student")
+    if len(body.password) < MIN_PASSWORD:
+        raise HTTPException(400, f"Password must have at least {MIN_PASSWORD} characters")
+    login_name = auth.student_logins().get(student_id)
+    if login_name:
+        auth.set_password(login_name, body.password)
+        return {"login": login_name, "message": "Password reset"}
+    try:
+        login_name = auth.create_student_login(student_id, body.password, user["username"])
+    except ValueError as err:
+        raise HTTPException(400, str(err))
+    return {"login": login_name, "message": f"Login created: {login_name}"}
+
+
+@app.delete("/api/faculty/students/{student_id}/login")
+def remove_student_login(student_id: str, _=Depends(auth.require_faculty)):
+    """Revokes a student's access (their learning data is kept)."""
+    login_name = auth.student_logins().get(student_id)
+    if not login_name:
+        raise HTTPException(404, "This student has no login")
+    auth.delete_login(login_name)
+    return {"message": "Login removed"}
+
+
 @app.get("/api/course")
 def course_info():
     """Which course is active (switch with: python scripts/switch_course.py <name>)."""
@@ -68,7 +231,7 @@ class CourseSwitch(BaseModel):
 
 
 @app.post("/api/course/switch")
-def switch_course(body: CourseSwitch):
+def switch_course(body: CourseSwitch, _=Depends(auth.require_faculty)):
     """Makes another course active. Builds it first if it has never been built (about a minute)."""
     try:
         courses.switch(body.course)
@@ -84,9 +247,54 @@ def switch_course(body: CourseSwitch):
     return course_info()
 
 
+def _read_meta():
+    return json.loads(_sources_json().read_text(encoding="utf-8"))
+
+
+def _write_meta(meta):
+    _sources_json().write_text(json.dumps(meta, indent=2, ensure_ascii=False), encoding="utf-8")
+
+
+def _find_source(source_id):
+    meta = _read_meta()
+    src = next((s for s in meta["sources"] if s["id"] == source_id), None)
+    if not src:
+        raise HTTPException(404, f"Unknown source {source_id}")
+    return meta, src
+
+
 @app.get("/api/sources")
-def list_sources():
-    return json.loads(_sources_json().read_text(encoding="utf-8"))["sources"]
+def list_sources(_=Depends(auth.require_faculty)):
+    """Every source with tracking info: pages, words, whether it is in the current knowledge base, claims from it."""
+    meta = _read_meta()
+    kb = json.loads(KB_FILE.read_text(encoding="utf-8")) if KB_FILE.exists() else None
+    trusted = json.loads(TRUSTED_FILE.read_text(encoding="utf-8")) if TRUSTED_FILE.exists() else None
+    built_from = (kb or {}).get("built_from")
+    built_ids = {s["id"] for s in (kb or {}).get("sources", [])}
+    out = []
+    for src in meta["sources"]:
+        path = courses.data_dir() / src["file"]
+        info = {**src}
+        if not path.exists():
+            out.append({**info, "status": "missing_file"})
+            continue
+        if "words" not in info:  # sources added before tracking existed (e.g. the demo .md files)
+            try:
+                info.update(inspect_file(path, src.get("page_range")))
+            except ValueError:
+                pass
+        sha = info.get("sha256") or file_sha256(path)
+        if built_from is not None:
+            status = "in_build" if built_from.get(src["id"]) == sha else "changed" if src["id"] in built_from else "new"
+        else:
+            status = "in_build" if src["id"] in built_ids else "new"
+        claims = [c for c in (trusted or {}).get("claims", []) if c["source_id"] == src["id"]]
+        conflicts = [c for c in (trusted or {}).get("conflicts", [])
+                     if any(src["id"] in side["score"]["sources"] for side in c["sides"])]
+        out.append({**info, "format": path.suffix.lower().lstrip("."), "status": status,
+                    "claims": len(claims), "trusted_claims": sum(c["status"] == "trusted" for c in claims),
+                    "conflicts": len(conflicts)})
+    return out
 
 
 @app.post("/api/sources/upload")
@@ -95,37 +303,96 @@ async def upload_source(
     title: str = Form(...),
     type: str = Form(...),
     year: int = Form(...),
+    page_range: str = Form(""),
+    _=Depends(auth.require_faculty),
 ):
-    """Faculty uploads a new source (PDF, PPTX, MD, TXT). Then call POST /api/course/build."""
+    """Faculty uploads notes or a book (PDF, PPTX, MD, TXT). The file is checked and read right away;
+    page_range (e.g. '12-40') limits a big book to the chapters being taught. Then call POST /api/course/build."""
     if type not in SOURCE_TYPES:
         raise HTTPException(400, f"type must be one of {sorted(SOURCE_TYPES)}")
     suffix = Path(file.filename).suffix.lower()
-    if suffix not in {".pdf", ".pptx", ".md", ".txt"}:
+    if suffix not in SUPPORTED_SUFFIXES:
         raise HTTPException(400, "Only PDF, PPTX, MD or TXT files are supported")
+    data = await file.read()
+    if len(data) > MAX_UPLOAD_MB * 1024 * 1024:
+        raise HTTPException(400, f"File is larger than {MAX_UPLOAD_MB} MB")
+    if suffix == ".pdf" and not data.startswith(b"%PDF"):
+        raise HTTPException(400, "This file is not a valid PDF")
 
-    source_id = re.sub(r"[^a-z0-9]+", "_", Path(file.filename).stem.lower()).strip("_")
+    source_id = re.sub(r"[^a-z0-9]+", "_", Path(file.filename).stem.lower()).strip("_") or "source"
+    meta = _read_meta()
+    sha = hashlib.sha256(data).hexdigest()
+    duplicate = next((s for s in meta["sources"] if s.get("sha256") == sha and s["id"] != source_id), None)
+    if duplicate:
+        raise HTTPException(400, f"This file is already uploaded as '{duplicate['title']}'")
+
     dest = courses.data_dir() / "sources" / f"{source_id}{suffix}"
-    dest.write_bytes(await file.read())
+    previous = dest.read_bytes() if dest.exists() else None
+    dest.write_bytes(data)
+    try:
+        info = inspect_file(dest, page_range)
+        if info["words"] == 0:
+            raise ValueError("No readable text was found. If this is a scanned PDF, export it with a text layer "
+                             "(or run OCR) and upload again.")
+    except Exception as err:  # unreadable, encrypted, scanned or a bad page range: undo the upload
+        if previous is None:
+            dest.unlink(missing_ok=True)
+        else:
+            dest.write_bytes(previous)
+        raise HTTPException(400, f"Could not read {file.filename}: {err}")
 
-    meta = json.loads(_sources_json().read_text(encoding="utf-8"))
-    meta["sources"] = [s for s in meta["sources"] if s["id"] != source_id]  # replace if re-uploaded
-    meta["sources"].append(
-        {"id": source_id, "file": f"sources/{dest.name}", "title": title, "type": type, "year": year}
-    )
-    _sources_json().write_text(json.dumps(meta, indent=2, ensure_ascii=False), encoding="utf-8")
-    return {"id": source_id, "message": "Uploaded. Run POST /api/course/build to update the knowledge base."}
+    entry = {"id": source_id, "file": f"sources/{dest.name}", "title": title, "type": type, "year": year,
+             "page_range": page_range.strip() or None, "sha256": sha, "size_bytes": len(data),
+             "uploaded_at": datetime.now().isoformat(timespec="seconds"), **info}
+    meta["sources"] = [s for s in meta["sources"] if s["id"] != source_id] + [entry]  # replace if re-uploaded
+    _write_meta(meta)
+
+    warnings = []
+    if info["pages_without_text"]:
+        warnings.append(f"{len(info['pages_without_text'])} page(s) have no text (images or scans) and will be skipped.")
+    if info["words"] > LARGE_SOURCE_WORDS:
+        warnings.append(f"Large source ({info['words']:,} words). Consider a page range with only the chapters you teach.")
+    return {"id": source_id, "source": entry, "warnings": warnings,
+            "message": f"Uploaded {info['pages_used']} page(s), {info['words']:,} words. "
+                       "Press Build course to add it to the knowledge base."}
+
+
+@app.get("/api/sources/{source_id}/pages")
+def source_pages(source_id: str, _=Depends(auth.require_faculty)):
+    """The text the agents will read from this source, page by page (what was extracted from the PDF)."""
+    _, src = _find_source(source_id)
+    path = courses.data_dir() / src["file"]
+    if not path.exists():
+        raise HTTPException(404, "Source file is missing")
+    try:
+        return {"id": source_id, "title": src["title"], "pages": page_texts(path, src.get("page_range"))}
+    except ValueError as err:
+        raise HTTPException(400, str(err))
+
+
+@app.delete("/api/sources/{source_id}")
+def delete_source(source_id: str, _=Depends(auth.require_faculty)):
+    """Removes a source and its file. Press Build course afterwards to update the knowledge base."""
+    meta, src = _find_source(source_id)
+    meta["sources"] = [s for s in meta["sources"] if s["id"] != source_id]
+    _write_meta(meta)
+    (courses.data_dir() / src["file"]).unlink(missing_ok=True)
+    return {"deleted": source_id, "message": "Removed. Press Build course to update the knowledge base."}
 
 
 # --------------------------------------------------------------------------- #
 # Faculty: build + knowledge base
 # --------------------------------------------------------------------------- #
 @app.post("/api/course/build")
-def build_course():
+def build_course(_=Depends(auth.require_faculty)):
     """Runs Knowledge Builder then Source Reconciler. Takes ~1 minute on a fresh run, instant when cached."""
     from backend.agents.knowledge_builder import build_knowledge
     from backend.agents.reconciler import reconcile
 
-    kb = build_knowledge(str(courses.data_dir()))
+    try:
+        kb = build_knowledge(str(courses.data_dir()))
+    except ValueError as err:  # e.g. too many words, or a source without readable text
+        raise HTTPException(400, str(err))
     db.init_db()  # make sure the active course's student database exists
     trusted = reconcile()
     return {
@@ -138,7 +405,7 @@ def build_course():
 
 
 @app.get("/api/course/graph")
-def course_graph():
+def course_graph(user=Depends(auth.current_user)):
     """Prerequisite graph in a shape React Flow (or any graph library) can use directly."""
     kb = _load(TRUSTED_FILE)
     order = {cid: i for i, cid in enumerate(kb["learning_order"])}
@@ -156,7 +423,7 @@ def course_graph():
 
 
 @app.get("/api/course/claims")
-def course_claims(status: str | None = None, concept_id: str | None = None):
+def course_claims(status: str | None = None, concept_id: str | None = None, _=Depends(auth.require_faculty)):
     """Filter with ?status=trusted|outdated|superseded|unreliable|needs_review and/or ?concept_id=..."""
     claims = _load(TRUSTED_FILE)["claims"]
     if status:
@@ -167,13 +434,13 @@ def course_claims(status: str | None = None, concept_id: str | None = None):
 
 
 @app.get("/api/course/rejected-claims")
-def rejected_claims():
+def rejected_claims(_=Depends(auth.require_faculty)):
     """Claims whose quotes could not be found in the sources (hallucinations caught)."""
     return _load(KB_FILE)["rejected_claims"]
 
 
 @app.get("/api/course/conflicts")
-def course_conflicts():
+def course_conflicts(_=Depends(auth.require_faculty)):
     return _load(TRUSTED_FILE)["conflicts"]
 
 
@@ -182,7 +449,7 @@ class Override(BaseModel):
 
 
 @app.post("/api/course/conflicts/{conflict_id}/override")
-def override_conflict(conflict_id: str, body: Override):
+def override_conflict(conflict_id: str, body: Override, _=Depends(auth.require_faculty)):
     """Faculty control: choose which side of a conflict is trusted."""
     from backend.agents.reconciler import reconcile, set_faculty_override
 
@@ -196,7 +463,7 @@ def override_conflict(conflict_id: str, body: Override):
 
 
 @app.get("/api/course/freshness")
-def freshness_report():
+def freshness_report(_=Depends(auth.require_faculty)):
     return _load(TRUSTED_FILE)["freshness_report"]
 
 
@@ -204,12 +471,13 @@ def freshness_report():
 # Students
 # --------------------------------------------------------------------------- #
 @app.get("/api/students")
-def list_students():
+def list_students(_=Depends(auth.require_faculty)):
     return db.rows("SELECT * FROM students ORDER BY name")
 
 
 @app.get("/api/students/{student_id}")
-def get_student(student_id: str):
+def get_student(student_id: str, user=Depends(auth.current_user)):
+    auth.check_student_access(user, student_id)
     found = db.rows("SELECT * FROM students WHERE id = ?", (student_id,))
     if not found:
         raise HTTPException(404, "Unknown student")
@@ -224,7 +492,7 @@ def get_student(student_id: str):
 
 
 @app.post("/api/demo/reset")
-def demo_reset():
+def demo_reset(_=Depends(auth.require_faculty)):
     """Clears all student progress (keeps students and course knowledge). Use before each demo run."""
     db.reset_student_progress()
     return {"status": "reset"}
@@ -243,7 +511,8 @@ class VivaAnswer(BaseModel):
 
 
 @app.post("/api/viva/{student_id}/start")
-def viva_start(student_id: str, body: VivaStart | None = None):
+def viva_start(student_id: str, body: VivaStart | None = None, user=Depends(auth.current_user)):
+    auth.check_student_access(user, student_id)
     from backend.agents.viva import start_viva
 
     try:
@@ -253,7 +522,8 @@ def viva_start(student_id: str, body: VivaStart | None = None):
 
 
 @app.post("/api/viva/session/{session_id}/answer")
-def viva_answer(session_id: int, body: VivaAnswer):
+def viva_answer(session_id: int, body: VivaAnswer, user=Depends(auth.current_user)):
+    _check_owner(user, "viva_sessions", session_id)
     from backend.agents.viva import answer_viva
 
     if not body.answer.strip():
@@ -265,7 +535,8 @@ def viva_answer(session_id: int, body: VivaAnswer):
 
 
 @app.get("/api/viva/session/{session_id}")
-def viva_session(session_id: int):
+def viva_session(session_id: int, user=Depends(auth.current_user)):
+    _check_owner(user, "viva_sessions", session_id)
     found = db.rows("SELECT * FROM viva_sessions WHERE id = ?", (session_id,))
     if not found:
         raise HTTPException(404, "Unknown session")
@@ -289,7 +560,8 @@ class PracticeAnswer(BaseModel):
 
 
 @app.post("/api/tutor/{student_id}/lesson")
-def tutor_lesson(student_id: str, body: LessonRequest):
+def tutor_lesson(student_id: str, body: LessonRequest, user=Depends(auth.current_user)):
+    auth.check_student_access(user, student_id)
     from backend.agents.tutor import generate_lesson
 
     if body.level and body.level not in ("foundation", "standard", "challenge"):
@@ -303,7 +575,8 @@ def tutor_lesson(student_id: str, body: LessonRequest):
 
 
 @app.get("/api/tutor/lessons/{lesson_id}")
-def tutor_get_lesson(lesson_id: int):
+def tutor_get_lesson(lesson_id: int, user=Depends(auth.current_user)):
+    _check_owner(user, "lessons", lesson_id)
     from backend.agents.tutor import get_lesson
 
     try:
@@ -313,7 +586,8 @@ def tutor_get_lesson(lesson_id: int):
 
 
 @app.post("/api/tutor/lessons/{lesson_id}/check")
-def tutor_check(lesson_id: int, body: PracticeAnswer):
+def tutor_check(lesson_id: int, body: PracticeAnswer, user=Depends(auth.current_user)):
+    _check_owner(user, "lessons", lesson_id)
     from backend.agents.tutor import check_practice
 
     if not body.answer.strip():
@@ -328,7 +602,8 @@ def tutor_check(lesson_id: int, body: PracticeAnswer):
 # Gap prediction + proactive path redesign (Objective 2)
 # --------------------------------------------------------------------------- #
 @app.get("/api/students/{student_id}/path")
-def student_path(student_id: str):
+def student_path(student_id: str, user=Depends(auth.current_user)):
+    auth.check_student_access(user, student_id)
     from backend.agents.gap_predictor import build_path
 
     try:
@@ -338,8 +613,9 @@ def student_path(student_id: str):
 
 
 @app.get("/api/students/{student_id}/gap-radar")
-def student_gap_radar(student_id: str):
+def student_gap_radar(student_id: str, user=Depends(auth.current_user)):
     """Risk for every upcoming concept with its factors and reason chain. Read-only, instant."""
+    auth.check_student_access(user, student_id)
     from backend.agents.gap_predictor import gap_radar
 
     try:
@@ -349,8 +625,9 @@ def student_gap_radar(student_id: str):
 
 
 @app.post("/api/students/{student_id}/predict")
-def student_predict(student_id: str):
+def student_predict(student_id: str, user=Depends(auth.current_user)):
     """Predicts gaps and redesigns the path. Call after a viva or a practice check."""
+    auth.check_student_access(user, student_id)
     from backend.agents.gap_predictor import predict_and_redesign
 
     try:
@@ -360,7 +637,8 @@ def student_predict(student_id: str):
 
 
 @app.post("/api/students/{student_id}/path/{item_id}/complete")
-def student_complete_item(student_id: str, item_id: int):
+def student_complete_item(student_id: str, item_id: int, user=Depends(auth.current_user)):
+    auth.check_student_access(user, student_id)
     from backend.agents.gap_predictor import complete_item
 
     try:
@@ -370,7 +648,7 @@ def student_complete_item(student_id: str, item_id: int):
 
 
 @app.get("/api/class/gap-radar")
-def class_gap_radar():
+def class_gap_radar(_=Depends(auth.require_faculty)):
     """Faculty view: which upcoming concepts put which students at risk."""
     from backend.agents.gap_predictor import class_radar
 

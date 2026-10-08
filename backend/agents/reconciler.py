@@ -4,7 +4,7 @@ from pathlib import Path
 
 from backend.engine.trust import CLOSE_CALL_MARGIN, UNRELIABLE_THRESHOLD, explain, score_side
 from backend.models import ReconcilerOutput
-from backend.tools.agnes_client import chat_json
+from backend.tools.llm import heavy_json, heavy_model
 
 KB_FILE = Path("data/knowledge_base.json")
 OVERRIDES_FILE = Path("data/faculty_overrides.json")
@@ -60,8 +60,8 @@ def reconcile():
         for c in kb["claims"]
     ]
     user = "CLAIMS:\n" + json.dumps(claim_lines, indent=1, ensure_ascii=False)
-    print(f"Sending {len(claim_lines)} claims to Agnes for conflict detection...")
-    result = chat_json(SYSTEM_PROMPT, user, ReconcilerOutput)
+    print(f"Sending {len(claim_lines)} claims to {heavy_model()} for conflict detection...")
+    result = heavy_json(SYSTEM_PROMPT, user, ReconcilerOutput)
 
     overrides = _load_overrides()
     status = {cid: "trusted" for cid in claims_by_id}  # default: uncontested claims are trusted

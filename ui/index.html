@@ -43,57 +43,62 @@
                 <p class="font-display text-xl uppercase">Learn your way</p><p class="text-sm">Lessons in your language and style, built only from trusted course material.</p></div>
         </section>
 
-        <section class="mb-12">
-            <p class="text-xs font-bold uppercase text-gray-500 mb-2">// Courses: everything below shows the active one</p>
-            <div id="course-list" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
-        </section>
-
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <section class="card p-6">
-                <div class="flex items-center gap-3 mb-4">
-                    <div class="bg-neo-pink text-white border-2 border-black p-2"><i class="ph-bold ph-student text-3xl"></i></div>
-                    <h2 class="font-display text-3xl uppercase">I'm a student</h2>
-                </div>
-                <p class="font-bold text-sm uppercase text-gray-500 mb-4">// Pick your name to start</p>
-                <div id="students" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div class="font-bold">Loading students...</div>
-                </div>
-            </section>
-
-            <section class="card p-6">
-                <div class="flex items-center gap-3 mb-4">
-                    <div class="bg-neo-blue border-2 border-black p-2"><i class="ph-bold ph-chalkboard-teacher text-3xl"></i></div>
-                    <h2 class="font-display text-3xl uppercase">I'm faculty</h2>
-                </div>
-                <p class="font-bold text-sm uppercase text-gray-500 mb-4">// Sources, conflicts, syllabus freshness, class radar</p>
-                <div id="course-stats" class="grid grid-cols-3 gap-4 mb-6"></div>
-                <a href="faculty.html" class="btn inline-block">Open faculty dashboard -></a>
-            </section>
-        </div>
+        <!-- Filled by the script: a login prompt, or the logged-in user's entry points -->
+        <div id="home-actions"></div>
     </main>
 
     <script src="vp.js"></script>
     <script>
+        const stat = (n, label, color) => `
+            <div class="border-4 border-black ${color} p-3 text-center">
+                <p class="font-display text-3xl">${esc(n)}</p><p class="text-xs font-bold uppercase">${esc(label)}</p>
+            </div>`;
+
         async function init() {
-            try {
-                const students = await api("/api/students");
-                $("students").innerHTML = students.map(s => `
-                    <a href="student.html?id=${encodeURIComponent(s.id)}"
-                       class="block border-4 border-black bg-white p-4 shadow-brutal-sm hover:bg-neo-yellow hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-all">
-                        <p class="font-display text-2xl uppercase">${esc(s.name)}</p>
-                        <p class="text-xs font-bold uppercase">${esc(s.language)} · ${esc(s.stated_style)} · ${esc(s.pace)}</p>
-                        <p class="text-xs font-bold uppercase text-gray-500">${esc(s.target_role)}</p>
-                    </a>`).join("");
-            } catch (err) {
-                $("students").innerHTML = emptyState("Backend not reachable");
+            const auth = getAuth();
+            if (!auth || !auth.token) {
+                $("home-actions").innerHTML = `
+                    <section class="card p-8 flex flex-wrap justify-between items-center gap-6">
+                        <div>
+                            <h2 class="font-display text-3xl uppercase">Log in to start</h2>
+                            <p class="font-bold mt-1">Faculty use their admin account. Students use the ID and password from their faculty.</p>
+                        </div>
+                        <a href="login.html" class="btn inline-block text-lg"><i class="ph-bold ph-sign-in"></i> Log in -></a>
+                    </section>`;
+                return;
             }
+            const user = auth.user;
+            const isFaculty = user.role === "faculty";
+            $("home-actions").innerHTML = `
+                ${isFaculty ? `<section class="mb-12">
+                    <p class="text-xs font-bold uppercase text-gray-500 mb-2">// Courses: everything shows the active one</p>
+                    <div id="course-list" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+                </section>` : ""}
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <section class="card p-6">
+                        <div class="flex items-center gap-3 mb-4">
+                            <div class="${isFaculty ? "bg-neo-blue" : "bg-neo-pink text-white"} border-2 border-black p-2">
+                                <i class="ph-bold ${isFaculty ? "ph-chalkboard-teacher" : "ph-student"} text-3xl"></i></div>
+                            <h2 class="font-display text-3xl uppercase">Welcome, ${esc(user.name || user.username)}</h2>
+                        </div>
+                        <p class="font-bold text-sm uppercase text-gray-500 mb-6">// ${isFaculty
+                            ? "Sources, conflicts, syllabus freshness, class radar, student accounts"
+                            : "Your viva, your learning path, your lessons"}</p>
+                        <div class="flex flex-wrap gap-3">
+                            <a href="${homeFor(user)}" class="btn inline-block">Open my dashboard -></a>
+                            <a href="profile.html" class="btn btn-light inline-block"><i class="ph-bold ph-user-circle"></i> My profile</a>
+                        </div>
+                    </section>
+                    ${isFaculty ? `<section class="card p-6">
+                        <h2 class="font-display text-2xl uppercase mb-4">Active course</h2>
+                        <div id="course-stats" class="grid grid-cols-3 gap-4"></div>
+                    </section>` : ""}
+                </div>`;
+            if (!isFaculty) return;
+            if (ACTIVE_COURSE) renderCourseList(ACTIVE_COURSE);
             try {
                 const [conflicts, freshness, graph] = await Promise.all([
                     api("/api/course/conflicts"), api("/api/course/freshness"), api("/api/course/graph")]);
-                const stat = (n, label, color) => `
-                    <div class="border-4 border-black ${color} p-3 text-center">
-                        <p class="font-display text-3xl">${esc(n)}</p><p class="text-xs font-bold uppercase">${esc(label)}</p>
-                    </div>`;
                 $("course-stats").innerHTML = stat(graph.nodes.length, "concepts", "bg-white")
                     + stat(conflicts.length, "conflicts", "bg-neo-yellow")
                     + stat(`${freshness.score ?? "—"}%`, "fresh", "bg-neo-green");

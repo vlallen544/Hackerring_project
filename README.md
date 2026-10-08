@@ -194,7 +194,7 @@ Authority order is configurable by faculty (default: faculty notes > official te
 | **Visualization** | Mermaid (lesson diagrams); risk, trust and mastery bars in the UI |
 | **Backend** | FastAPI (Python) |
 | **Agent orchestration** | FastAPI routes + shared knowledge base / SQLite state (LangGraph planned) |
-| **LLM** | `agnes-3.0-flash` – reasoning, extraction, source comparison, path planning, multilingual content, tool calling |
+| **LLM** | `agnes-3.0-flash` – viva, tutoring, gap messages (interactive, multilingual); `claude-opus-5-5` (optional) – heavy extraction from courses and PDFs, source reconciliation |
 | **Image generation** | `agnes-image-2.5-flash` – planned; diagrams currently use Mermaid |
 | **SDK** | OpenAI-compatible Python SDK pointed at the Agnes API |
 | **Graph logic** | networkx |
@@ -261,6 +261,9 @@ What runs today versus what the architecture above still plans.
 | Tutor Agent (level / format / language in code, provenance, learned style) (Objective 1) | ✅ Built |
 | Gap Predictor (risk score, refreshers, format switch, challenge track, class radar) (Objective 2) | ✅ Built |
 | Web UI (student + faculty, voice input and read-aloud) served by FastAPI | ✅ Built |
+| JWT login: faculty admin, faculty-created student accounts, per-student access control, profile page | ✅ Built |
+| PDF / PPTX source upload with page ranges, text preview and build tracking | ✅ Built |
+| Claude (`claude-opus-5-5`) for heavy extraction and reconciliation, with automatic fallback to Agnes | ✅ Built (needs Anthropic credits) |
 | Multiple courses (DBMS and DSA demo courses, `scripts/switch_course.py`) | ✅ Built |
 | Agents coordinated through FastAPI routes and shared data (`data/*.json` + SQLite) | ✅ Built |
 | LangGraph orchestration, SSE streaming | 🔜 Planned |
@@ -324,6 +327,12 @@ uvicorn backend.main:app --reload
 
 Open <http://localhost:8000> for the web UI (student and faculty views). Interactive API docs are at <http://localhost:8000/docs> and the health check at <http://localhost:8000/health>.
 
+### Logins (JWT)
+- **Faculty master login:** `admin` / `admin123`, created on first start. Change the password on the **Profile** page before real use.
+- **Students** are created by faculty on **Faculty → 5. Students** (student ID, name, password, language, learning style, pace, target role). A student logs in with their student ID and only sees their own viva, lessons, path and profile; faculty routes return 403.
+- The API issues an HS256 JWT valid for 12 hours (`POST /api/auth/login`), sent as `Authorization: Bearer <token>`. Passwords are stored as salted PBKDF2 hashes in `data/auth.db`; the signing key is `JWT_SECRET` in `.env`, or a random key generated in `data/.jwt_secret`. After 5 wrong passwords, a username is locked for 5 minutes for that address.
+- Every user has a **Profile** page (photo, department, email, bio, change password), adapted from the Campus Zero prototype.
+
 ### Courses and demo data
 Two demo courses are included, each with planted conflicts and an answer key (`expected_results.md`):
 
@@ -343,7 +352,15 @@ To verify the Agnes connection and cached JSON client, run `python scripts/hello
 AGNES_API_KEY=your_key_here
 AGNES_BASE_URL=https://apihub.agnes-ai.com/v1
 AGNES_TEXT_MODEL=agnes-3.0-flash
+
+# Optional: Claude for heavy tasks (reading whole courses / PDFs, reconciling sources)
+ANTHROPIC_API_KEY=your_anthropic_key   # leave empty to run everything on Agnes
+HEAVY_LLM_PROVIDER=claude
+CLAUDE_MODEL=claude-opus-5-5
+CLAUDE_EFFORT=high
 ```
+
+**Which model does what:** the Knowledge Builder (extracting claims from all sources, including PDFs), the prerequisite mapping and the Source Reconciler run on Claude when `ANTHROPIC_API_KEY` is set (`backend/tools/llm.py`); the Viva, Tutor and Gap Predictor messages run on Agnes. If a Claude call fails, the heavy task falls back to Agnes automatically.
 
 ---
 

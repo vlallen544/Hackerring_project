@@ -1,13 +1,66 @@
 // Shared helpers for the VidyaPath UI: API calls, safe HTML, tabs, loading states and small render helpers.
 // The UI is served by FastAPI at /ui, so every API call is same-origin.
 
+// --------------------------------------------------------------------------- //
+// Login state: the JWT from /api/auth/login is kept in this browser and sent as a Bearer token
+// --------------------------------------------------------------------------- //
+const AUTH_KEY = "vp-auth";
+
+function getAuth() {
+    try { return JSON.parse(localStorage.getItem(AUTH_KEY)); } catch { return null; }
+}
+
+function setAuth(auth) {
+    try { localStorage.setItem(AUTH_KEY, JSON.stringify(auth)); } catch { /* storage blocked: login lasts this page only */ }
+}
+
+function clearAuth() {
+    try { localStorage.removeItem(AUTH_KEY); } catch { /* ignore */ }
+}
+
+function authHeaders() {
+    const auth = getAuth();
+    return auth && auth.token ? { Authorization: `Bearer ${auth.token}` } : {};
+}
+
+const homeFor = user => (user.role === "faculty" ? "faculty.html" : "student.html");
+
+function goLogin() {
+    clearAuth();
+    const back = location.pathname.split("/").pop() + location.search + location.hash;
+    location.href = `login.html?next=${encodeURIComponent(back)}`;
+}
+
+function logout() {
+    clearAuth();
+    location.href = "login.html";
+}
+
+// Call at the top of a page: returns the logged-in user, or redirects (to login, or to the user's own page)
+function requireRole(role) {
+    const auth = getAuth();
+    if (!auth || !auth.token) {
+        goLogin();
+        return null;
+    }
+    if (role && auth.user.role !== role) {
+        location.href = homeFor(auth.user);
+        return null;
+    }
+    return auth.user;
+}
+
 async function api(path, { method = "GET", body } = {}) {
     const res = await fetch(path, {
         method,
-        headers: body ? { "Content-Type": "application/json" } : {},
+        headers: { ...(body ? { "Content-Type": "application/json" } : {}), ...authHeaders() },
         body: body ? JSON.stringify(body) : undefined,
     });
     const data = await res.json().catch(() => ({}));
+    if (res.status === 401 && !location.pathname.endsWith("login.html")) {
+        goLogin();  // missing, expired or revoked login
+        throw new Error(data.detail || "Please log in");
+    }
     if (!res.ok) throw new Error(data.detail || `Request failed (${res.status})`);
     return data;
 }
@@ -154,13 +207,34 @@ function courseSelect(course, extraClass = "") {
 let ACTIVE_COURSE = null;
 
 document.addEventListener("DOMContentLoaded", async () => {
+    const auth = getAuth();
+    const user = auth && auth.user;
+    const nav = document.querySelector("nav > div");
+    if (user && nav && !location.pathname.endsWith("login.html")) {
+        // Students only see their own pages: no switch to the faculty view
+        if (user.role !== "faculty") document.querySelectorAll(".role-switch").forEach(el => el.remove());
+        // Put the user menu next to the existing right-hand items (wrapped, so their own styles don't apply to it)
+        const right = nav.lastElementChild;
+        const box = document.createElement("div");
+        box.className = "flex items-center gap-3 flex-wrap justify-end";
+        right.replaceWith(box);
+        box.appendChild(right);
+        box.insertAdjacentHTML("beforeend", `
+            <a href="profile.html" class="chip bg-white hover:bg-neo-yellow !py-1 flex items-center gap-1" title="My profile">
+                <i class="ph-bold ph-user-circle text-lg"></i><span class="hidden sm:inline">${esc(user.name || user.username)}</span></a>
+            <button onclick="logout()" class="chip bg-neo-red text-white !py-1 hover:bg-black" title="Log out">
+                <i class="ph-bold ph-sign-out"></i><span class="hidden sm:inline"> Logout</span></button>`);
+    }
     try {
         ACTIVE_COURSE = await api("/api/course");
         const logo = document.querySelector("nav a[href='index.html']");
-        if (logo) logo.insertAdjacentHTML("afterend", `<label class="hidden md:flex items-center gap-2 ml-3">
-            <i class="ph-bold ph-books text-xl"></i>${courseSelect(ACTIVE_COURSE)}</label>`);
-        const box = $("course-list");  // home page only
-        if (box) renderCourseList(ACTIVE_COURSE);
+        if (logo && !location.pathname.endsWith("login.html")) {
+            // Only faculty can switch the course; everyone else sees which course is active
+            logo.insertAdjacentHTML("afterend", user && user.role === "faculty"
+                ? `<label class="hidden md:flex items-center gap-2 ml-3"><i class="ph-bold ph-books text-xl"></i>${courseSelect(ACTIVE_COURSE)}</label>`
+                : `<span class="chip bg-neo-blue ml-3 hidden md:inline-block">${esc(ACTIVE_COURSE.title)}</span>`);
+        }
+        if ($("course-list") && user && user.role === "faculty") renderCourseList(ACTIVE_COURSE);  // home page
     } catch { /* older backend without /api/course */ }
 });
 

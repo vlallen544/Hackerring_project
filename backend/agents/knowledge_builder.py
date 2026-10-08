@@ -1,15 +1,20 @@
 # Knowledge Builder agent: extracts concepts, source-cited claims and the prerequisite graph
 import json
+from datetime import datetime
 from pathlib import Path
 
 import networkx as nx
 
 from backend.models import KnowledgeExtraction, PrerequisiteMap
-from backend.tools.agnes_client import chat_json
-from backend.tools.parsers import chunks_to_prompt, load_sources
+from backend.tools import llm
+from backend.tools.llm import heavy_json, heavy_model, heavy_provider
+from backend.tools.parsers import chunks_to_prompt, file_sha256, load_sources
 from backend.tools.verify import find_quote_anywhere, quote_exists
 
 OUTPUT_FILE = Path("data/knowledge_base.json")
+# Everything goes into ONE extraction call, so the input is capped (larger books need a page range).
+# Claude reads much more per call than Agnes.
+MAX_BUILD_WORDS = {"claude": 80000, "agnes": 20000}
 
 SYSTEM_PROMPT = """You are the Knowledge Builder agent of VidyaPath, a learning platform for college faculty.
 You receive ALL of a course's teaching material at once: faculty notes, textbook excerpts, web articles
@@ -59,14 +64,25 @@ def _map_prerequisites(concepts, claims):
             facts[c["concept_id"]].append(c["statement"])
     payload = [{"id": cid, "name": c["name"], "description": c["description"], "facts": facts.get(cid, [])}
                for cid, c in concepts.items()]
-    return chat_json(PREREQ_PROMPT, "CONCEPTS:\n" + json.dumps(payload, ensure_ascii=False, indent=1), PrerequisiteMap)
+    return heavy_json(PREREQ_PROMPT, "CONCEPTS:\n" + json.dumps(payload, ensure_ascii=False, indent=1), PrerequisiteMap)
 
 
 def build_knowledge(data_dir="sample_data"):
     meta, chunks = load_sources(data_dir)
-    print(f"Loaded {len(meta['sources'])} sources, {len(chunks)} pages. Calling Agnes (one large-context call)...")
+    total_words = sum(len(c.text.split()) for c in chunks)
+    limit = MAX_BUILD_WORDS[heavy_provider()]
+    if total_words > limit:
+        sizes = {}
+        for c in chunks:
+            sizes[c.source_id] = sizes.get(c.source_id, 0) + len(c.text.split())
+        biggest = max(sizes, key=sizes.get)
+        raise ValueError(f"The sources contain {total_words:,} words; the limit is {limit:,}. "
+                         f"Set a page range on the largest source ({biggest}: {sizes[biggest]:,} words) "
+                         f"so only the chapters you teach are used.")
+    print(f"Loaded {len(meta['sources'])} sources, {len(chunks)} pages. Calling {heavy_model()} (one large-context call)...")
 
-    extraction = chat_json(SYSTEM_PROMPT, chunks_to_prompt(chunks), KnowledgeExtraction)
+    extraction = heavy_json(SYSTEM_PROMPT, chunks_to_prompt(chunks), KnowledgeExtraction)
+    extracted_with = llm.last_model  # may be Agnes if Claude was unavailable
 
     # ---- 1. Concepts ----
     concepts = {c.id: c.model_dump() for c in extraction.concepts}
@@ -119,6 +135,10 @@ def build_knowledge(data_dir="sample_data"):
     learning_order = list(nx.lexicographical_topological_sort(graph, key=lambda c: first_seen[c]))
 
     knowledge_base = {
+        "built_at": datetime.now().isoformat(timespec="seconds"),
+        "extracted_with": extracted_with,
+        # file fingerprints, so the platform can tell which sources are new or changed since this build
+        "built_from": {src["id"]: file_sha256(Path(data_dir) / src["file"]) for src in meta["sources"]},
         "sources": meta["sources"],
         "authority_defaults": meta["authority_defaults"],
         "concepts": concepts,

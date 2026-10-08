@@ -495,12 +495,20 @@ async function checkPractice(button, index) {
 // --------------------------------------------------------------------------- //
 VIEW_HOOKS.path = loadPath;
 
+const ME = requireRole();  // students see only themselves; faculty can open any student
+
 async function init() {
-    const students = await api("/api/students").catch(() => []);
-    if (!students.length) return toast("Backend not reachable.", "error");
-    if (!STUDENT_ID || !students.some(s => s.id === STUDENT_ID)) STUDENT_ID = students[0].id;
-    $("student-select").innerHTML = students.map(s =>
-        `<option value="${esc(s.id)}" ${s.id === STUDENT_ID ? "selected" : ""}>${esc(s.name)}</option>`).join("");
+    if (!ME) return;
+    if (ME.role === "student") {
+        STUDENT_ID = ME.student_id;
+        $("student-select").closest("label").remove();
+    } else {
+        const students = await api("/api/students").catch(() => []);
+        if (!students.length) return toast("No students yet. Add them on the faculty Students page.", "error");
+        if (!STUDENT_ID || !students.some(s => s.id === STUDENT_ID)) STUDENT_ID = students[0].id;
+        $("student-select").innerHTML = students.map(s =>
+            `<option value="${esc(s.id)}" ${s.id === STUDENT_ID ? "selected" : ""}>${esc(s.name)}</option>`).join("");
+    }
 
     const graph = await loadConcepts();
     if (graph) {
