@@ -59,6 +59,31 @@ CREATE TABLE IF NOT EXISTS viva_sessions (
     created_at TEXT DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE IF NOT EXISTS lessons (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    student_id TEXT,
+    concept_id TEXT,
+    level TEXT,                    -- foundation / standard / challenge
+    format TEXT,                   -- text / audio / visual / practice
+    language TEXT,
+    content TEXT,                  -- JSON: segments with provenance, diagram, audio script, practice
+    adaptation TEXT,               -- JSON: why this level/format/language was chosen
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS lesson_checks (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    student_id TEXT,
+    lesson_id INTEGER,
+    concept_id TEXT,
+    format TEXT,                   -- format of the lesson being checked (used to learn the student's best style)
+    level TEXT,
+    question TEXT,
+    answer TEXT,
+    score REAL,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP
+);
+
 CREATE TABLE IF NOT EXISTS risk_events (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     student_id TEXT,
@@ -104,6 +129,6 @@ def execute(query, params=()):
 def reset_student_progress():
     """Demo helper: wipes progress but keeps students, so you can re-run the demo cleanly."""
     with get_conn() as conn:
-        for table in ("mastery", "attempts", "path_items", "risk_events", "viva_sessions"):
+        for table in ("mastery", "attempts", "path_items", "risk_events", "viva_sessions", "lessons", "lesson_checks"):
             conn.execute(f"DELETE FROM {table}")
         conn.execute("UPDATE students SET learned_style = NULL")

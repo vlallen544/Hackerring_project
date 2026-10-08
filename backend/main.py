@@ -229,3 +229,55 @@ def viva_session(session_id: int):
     if not found:
         raise HTTPException(404, "Unknown session")
     return {**found[0], "state": json.loads(found[0]["state"])}
+
+
+# --------------------------------------------------------------------------- #
+# Student: personalised lessons (Tutor agent)
+# --------------------------------------------------------------------------- #
+class LessonRequest(BaseModel):
+    concept_id: str
+    level: str | None = None   # optional override: foundation / standard / challenge
+    format: str | None = None  # optional override: text / audio / visual / practice
+    reason: str | None = None  # optional: why it was overridden (e.g. "re-teach after wrong answer")
+
+
+class PracticeAnswer(BaseModel):
+    question_index: int
+    answer: str
+    confidence: int = 3
+
+
+@app.post("/api/tutor/{student_id}/lesson")
+def tutor_lesson(student_id: str, body: LessonRequest):
+    from backend.agents.tutor import generate_lesson
+
+    if body.level and body.level not in ("foundation", "standard", "challenge"):
+        raise HTTPException(400, "level must be foundation, standard or challenge")
+    if body.format and body.format not in ("text", "audio", "visual", "practice"):
+        raise HTTPException(400, "format must be text, audio, visual or practice")
+    try:
+        return generate_lesson(student_id, body.concept_id, body.level, body.format, body.reason)
+    except ValueError as err:
+        raise HTTPException(400, str(err))
+
+
+@app.get("/api/tutor/lessons/{lesson_id}")
+def tutor_get_lesson(lesson_id: int):
+    from backend.agents.tutor import get_lesson
+
+    try:
+        return get_lesson(lesson_id)
+    except ValueError as err:
+        raise HTTPException(404, str(err))
+
+
+@app.post("/api/tutor/lessons/{lesson_id}/check")
+def tutor_check(lesson_id: int, body: PracticeAnswer):
+    from backend.agents.tutor import check_practice
+
+    if not body.answer.strip():
+        raise HTTPException(400, "Answer is empty")
+    try:
+        return check_practice(lesson_id, body.question_index, body.answer, body.confidence)
+    except ValueError as err:
+        raise HTTPException(400, str(err))

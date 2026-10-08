@@ -9,11 +9,11 @@ def concept_score(scores):
     return sum(scores) / len(scores) if scores else None
 
 
-def blend(old, new):
+def blend(old, new, weight=NEW_EVIDENCE_WEIGHT):
     """Combine previous mastery with new evidence. First evidence is taken as-is."""
     if old is None:
         return new
-    return NEW_EVIDENCE_WEIGHT * new + (1 - NEW_EVIDENCE_WEIGHT) * old
+    return weight * new + (1 - weight) * old
 
 
 def confidence_to_unit(rating):

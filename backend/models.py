@@ -93,3 +93,26 @@ class QuestionReview(BaseModel):
 
 class QuestionReviews(BaseModel):
     reviews: list[QuestionReview]
+
+
+# ---------- Tutor agent ----------
+class LessonSegment(BaseModel):
+    text: str = Field(description="One short paragraph or bullet of the lesson, in the student's language")
+    origin: Literal["material", "ai"] = Field(
+        description="material: restates facts from the given TRUSTED CLAIMS (cite them). "
+                    "ai: your own explanation, analogy or example")
+    claim_ids: list[str] = Field(description="ids of the trusted claims this segment is based on (empty if origin is ai)")
+
+
+class PracticeQuestion(BaseModel):
+    question: str
+    answer: str = Field(description="Model answer, 1-3 sentences")
+
+
+class TutorLesson(BaseModel):
+    title: str
+    segments: list[LessonSegment] = Field(description="The lesson body, 4-8 segments")
+    misconception_fix: str | None = Field(description="If misconceptions are given: a short correction. Otherwise null")
+    diagram_mermaid: str | None = Field(description="For visual format: a simple Mermaid flowchart. Otherwise null")
+    audio_script: str | None = Field(description="For audio format: the lesson as a friendly spoken script. Otherwise null")
+    practice: list[PracticeQuestion] = Field(description="2-3 practice questions")
