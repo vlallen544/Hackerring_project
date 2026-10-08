@@ -23,6 +23,11 @@ TASK 1 - CONFLICTS. Find every place where claims disagree or a claim is mislead
   For each side, set is_specific (gives versions, dates or reasons) and is_absolute (uses always/never/every).
   IMPORTANT: Do NOT decide who is right. Only group the claims into sides. Trust is calculated separately.
   Job description requirements count as evidence of current industry practice.
+  If a job description requires a feature or skill, include that requirement claim's id
+  in the side that says the feature exists or is current. It is supporting evidence.
+  Use "unreliable" ONLY when no other claim addresses the same point. If any other source
+  states the opposite, report a "contradiction" or "outdated" conflict with BOTH sides,
+  and put every agreeing claim from every source on its side.
 
 TASK 2 - INDUSTRY SKILLS. List the database and SQL skills the job descriptions ask for
   (ignore non-database skills such as Python, Excel or BI tools).
