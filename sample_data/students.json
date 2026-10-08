@@ -1,0 +1,12 @@
+{
+  "students": [
+    { "id": "asha", "name": "Asha", "language": "English", "stated_style": "reading", "pace": "fast", "target_role": "Data Analyst",
+      "demo_behaviour": "Answers most viva questions correctly and confidently. Should receive challenge content." },
+    { "id": "ravi", "name": "Ravi", "language": "Hindi", "stated_style": "listening", "pace": "medium", "target_role": "Data Analyst",
+      "demo_behaviour": "Vague on foreign keys, mixes up candidate key and primary key. Gap Radar should flag Joins and add a Hindi audio refresher on Keys." },
+    { "id": "meera", "name": "Meera", "language": "English", "stated_style": "visual", "pace": "medium", "target_role": "Data Analyst",
+      "demo_behaviour": "Answers correctly but rates confidence low. Confidence Calibration should show she knows more than she thinks." },
+    { "id": "arjun", "name": "Arjun", "language": "English", "stated_style": "practice", "pace": "fast", "target_role": "Data Analyst",
+      "demo_behaviour": "Says AVG() can be used in WHERE and rates confidence high. Should trigger the WHERE vs HAVING misconception." }
+  ]
+}
