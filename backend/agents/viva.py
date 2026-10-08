@@ -29,7 +29,7 @@ For EACH concept given, write ONE opening question:
   BAD:  "Why can't we use AVG inside a WHERE clause?"  (reveals that it is not allowed)
   GOOD: "If you want only the groups whose average is above 100, which clause would you use, and why?"
 - Write the question in {language}. If the language is Hindi, use natural Hinglish
-  (Hindi in Roman script, keeping technical terms like JOIN, primary key in English).
+  (Hindi in Roman script, keeping technical terms such as JOIN, primary key or hash table in English).
 Return the questions in the same order as the concepts."""
 
 REVIEW_PROMPT = """You are a strict exam reviewer. Assume every question leaks until you have checked it.

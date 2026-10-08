@@ -7,3 +7,5 @@ __pycache__/
 node_modules/
 .next/
 .streamlit/secrets.toml
+# Which course is active on this machine (scripts/switch_course.py)
+data/active_course.json

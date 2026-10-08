@@ -1,0 +1,15 @@
+{
+  "authority_defaults": {
+    "faculty_notes": 0.9,
+    "textbook": 0.85,
+    "job_description": 0.7,
+    "web_link": 0.4
+  },
+  "sources": [
+    { "id": "faculty_notes_dsa", "file": "sources/faculty_notes_dsa.md", "title": "DSA Lecture Notes (Prof. A. Iyer)", "type": "faculty_notes", "year": 2016 },
+    { "id": "textbook_dsa_2024", "file": "sources/textbook_dsa_2024.md", "title": "Algorithms and Data Structures in Practice, 2nd Ed.", "type": "textbook", "year": 2024 },
+    { "id": "web_dsa_cheatsheet_2015", "file": "sources/web_dsa_cheatsheet_2015.md", "title": "DSA Interview Cheat Sheet (blog)", "type": "web_link", "year": 2015 },
+    { "id": "jd_sde_product", "file": "sources/jd_sde_product.md", "title": "JD: Software Engineer (New Grad), Product Company", "type": "job_description", "year": 2026 },
+    { "id": "jd_sde_fintech", "file": "sources/jd_sde_fintech.md", "title": "JD: Backend Engineer, Fintech Payments", "type": "job_description", "year": 2026 }
+  ]
+}

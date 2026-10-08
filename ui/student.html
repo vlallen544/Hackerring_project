@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VidyaPath Student</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="theme.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web@2.1.1"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
+    <link rel="stylesheet" href="vp.css">
+</head>
+<body class="bg-slate-100 text-neo-black antialiased selection:bg-neo-pink selection:text-white">
+
+    <!-- Top bar: logo, role switch, student picker -->
+    <nav class="fixed w-full z-40 bg-white border-b-4 border-black top-0">
+        <div class="px-4 flex justify-between h-16 items-center gap-3">
+            <a href="index.html" class="flex items-center gap-2 group">
+                <div class="bg-neo-black text-white p-2 border-2 border-transparent group-hover:bg-neo-yellow group-hover:text-black group-hover:border-black transition-colors">
+                    <i class="ph-bold ph-graduation-cap text-xl"></i>
+                </div>
+                <span class="font-display text-xl tracking-tighter uppercase italic hidden sm:inline">VIDYA<span class="text-neo-pink">_PATH</span></span>
+            </a>
+            <div class="flex items-center gap-3">
+                <div class="role-switch flex text-xs">
+                    <a href="student.html" class="on">Student</a><a href="faculty.html" class="border-l-0">Faculty</a>
+                </div>
+                <label class="flex items-center gap-2">
+                    <i class="ph-bold ph-user-circle text-2xl hidden sm:inline"></i>
+                    <select id="student-select" class="field !w-auto !py-1 font-bold uppercase" aria-label="Student"
+                            onchange="location.href='student.html?id='+this.value+location.hash"></select>
+                </label>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Sidebar (desktop): the steps in the order a student should do them -->
+    <aside class="hidden lg:block fixed top-16 bottom-0 left-0 w-72 bg-white border-r-4 border-black p-4 overflow-y-auto z-30">
+        <a href="#dashboard" data-view="dashboard" class="side-item mb-4">
+            <span class="step-num"><i class="ph-bold ph-house"></i></span>
+            <span>Home<span class="side-sub">Progress and what to do next</span></span>
+        </a>
+        <p class="text-xs font-bold uppercase text-gray-500 mb-2 px-1">// Your learning steps</p>
+        <nav class="space-y-2">
+            <a href="#viva" data-view="viva" class="side-item">
+                <span class="step-num">1</span>
+                <span>Viva<span class="side-sub" id="side-viva">Find out what you know</span></span>
+            </a>
+            <a href="#path" data-view="path" class="side-item">
+                <span class="step-num">2</span>
+                <span>My path<span class="side-sub" id="side-path">Your plan, fixed before gaps appear</span></span>
+            </a>
+            <a href="#lessons" data-view="lessons" class="side-item">
+                <span class="step-num">3</span>
+                <span>Lessons<span class="side-sub" id="side-lessons">Learn and practise each topic</span></span>
+            </a>
+        </nav>
+        <div class="mt-8 border-4 border-black p-3 bg-slate-100 text-xs">
+            <p class="font-bold uppercase mb-1"><i class="ph-bold ph-lightbulb"></i> How it works</p>
+            <p>Take the viva once. The agents then plan your path, warn you about topics you may struggle with,
+                and teach each topic in your language and style.</p>
+        </div>
+    </aside>
+
+    <!-- Bottom tab bar (mobile) -->
+    <nav class="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-white border-t-4 border-black flex">
+        <a href="#dashboard" data-view="dashboard" class="tab-item"><i class="ph-bold ph-house text-xl"></i>Home</a>
+        <a href="#viva" data-view="viva" class="tab-item"><i class="ph-bold ph-microphone text-xl"></i>1 Viva</a>
+        <a href="#path" data-view="path" class="tab-item"><i class="ph-bold ph-path text-xl"></i>2 Path</a>
+        <a href="#lessons" data-view="lessons" class="tab-item"><i class="ph-bold ph-book-open text-xl"></i>3 Lessons</a>
+    </nav>
+
+    <main class="pt-24 pb-28 px-4 lg:pl-80 lg:pr-8 max-w-[1500px] min-h-screen">
+
+        <!-- ============================ HOME ============================ -->
+        <div id="view-dashboard" class="view-section hidden">
+            <header class="mb-8 border-b-4 border-black pb-6">
+                <p class="text-xs font-bold uppercase text-gray-500">// Student home</p>
+                <h1 class="font-display text-5xl md:text-6xl uppercase leading-none" id="student-name">Student_</h1>
+                <div id="student-meta" class="flex flex-wrap gap-2 mt-4"></div>
+            </header>
+            <div id="next-step" class="mb-8"></div>
+            <div class="grid grid-cols-1 xl:grid-cols-3 gap-8">
+                <section class="card p-6 xl:col-span-2">
+                    <h2 class="font-display text-2xl uppercase mb-1">Mastery</h2>
+                    <p class="text-xs font-bold uppercase text-gray-500 mb-4">// Measured by the viva and practice. Click a topic to study it.</p>
+                    <div id="mastery"></div>
+                </section>
+                <section class="card p-6">
+                    <h2 class="font-display text-2xl uppercase mb-1">Agent activity</h2>
+                    <p class="text-xs font-bold uppercase text-gray-500 mb-4">// Changes made to your path, and why</p>
+                    <div id="risk-events" class="space-y-3"></div>
+                </section>
+            </div>
+        </div>
+
+        <!-- ============================ 1. VIVA ============================ -->
+        <div id="view-viva" class="view-section hidden">
+            <header class="mb-8 border-b-4 border-black pb-6">
+                <p class="text-xs font-bold uppercase text-gray-500">// Step 1 of 3</p>
+                <h1 class="font-display text-5xl md:text-6xl uppercase leading-none">Viva<span class="text-neo-pink">_</span></h1>
+                <p class="font-bold mt-2 max-w-2xl">A short spoken interview. Answer in your own words, in English or Hinglish. Vague answers get a follow-up question.</p>
+            </header>
+            <div id="viva-start" class="card p-6 max-w-2xl">
+                <ol class="list-decimal pl-6 mb-6 space-y-1">
+                    <li>The agent asks one question on each of 4 foundation topics.</li>
+                    <li>Type your answer, or press <b>Speak</b> and say it.</li>
+                    <li>Tell it how sure you were (1-5). It spots over- and under-confidence.</li>
+                </ol>
+                <button class="btn" onclick="startViva(this)"><i class="ph-bold ph-play"></i> Start viva</button>
+            </div>
+            <div id="viva-box" class="hidden grid grid-cols-1 xl:grid-cols-5 gap-8">
+                <section class="card p-6 xl:col-span-3">
+                    <div class="flex justify-between items-center mb-3">
+                        <span id="viva-progress" class="chip bg-neo-yellow"></span>
+                        <span id="viva-followup" class="chip bg-neo-pink text-white hidden">Follow-up question</span>
+                    </div>
+                    <div id="viva-dots" class="flex gap-2 mb-4"></div>
+                    <p id="viva-concept" class="text-xs font-bold uppercase text-gray-500 mb-2"></p>
+                    <p id="viva-question" class="font-display text-2xl leading-tight mb-6"></p>
+                    <textarea id="viva-answer" rows="4" class="field mb-2" placeholder="Type or speak your answer..."></textarea>
+                    <div class="flex flex-wrap items-center gap-3 mb-4">
+                        <button class="btn btn-light" onclick="dictate('viva-answer', this)"><i class="ph-bold ph-microphone"></i> Speak</button>
+                        <button class="btn btn-light" onclick="speak($('viva-question').textContent)"><i class="ph-bold ph-speaker-high"></i> Read aloud</button>
+                    </div>
+                    <p class="font-bold uppercase text-sm mb-2">How sure are you? <span class="font-normal normal-case">(1 = guessing, 5 = certain)</span></p>
+                    <div id="viva-confidence" class="flex gap-2 mb-6"></div>
+                    <button class="btn" onclick="answerViva(this)">Submit answer -></button>
+                </section>
+                <section class="xl:col-span-2 space-y-4">
+                    <p class="text-xs font-bold uppercase text-gray-500">// Feedback on your answers</p>
+                    <div id="viva-feedback" class="space-y-4"></div>
+                </section>
+            </div>
+            <div id="viva-summary" class="hidden"></div>
+        </div>
+
+        <!-- ============================ 2. PATH ============================ -->
+        <div id="view-path" class="view-section hidden">
+            <header class="mb-8 border-b-4 border-black pb-6 flex flex-wrap justify-between items-end gap-4">
+                <div>
+                    <p class="text-xs font-bold uppercase text-gray-500">// Step 2 of 3</p>
+                    <h1 class="font-display text-5xl md:text-6xl uppercase leading-none">My path<span class="text-neo-pink">_</span></h1>
+                    <p class="font-bold mt-2 max-w-2xl">Your topics in order. The Gap Predictor adds refreshers before the topics you are likely to struggle with.</p>
+                </div>
+                <button class="btn" onclick="runPrediction(this)"><i class="ph-bold ph-crosshair"></i> Check for gaps</button>
+            </header>
+            <div id="path-message"></div>
+            <div class="grid grid-cols-1 xl:grid-cols-5 gap-8">
+                <section class="card p-6 xl:col-span-3">
+                    <h2 class="font-display text-2xl uppercase mb-1">Learning path</h2>
+                    <p class="text-xs font-bold uppercase text-gray-500 mb-4">// Press START to open a lesson · DONE when finished</p>
+                    <div id="path-list" class="space-y-2"></div>
+                </section>
+                <section class="card p-6 xl:col-span-2">
+                    <h2 class="font-display text-2xl uppercase mb-1">Watch out</h2>
+                    <p class="text-xs font-bold uppercase text-gray-500 mb-4">// Topics ahead you may struggle with, and why</p>
+                    <div id="radar-list" class="space-y-4"></div>
+                </section>
+            </div>
+        </div>
+
+        <!-- ============================ 3. LESSONS ============================ -->
+        <div id="view-lessons" class="view-section hidden">
+            <header class="mb-8 border-b-4 border-black pb-6">
+                <p class="text-xs font-bold uppercase text-gray-500">// Step 3 of 3</p>
+                <h1 class="font-display text-5xl md:text-6xl uppercase leading-none">Lessons<span class="text-neo-pink">_</span></h1>
+                <p class="font-bold mt-2 max-w-2xl">Built only from trusted course material. Every part is marked as faculty material or AI-added.</p>
+            </header>
+            <section class="card p-6 mb-8 flex flex-wrap items-end gap-4">
+                <label class="flex-1 min-w-[220px]"><span class="font-bold uppercase text-sm">Topic</span>
+                    <select id="lesson-concept" class="field mt-1"></select></label>
+                <label class="min-w-[180px]"><span class="font-bold uppercase text-sm">Format</span>
+                    <select id="lesson-format" class="field mt-1">
+                        <option value="">Auto (agent decides)</option>
+                        <option value="text">Text</option><option value="audio">Audio</option>
+                        <option value="visual">Visual</option><option value="practice">Practice</option>
+                    </select></label>
+                <button class="btn" onclick="requestLesson(this)"><i class="ph-bold ph-sparkle"></i> Teach me</button>
+            </section>
+            <div id="lesson-body">
+                <div class="border-4 border-dashed border-black p-8 bg-white/70">
+                    <p class="font-bold uppercase mb-2">Pick a topic and press TEACH ME</p>
+                    <p class="text-sm">Tip: the easiest way in is <a href="#path" class="underline font-bold">My path</a>, where each topic has a START button.</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="vp.js"></script>
+    <script src="student.js"></script>
+</body>
+</html>

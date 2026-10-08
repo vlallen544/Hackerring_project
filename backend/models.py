@@ -22,6 +22,17 @@ class Prerequisite(BaseModel):
     after: str = Field(description="concept id that depends on it")
     reason: str = Field(description="Why 'before' is needed for 'after'")
 
+class ConceptPrerequisites(BaseModel):
+    concept_id: str
+    needs: list[str] = Field(description="ids of concepts a student must understand BEFORE this one. Direct "
+                                         "prerequisites only. Empty list if this concept is foundational")
+    reason: str = Field(description="One short sentence on why these are needed, or 'foundational'")
+
+
+class PrerequisiteMap(BaseModel):
+    concepts: list[ConceptPrerequisites] = Field(description="One entry for EVERY concept given, in the same order")
+
+
 class KnowledgeExtraction(BaseModel):
     concepts: list[Concept]
     claims: list[Claim]

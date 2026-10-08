@@ -190,20 +190,20 @@ Authority order is configurable by faculty (default: faculty notes > official te
 
 | Layer | Technology |
 |---|---|
-| **Frontend** | Next.js, React, Tailwind CSS |
-| **Visualization** | React Flow (prerequisite graph, Gap Radar), Recharts (heatmaps, trends) |
+| **Frontend** | HTML + vanilla JavaScript + Tailwind CSS (CDN), neo-brutalist design adapted from the Campus Zero prototype; served by FastAPI |
+| **Visualization** | Mermaid (lesson diagrams); risk, trust and mastery bars in the UI |
 | **Backend** | FastAPI (Python) |
-| **Agent orchestration** | LangGraph |
+| **Agent orchestration** | FastAPI routes + shared knowledge base / SQLite state (LangGraph planned) |
 | **LLM** | `agnes-3.0-flash` – reasoning, extraction, source comparison, path planning, multilingual content, tool calling |
-| **Image generation** | `agnes-image-2.5-flash` – diagrams and visual aids for visual learners |
+| **Image generation** | `agnes-image-2.5-flash` – planned; diagrams currently use Mermaid |
 | **SDK** | OpenAI-compatible Python SDK pointed at the Agnes API |
 | **Graph logic** | networkx |
 | **Document parsing** | pdfplumber, python-pptx |
-| **Speech-to-text** | Browser Web Speech API (`en-IN`, `hi-IN`, `kn-IN`) |
+| **Speech-to-text** | Browser Web Speech API (`en-IN`) |
 | **Text-to-speech** | Browser `speechSynthesis` |
-| **Database** | SQLite (local) / Supabase (hosted) |
-| **Reliability** | tenacity (retry with backoff), request queue, response cache |
-| **Live updates** | Server-Sent Events (agent activity feed) |
+| **Database** | SQLite, one database per course (Supabase planned) |
+| **Reliability** | rate limiting, retry with backoff, response cache (`backend/tools/agnes_client.py`) |
+| **Live updates** | Server-Sent Events (planned) |
 
 > **Note:** Agnes 3.0 Flash accepts text and image-URL input only, so speech-to-text and text-to-speech are handled by a separate component in the browser.
 
@@ -249,37 +249,52 @@ risk_events (student, concept, risk, action, reason)
 
 ---
 
+## 🚦 Implementation Status
+
+What runs today versus what the architecture above still plans.
+
+| Area | Status |
+|---|---|
+| Knowledge Builder (claims with verified quotes, prerequisite graph) | ✅ Built |
+| Source Reconciler + trust engine + Syllabus Freshness Report (Objective 3) | ✅ Built |
+| Viva Agent (adaptive, follow-ups, misconceptions, confidence calibration) | ✅ Built |
+| Tutor Agent (level / format / language in code, provenance, learned style) (Objective 1) | ✅ Built |
+| Gap Predictor (risk score, refreshers, format switch, challenge track, class radar) (Objective 2) | ✅ Built |
+| Web UI (student + faculty, voice input and read-aloud) served by FastAPI | ✅ Built |
+| Multiple courses (DBMS and DSA demo courses, `scripts/switch_course.py`) | ✅ Built |
+| Agents coordinated through FastAPI routes and shared data (`data/*.json` + SQLite) | ✅ Built |
+| LangGraph orchestration, SSE streaming | 🔜 Planned |
+| Brief, Doubt, Change and Insights agents; placement view | 🔜 Planned |
+| `agnes-image-2.5-flash` visuals (diagrams currently use Mermaid), Supabase hosting | 🔜 Planned |
+
+---
+
 ## 📁 Project Structure
 
 ```
-vidyapath/
+Hackerring_project/
 ├── backend/
-│   ├── main.py                 # FastAPI app & routes
-│   ├── agents/                 # one module per agent
-│   │   ├── brief.py
+│   ├── main.py                 # FastAPI app: API routes + serves the web UI at /ui
+│   ├── courses.py              # course registry (DBMS, DSA) and the active course
+│   ├── db.py                   # SQLite student state (one database per course)
+│   ├── models.py               # Pydantic schemas the agents must return
+│   ├── agents/                 # LLM agents (Agnes 3.0 Flash)
 │   │   ├── knowledge_builder.py
 │   │   ├── reconciler.py
-│   │   ├── planner.py
 │   │   ├── viva.py
 │   │   ├── tutor.py
-│   │   ├── doubt.py
-│   │   ├── gap_predictor.py
-│   │   ├── change.py
-│   │   └── insights.py
-│   ├── engine/                 # deterministic logic
-│   │   ├── trust.py
-│   │   ├── mastery.py
-│   │   ├── risk.py
-│   │   └── diff.py
-│   ├── tools/                  # parsers, quote verifier, agnes client, queue
-│   ├── models.py               # Pydantic schemas
-│   └── db.py
-├── frontend/
-│   └── app/
-│       ├── faculty/
-│       ├── student/
-│       └── placement/
-├── sample_data/                # demo notes, textbook excerpts, job descriptions
+│   │   └── gap_predictor.py
+│   ├── engine/                 # deterministic decisions (no LLM)
+│   │   ├── trust.py            # which source to trust
+│   │   ├── mastery.py          # mastery + confidence calibration
+│   │   ├── adapt.py            # lesson level / format / learned style
+│   │   └── risk.py             # learning-gap risk
+│   └── tools/                  # parsers, quote verifier, Agnes client (rate limit, retry, cache)
+├── ui/                         # web UI (HTML + Tailwind CDN + vanilla JS)
+├── sample_data/                # DBMS demo course: sources, students, answer key
+├── sample_data_dsa/            # DSA demo course: sources, students, answer key
+├── data/                       # generated knowledge bases (+ local SQLite databases)
+├── scripts/                    # runners and checks for each agent, course switching
 ├── .env.example
 └── README.md
 ```
@@ -290,9 +305,8 @@ vidyapath/
 
 ### Prerequisites
 - Python 3.10+
-- Node.js 18+
 - An Agnes API key from [platform.agnes-ai.com](https://platform.agnes-ai.com)
-- Google Chrome (for the Web Speech API)
+- Google Chrome or Edge (for voice input via the Web Speech API); an internet connection for the UI's CDN assets
 
 ### Setup
 ```bash
@@ -306,14 +320,21 @@ source .venv/bin/activate        # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 cp .env.example .env             # add your AGNES_API_KEY
 uvicorn backend.main:app --reload
-
-# Frontend (new terminal)
-cd frontend
-npm install
-npm run dev
 ```
 
-The API health check is at <http://localhost:8000/health>; interactive API docs are at <http://localhost:8000/docs>. The Next.js app runs at <http://localhost:3000>.
+Open <http://localhost:8000> for the web UI (student and faculty views). Interactive API docs are at <http://localhost:8000/docs> and the health check at <http://localhost:8000/health>.
+
+### Courses and demo data
+Two demo courses are included, each with planted conflicts and an answer key (`expected_results.md`):
+
+| Course | Sources | Switch to it |
+|---|---|---|
+| DBMS (default) | `sample_data/` | `python scripts/switch_course.py dbms` |
+| Data Structures and Algorithms | `sample_data_dsa/` | `python scripts/switch_course.py dsa` |
+
+Each course keeps its own knowledge base, faculty overrides and student progress. A course is built automatically the first time you switch to it (about a minute); you can also press **Build course** on the faculty page. Use **Reset student progress** on the faculty page before a demo.
+
+Useful scripts: `run_knowledge_builder.py` and `run_reconciler.py` (check the planted conflicts), `viva_cli.py ravi` (terminal viva), `run_tutor_demo.py keys ravi asha` (same topic, two students), `run_gap_demo.py ravi` (gap prediction).
 
 To verify the Agnes connection and cached JSON client, run `python scripts/hello_agnes.py` and `python scripts/test_client.py` from the repository root after configuring `.env`.
 
@@ -322,8 +343,6 @@ To verify the Agnes connection and cached JSON client, run `python scripts/hello
 AGNES_API_KEY=your_key_here
 AGNES_BASE_URL=https://apihub.agnes-ai.com/v1
 AGNES_TEXT_MODEL=agnes-3.0-flash
-AGNES_IMAGE_MODEL=agnes-image-2.5-flash
-DATABASE_URL=sqlite:///./vidyapath.db
 ```
 
 ---

@@ -6,15 +6,16 @@ from pathlib import Path
 
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import RedirectResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from backend import db
+from backend import courses, db
 
-DATA_DIR = Path("sample_data")
-SOURCES_JSON = DATA_DIR / "sources.json"
 KB_FILE = Path("data/knowledge_base.json")
 TRUSTED_FILE = Path("data/trusted_kb.json")
 SOURCE_TYPES = {"faculty_notes", "textbook", "job_description", "web_link"}
+UI_DIR = Path("ui")
 
 
 @asynccontextmanager
@@ -25,6 +26,12 @@ async def lifespan(app):
 
 app = FastAPI(title="VidyaPath API", lifespan=lifespan)
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
+app.mount("/ui", StaticFiles(directory=UI_DIR, html=True), name="ui")  # the VidyaPath web UI
+
+
+@app.get("/", include_in_schema=False)
+def root():
+    return RedirectResponse("/ui/")
 
 
 def _load(path):
@@ -44,9 +51,21 @@ def health():
 # --------------------------------------------------------------------------- #
 # Faculty: sources
 # --------------------------------------------------------------------------- #
+def _sources_json():
+    return courses.data_dir() / "sources.json"
+
+
+@app.get("/api/course")
+def course_info():
+    """Which course is active (switch with: python scripts/switch_course.py <name>)."""
+    name = courses.active_course()
+    return {"id": name, "title": courses.COURSES[name]["title"], "built": courses.is_built(),
+            "available": {k: v["title"] for k, v in courses.COURSES.items()}}
+
+
 @app.get("/api/sources")
 def list_sources():
-    return json.loads(SOURCES_JSON.read_text(encoding="utf-8"))["sources"]
+    return json.loads(_sources_json().read_text(encoding="utf-8"))["sources"]
 
 
 @app.post("/api/sources/upload")
@@ -64,15 +83,15 @@ async def upload_source(
         raise HTTPException(400, "Only PDF, PPTX, MD or TXT files are supported")
 
     source_id = re.sub(r"[^a-z0-9]+", "_", Path(file.filename).stem.lower()).strip("_")
-    dest = DATA_DIR / "sources" / f"{source_id}{suffix}"
+    dest = courses.data_dir() / "sources" / f"{source_id}{suffix}"
     dest.write_bytes(await file.read())
 
-    meta = json.loads(SOURCES_JSON.read_text(encoding="utf-8"))
+    meta = json.loads(_sources_json().read_text(encoding="utf-8"))
     meta["sources"] = [s for s in meta["sources"] if s["id"] != source_id]  # replace if re-uploaded
     meta["sources"].append(
         {"id": source_id, "file": f"sources/{dest.name}", "title": title, "type": type, "year": year}
     )
-    SOURCES_JSON.write_text(json.dumps(meta, indent=2, ensure_ascii=False), encoding="utf-8")
+    _sources_json().write_text(json.dumps(meta, indent=2, ensure_ascii=False), encoding="utf-8")
     return {"id": source_id, "message": "Uploaded. Run POST /api/course/build to update the knowledge base."}
 
 
@@ -85,7 +104,8 @@ def build_course():
     from backend.agents.knowledge_builder import build_knowledge
     from backend.agents.reconciler import reconcile
 
-    kb = build_knowledge(str(DATA_DIR))
+    kb = build_knowledge(str(courses.data_dir()))
+    db.init_db()  # make sure the active course's student database exists
     trusted = reconcile()
     return {
         "concepts": len(kb["concepts"]),

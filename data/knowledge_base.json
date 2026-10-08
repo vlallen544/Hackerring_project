@@ -353,43 +353,48 @@
   "prerequisites": [
     {
       "before": "relational_model",
-      "after": "keys",
-      "reason": "Understanding what a tuple and attribute are is required to understand how keys uniquely identify tuples."
+      "after": "indexing",
+      "reason": "Indexes are data structures built on top of relational tables to improve retrieval performance."
     },
     {
       "before": "relational_model",
-      "after": "normalization",
-      "reason": "Normalization is the process of organizing relations, so the relational model is the foundational concept."
+      "after": "basic_queries",
+      "reason": "SQL queries operate on the tables and attributes defined by the relational model."
+    },
+    {
+      "before": "relational_model",
+      "after": "keys",
+      "reason": "Keys are attributes defined within the relations (tables) of the relational model."
     },
     {
       "before": "keys",
       "after": "joins",
-      "reason": "Joins connect tables through keys, so an understanding of primary and foreign keys is necessary to write effective joins."
+      "reason": "Joins combine tables based on relationships established by keys, extending basic query operations."
     },
     {
       "before": "keys",
       "after": "constraints",
-      "reason": "Constraint types like PRIMARY KEY and FOREIGN KEY are fundamentally based on key concepts."
+      "reason": "Constraints enforce rules on relational data and are often defined using primary and foreign keys."
     },
     {
-      "before": "basic_queries",
-      "after": "aggregation",
-      "reason": "Aggregation builds upon the basic SELECT...FROM structure, adding functions and grouping clauses."
-    },
-    {
-      "before": "basic_queries",
-      "after": "subqueries",
-      "reason": "A subquery is a query nested inside another query, so the basic query structure must be understood first."
+      "before": "keys",
+      "after": "normalization",
+      "reason": "Normalization is the process of structuring relations to minimize redundancy based on functional dependencies between attributes and keys."
     },
     {
       "before": "basic_queries",
       "after": "joins",
-      "reason": "Joins are an extension of the basic SELECT statement involving multiple tables."
+      "reason": "Joins combine tables based on relationships established by keys, extending basic query operations."
     },
     {
-      "before": "aggregation",
-      "after": "window_functions",
-      "reason": "Window functions perform calculations across rows and are often compared to or used alongside GROUP BY aggregation."
+      "before": "basic_queries",
+      "after": "aggregation",
+      "reason": "Aggregation functions and GROUP BY extend basic SELECT statements to process grouped data."
+    },
+    {
+      "before": "basic_queries",
+      "after": "subqueries",
+      "reason": "Subqueries are nested versions of basic SQL queries used for conditional filtering."
     },
     {
       "before": "aggregation",
@@ -397,24 +402,44 @@
       "reason": "Optimizing queries often involves understanding how aggregated data is retrieved and grouped."
     },
     {
+      "before": "aggregation",
+      "after": "window_functions",
+      "reason": "Window functions perform calculations similar to aggregation but without collapsing rows, requiring understanding of grouping and selection."
+    },
+    {
+      "before": "joins",
+      "after": "query_performance",
+      "reason": "Optimizing performance requires understanding how complex operations like joins and subqueries interact with indexes."
+    },
+    {
       "before": "subqueries",
       "after": "cte",
-      "reason": "CTEs are an alternative to deeply nested subqueries, making an understanding of subqueries a useful prerequisite."
+      "reason": "CTEs provide a readable way to manage complex multi-step logic that might otherwise use nested subqueries."
+    },
+    {
+      "before": "subqueries",
+      "after": "query_performance",
+      "reason": "Optimizing performance requires understanding how complex operations like joins and subqueries interact with indexes."
+    },
+    {
+      "before": "indexing",
+      "after": "query_performance",
+      "reason": "Optimizing performance requires understanding how complex operations like joins and subqueries interact with indexes."
     }
   ],
   "learning_order": [
     "relational_model",
-    "basic_queries",
-    "indexing",
     "keys",
-    "normalization",
-    "aggregation",
-    "subqueries",
-    "joins",
     "constraints",
+    "basic_queries",
+    "aggregation",
+    "joins",
     "window_functions",
-    "query_performance",
-    "cte"
+    "normalization",
+    "indexing",
+    "subqueries",
+    "cte",
+    "query_performance"
   ],
   "removed_cycle_edges": []
 }

@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VidyaPath</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="theme.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web@2.1.1"></script>
+    <link rel="stylesheet" href="vp.css">
+</head>
+<body class="bg-slate-100 text-neo-black antialiased selection:bg-neo-pink selection:text-white">
+
+    <nav class="fixed w-full z-40 bg-white border-b-4 border-black top-0">
+        <div class="max-w-7xl mx-auto px-4 flex justify-between h-20 items-center">
+            <a href="index.html" class="flex items-center gap-2 group">
+                <div class="bg-neo-black text-white p-2 border-2 border-transparent group-hover:bg-neo-yellow group-hover:text-black group-hover:border-black transition-colors">
+                    <i class="ph-bold ph-graduation-cap text-2xl"></i>
+                </div>
+                <span class="font-display text-2xl tracking-tighter uppercase italic">VIDYA<span class="text-neo-pink">_PATH</span></span>
+            </a>
+            <div class="flex items-center gap-2">
+                <a href="student.html" class="nav-btn">Student</a>
+                <a href="faculty.html" class="nav-btn">Faculty</a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="pt-32 pb-24 px-4 max-w-7xl mx-auto min-h-screen animate-slam">
+        <header class="mb-12 border-b-4 border-black pb-6">
+            <h1 class="font-display text-5xl md:text-7xl uppercase leading-none mb-4">Learn what<br><span class="text-neo-pink">industry needs.</span></h1>
+            <p class="font-bold max-w-2xl">Agents that check your course material against current industry practice, diagnose each student
+                with a spoken viva, teach them in their own language and style, and fix learning gaps before they happen.</p>
+        </header>
+
+        <section class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-12">
+            <div class="border-4 border-black bg-white p-4"><span class="chip bg-neo-yellow mb-2">Step 1</span>
+                <p class="font-display text-xl uppercase">Take the viva</p><p class="text-sm">A short spoken interview finds what you know and what you only think you know.</p></div>
+            <div class="border-4 border-black bg-white p-4"><span class="chip bg-neo-yellow mb-2">Step 2</span>
+                <p class="font-display text-xl uppercase">Get your path</p><p class="text-sm">The agents plan your topics and add refreshers before the ones you would struggle with.</p></div>
+            <div class="border-4 border-black bg-white p-4"><span class="chip bg-neo-yellow mb-2">Step 3</span>
+                <p class="font-display text-xl uppercase">Learn your way</p><p class="text-sm">Lessons in your language and style, built only from trusted course material.</p></div>
+        </section>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <section class="card p-6">
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="bg-neo-pink text-white border-2 border-black p-2"><i class="ph-bold ph-student text-3xl"></i></div>
+                    <h2 class="font-display text-3xl uppercase">I'm a student</h2>
+                </div>
+                <p class="font-bold text-sm uppercase text-gray-500 mb-4">// Pick your name to start</p>
+                <div id="students" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div class="font-bold">Loading students...</div>
+                </div>
+            </section>
+
+            <section class="card p-6">
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="bg-neo-blue border-2 border-black p-2"><i class="ph-bold ph-chalkboard-teacher text-3xl"></i></div>
+                    <h2 class="font-display text-3xl uppercase">I'm faculty</h2>
+                </div>
+                <p class="font-bold text-sm uppercase text-gray-500 mb-4">// Sources, conflicts, syllabus freshness, class radar</p>
+                <div id="course-stats" class="grid grid-cols-3 gap-4 mb-6"></div>
+                <a href="faculty.html" class="btn inline-block">Open faculty dashboard -></a>
+            </section>
+        </div>
+    </main>
+
+    <script src="vp.js"></script>
+    <script>
+        async function init() {
+            try {
+                const students = await api("/api/students");
+                $("students").innerHTML = students.map(s => `
+                    <a href="student.html?id=${encodeURIComponent(s.id)}"
+                       class="block border-4 border-black bg-white p-4 shadow-brutal-sm hover:bg-neo-yellow hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-all">
+                        <p class="font-display text-2xl uppercase">${esc(s.name)}</p>
+                        <p class="text-xs font-bold uppercase">${esc(s.language)} · ${esc(s.stated_style)} · ${esc(s.pace)}</p>
+                        <p class="text-xs font-bold uppercase text-gray-500">${esc(s.target_role)}</p>
+                    </a>`).join("");
+            } catch (err) {
+                $("students").innerHTML = emptyState("Backend not reachable");
+            }
+            try {
+                const [conflicts, freshness, graph] = await Promise.all([
+                    api("/api/course/conflicts"), api("/api/course/freshness"), api("/api/course/graph")]);
+                const stat = (n, label, color) => `
+                    <div class="border-4 border-black ${color} p-3 text-center">
+                        <p class="font-display text-3xl">${esc(n)}</p><p class="text-xs font-bold uppercase">${esc(label)}</p>
+                    </div>`;
+                $("course-stats").innerHTML = stat(graph.nodes.length, "concepts", "bg-white")
+                    + stat(conflicts.length, "conflicts", "bg-neo-yellow")
+                    + stat(`${freshness.score ?? "—"}%`, "fresh", "bg-neo-green");
+            } catch {
+                $("course-stats").innerHTML = `<div class="col-span-3">${emptyState("Course not built yet")}</div>`;
+            }
+        }
+        init();
+    </script>
+</body>
+</html>

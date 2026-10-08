@@ -1,0 +1,1064 @@
+{
+  "concepts": {
+    "arrays": {
+      "id": "arrays",
+      "name": "Arrays",
+      "description": "A data structure that stores elements in contiguous memory, allowing for O(1) access by index."
+    },
+    "linked_lists": {
+      "id": "linked_lists",
+      "name": "Linked Lists",
+      "description": "A linear data structure where each node points to the next node in the sequence."
+    },
+    "stacks_and_queues": {
+      "id": "stacks_and_queues",
+      "name": "Stacks and Queues",
+      "description": "Linear data structures that manage elements according to Last-In-First-Out (LIFO) or First-In-First-Out (FIFO) principles."
+    },
+    "recursion": {
+      "id": "recursion",
+      "name": "Recursion",
+      "description": "A programming technique where a function calls itself to process smaller instances of the same problem."
+    },
+    "sorting": {
+      "id": "sorting",
+      "name": "Sorting Algorithms",
+      "description": "Algorithms such as Quicksort and Merge sort that arrange data in a specific order, with varying time and space complexities."
+    },
+    "binary_search": {
+      "id": "binary_search",
+      "name": "Binary Search",
+      "description": "An algorithm that finds an item in a sorted list by repeatedly halving the search interval."
+    },
+    "hashing": {
+      "id": "hashing",
+      "name": "Hashing",
+      "description": "A technique that maps keys to specific indices in a table using a hash function for fast data retrieval."
+    },
+    "trees": {
+      "id": "trees",
+      "name": "Trees",
+      "description": "Non-linear hierarchical data structures where each node has a parent and zero or more children, such as Binary Search Trees."
+    },
+    "heaps": {
+      "id": "heaps",
+      "name": "Heaps",
+      "description": "Special tree data structures used to efficiently implement priority queues with O(log n) insert and extract operations."
+    },
+    "graphs": {
+      "id": "graphs",
+      "name": "Graph Algorithms",
+      "description": "Structures of nodes (vertices) and edges used to model relationships, with traversal algorithms like BFS and DFS."
+    },
+    "shortest_paths": {
+      "id": "shortest_paths",
+      "name": "Shortest Path Algorithms",
+      "description": "Algorithms like Dijkstra's and Bellman-Ford that find the lowest-cost path between nodes in a weighted graph."
+    },
+    "dynamic_programming": {
+      "id": "dynamic_programming",
+      "name": "Dynamic Programming",
+      "description": "A method for solving complex problems by breaking them down into overlapping subproblems and reusing stored solutions."
+    },
+    "array_techniques": {
+      "id": "array_techniques",
+      "name": "Array and String Techniques",
+      "description": "Optimization strategies like sliding windows and two pointers to process arrays more efficiently in O(n) time."
+    },
+    "complexity_analysis": {
+      "id": "complexity_analysis",
+      "name": "Complexity Analysis",
+      "description": "The mathematical study of how an algorithm's time and space requirements grow relative to the input size using Big-O notation."
+    }
+  },
+  "prerequisites": [
+    {
+      "before": "arrays",
+      "after": "sorting",
+      "reason": "Sorting algorithms are typically implemented on arrays, and merge sort is an example of recursive divide-and-conquer."
+    },
+    {
+      "before": "arrays",
+      "after": "hashing",
+      "reason": "Hash tables use hash functions to map keys to indices within a backing array, so understanding arrays is essential."
+    },
+    {
+      "before": "linked_lists",
+      "after": "trees",
+      "reason": "Nodes in a tree are often linked like nodes in a linked list, and tree traversals are classically implemented with recursion."
+    },
+    {
+      "before": "stacks_and_queues",
+      "after": "graphs",
+      "reason": "Graph traversal algorithms use queues for Breadth-First Search (BFS) and stacks or recursion for Depth-First Search (DFS)."
+    },
+    {
+      "before": "recursion",
+      "after": "graphs",
+      "reason": "Graph traversal algorithms use queues for Breadth-First Search (BFS) and stacks or recursion for Depth-First Search (DFS)."
+    },
+    {
+      "before": "recursion",
+      "after": "sorting",
+      "reason": "Sorting algorithms are typically implemented on arrays, and merge sort is an example of recursive divide-and-conquer."
+    },
+    {
+      "before": "recursion",
+      "after": "dynamic_programming",
+      "reason": "Dynamic programming is essentially an optimized approach to recursive problems with overlapping subproblems, often using memoization."
+    },
+    {
+      "before": "recursion",
+      "after": "trees",
+      "reason": "Nodes in a tree are often linked like nodes in a linked list, and tree traversals are classically implemented with recursion."
+    },
+    {
+      "before": "sorting",
+      "after": "array_techniques",
+      "reason": "Techniques like two pointers often operate on sorted arrays to find pairs, and all techniques apply directly to array structures."
+    },
+    {
+      "before": "sorting",
+      "after": "heaps",
+      "reason": "A binary heap is a specialized complete binary tree, and heaps are widely used in sorting algorithms like Heapsort."
+    },
+    {
+      "before": "sorting",
+      "after": "binary_search",
+      "reason": "Binary search operates on a sorted array, so one must first understand arrays and how sorting produces the required order."
+    },
+    {
+      "before": "trees",
+      "after": "heaps",
+      "reason": "A binary heap is a specialized complete binary tree, and heaps are widely used in sorting algorithms like Heapsort."
+    },
+    {
+      "before": "heaps",
+      "after": "shortest_paths",
+      "reason": "Shortest path algorithms are defined over graph structures, and efficient implementations like Dijkstra's algorithm use heaps to manage priority queues."
+    },
+    {
+      "before": "graphs",
+      "after": "shortest_paths",
+      "reason": "Shortest path algorithms are defined over graph structures, and efficient implementations like Dijkstra's algorithm use heaps to manage priority queues."
+    }
+  ],
+  "learning_order": [
+    "arrays",
+    "complexity_analysis",
+    "linked_lists",
+    "stacks_and_queues",
+    "recursion",
+    "sorting",
+    "binary_search",
+    "hashing",
+    "trees",
+    "heaps",
+    "graphs",
+    "shortest_paths",
+    "dynamic_programming",
+    "array_techniques"
+  ],
+  "sources": [
+    {
+      "id": "faculty_notes_dsa",
+      "file": "sources/faculty_notes_dsa.md",
+      "title": "DSA Lecture Notes (Prof. A. Iyer)",
+      "type": "faculty_notes",
+      "year": 2016
+    },
+    {
+      "id": "textbook_dsa_2024",
+      "file": "sources/textbook_dsa_2024.md",
+      "title": "Algorithms and Data Structures in Practice, 2nd Ed.",
+      "type": "textbook",
+      "year": 2024
+    },
+    {
+      "id": "web_dsa_cheatsheet_2015",
+      "file": "sources/web_dsa_cheatsheet_2015.md",
+      "title": "DSA Interview Cheat Sheet (blog)",
+      "type": "web_link",
+      "year": 2015
+    },
+    {
+      "id": "jd_sde_product",
+      "file": "sources/jd_sde_product.md",
+      "title": "JD: Software Engineer (New Grad), Product Company",
+      "type": "job_description",
+      "year": 2026
+    },
+    {
+      "id": "jd_sde_fintech",
+      "file": "sources/jd_sde_fintech.md",
+      "title": "JD: Backend Engineer, Fintech Payments",
+      "type": "job_description",
+      "year": 2026
+    }
+  ],
+  "claims": [
+    {
+      "concept_id": "arrays",
+      "statement": "Arrays store elements in contiguous memory, which allows any element to be accessed in O(1) time.",
+      "quote": "An array stores elements in contiguous memory, so any element can be accessed by index in O(1) time.",
+      "source_id": "faculty_notes_dsa",
+      "page": 1,
+      "claim_type": "fact",
+      "id": "claim_1",
+      "status": "trusted"
+    },
+    {
+      "concept_id": "arrays",
+      "statement": "Inserting or deleting an element in the middle of an array takes O(n) time because existing elements must be shifted.",
+      "quote": "Inserting or deleting in the middle of an array takes O(n) time because elements must be shifted.",
+      "source_id": "faculty_notes_dsa",
+      "page": 1,
+      "claim_type": "fact",
+      "id": "claim_2",
+      "status": "trusted"
+    },
+    {
+      "concept_id": "complexity_analysis",
+      "statement": "Big-O notation describes how the running time of an algorithm grows as the input size n increases.",
+      "quote": "Big-O notation describes how the running time grows as the input size n grows.",
+      "source_id": "faculty_notes_dsa",
+      "page": 1,
+      "claim_type": "definition",
+      "id": "claim_3",
+      "status": "trusted"
+    },
+    {
+      "concept_id": "linked_lists",
+      "statement": "Inserting an element at the head of a linked list is an O(1) operation.",
+      "quote": "Inserting at the head of a linked list takes O(1) time, but accessing the k-th element takes O(k)",
+      "source_id": "faculty_notes_dsa",
+      "page": 1,
+      "claim_type": "fact",
+      "id": "claim_4",
+      "status": "trusted"
+    },
+    {
+      "concept_id": "stacks_and_queues",
+      "statement": "A stack follows Last In First Out (LIFO) order, meaning the most recently added item is the first to be removed.",
+      "quote": "A stack follows Last In First Out (LIFO) order, with push and pop at the top.",
+      "source_id": "faculty_notes_dsa",
+      "page": 1,
+      "claim_type": "definition",
+      "id": "claim_5",
+      "status": "trusted"
+    },
+    {
+      "concept_id": "stacks_and_queues",
+      "statement": "A queue operates on a First In First Out (FIFO) basis, adding elements at the rear and removing them from the front.",
+      "quote": "A queue follows First In First Out (FIFO) order, adding at the rear and removing from the front.",
+      "source_id": "faculty_notes_dsa",
+      "page": 1,
+      "claim_type": "definition",
+      "id": "claim_6",
+      "status": "trusted"
+    },
+    {
+      "concept_id": "recursion",
+      "statement": "A recursive function must call itself on a smaller input and include a base case to stop the infinite loop.",
+      "quote": "A recursive function calls itself on a smaller input and must have a base case to stop.",
+      "source_id": "faculty_notes_dsa",
+      "page": 2,
+      "claim_type": "definition",
+      "id": "claim_7",
+      "status": "trusted"
+    },
+    {
+      "concept_id": "recursion",
+      "statement": "Each recursive call requires stack space, meaning that very deep recursion can lead to a stack overflow error.",
+      "quote": "Each recursive call uses stack space, so very deep recursion can cause a stack overflow.",
+      "source_id": "faculty_notes_dsa",
+      "page": 2,
+      "claim_type": "fact",
+      "id": "claim_8",
+      "status": "trusted"
+    },
+    {
+      "concept_id": "sorting",
+      "statement": "Bubble sort and insertion sort have a worst-case time complexity of O(n^2).",
+      "quote": "Bubble sort and insertion sort take O(n^2) time in the worst case.",
+      "source_id": "faculty_notes_dsa",
+      "page": 2,
+      "claim_type": "fact",
+      "id": "claim_9",
+      "status": "trusted"
+    },
+    {
+      "concept_id": "sorting",
+      "statement": "Merge sort divides the array into halves, sorts them, and merges them, guaranteeing O(n log n) time in all cases.",
+      "quote": "Merge sort divides the array into halves, sorts them and merges them, taking O(n log n) time in all cases.",
+      "source_id": "faculty_notes_dsa",
+      "page": 2,
+      "claim_type": "fact",
+      "id": "claim_10",
+      "status": "trusted"
+    },
+    {
+      "concept_id": "sorting",
+      "statement": "Quicksort has an average time complexity of O(n log n) but degrades to O(n^2) in the worst case if the pivot is chosen badly.",
+      "quote": "Quicksort takes O(n log n) time on average, but O(n^2) in the worst case when the pivot is chosen badly.",
+      "source_id": "faculty_notes_dsa",
+      "page": 2,
+      "claim_type": "fact",
+      "id": "claim_11",
+      "status": "trusted"
+    },
+    {
+      "concept_id": "binary_search",
+      "statement": "Binary search requires a sorted array and repeatedly halves the search range, resulting in O(log n) time complexity.",
+      "quote": "Binary search works only on a sorted array and repeatedly halves the search range, taking O(log n) time.",
+      "source_id": "faculty_notes_dsa",
+      "page": 2,
+      "claim_type": "rule",
+      "id": "claim_12",
+      "status": "trusted"
+    },
+    {
+      "concept_id": "hashing",
+      "statement": "A hash table maps keys to values using a hash function that computes an array index.",
+      "quote": "A hash table maps keys to values using a hash function to compute an index.",
+      "source_id": "faculty_notes_dsa",
+      "page": 3,
+      "claim_type": "definition",
+      "id": "claim_13",
+      "status": "trusted"
+    },
+    {
+      "concept_id": "hashing",
+      "statement": "Python dictionaries do not preserve insertion order, so one should not rely on the order of keys when iterating.",
+      "quote": "Python dictionaries are hash tables, and Python dictionaries do not preserve insertion order, so never rely on the order of keys when iterating.",
+      "source_id": "faculty_notes_dsa",
+      "page": 3,
+      "claim_type": "fact",
+      "id": "claim_14",
+      "status": "outdated"
+    },
+    {
+      "concept_id": "trees",
+      "statement": "A binary tree is a tree structure where every node has a maximum of two children.",
+      "quote": "A binary tree is a tree in which every node has at most two children.",
+      "source_id": "faculty_notes_dsa",
+      "page": 3,
+      "claim_type": "definition",
+      "id": "claim_15",
+      "status": "trusted"
+    },
+    {
+      "concept_id": "trees",
+      "statement": "In a binary search tree, the left subtree contains smaller keys and the right contains larger keys, meaning an inorder traversal yields sorted order.",
+      "quote": "In a binary search tree, the left subtree holds smaller keys and the right subtree holds larger keys, so an inorder traversal visits keys in sorted order.",
+      "source_id": "faculty_notes_dsa",
+      "page": 3,
+      "claim_type": "fact",
+      "id": "claim_16",
+      "status": "trusted"
+    },
+    {
+      "concept_id": "trees",
+      "statement": "Searching a binary search tree takes O(h) time, where h represents the height of the tree.",
+      "quote": "Searching a binary search tree takes O(h) time, where h is the height of the tree.",
+      "source_id": "faculty_notes_dsa",
+      "page": 3,
+      "claim_type": "fact",
+      "id": "claim_17",
+      "status": "trusted"
+    },
+    {
+      "concept_id": "heaps",
+      "statement": "A binary heap is a complete binary tree that implements a priority queue with O(log n) time for insert and extract-min operations.",
+      "quote": "A binary heap is a complete binary tree used to implement a priority queue, with insert and extract-min in O(log n) time.",
+      "source_id": "faculty_notes_dsa",
+      "page": 3,
+      "claim_type": "definition",
+      "id": "claim_18",
+      "status": "trusted"
+    },
+    {
+      "concept_id": "graphs",
+      "statement": "Graphs can be stored as adjacency matrices or lists, with adjacency lists being more memory efficient for sparse graphs.",
+      "quote": "A graph can be stored as an adjacency matrix or an adjacency list; adjacency lists use less memory for sparse graphs.",
+      "source_id": "faculty_notes_dsa",
+      "page": 4,
+      "claim_type": "fact",
+      "id": "claim_19",
+      "status": "trusted"
+    },
+    {
+      "concept_id": "graphs",
+      "statement": "Breadth-first search (BFS) utilizes a queue and is used to find the shortest path in an unweighted graph.",
+      "quote": "Breadth-first search (BFS) uses a queue and finds the shortest path in an unweighted graph.",
+      "source_id": "faculty_notes_dsa",
+      "page": 4,
+      "claim_type": "fact",
+      "id": "claim_20",
+      "status": "trusted"
+    },
+    {
+      "concept_id": "graphs",
+      "statement": "Depth-first search (DFS) utilizes a stack or recursion and is commonly used for cycle detection and topological sorting.",
+      "quote": "Depth-first search (DFS) uses a stack or recursion and is used for cycle detection and topological sorting.",
+      "source_id": "faculty_notes_dsa",
+      "page": 4,
+      "claim_type": "fact",
+      "id": "claim_21",
+      "status": "trusted"
+    },
+    {
+      "concept_id": "shortest_paths",
+      "statement": "Dijkstra's algorithm finds shortest paths from a source node but requires all edge weights to be non-negative.",
+      "quote": "Dijkstra's algorithm finds shortest paths from a source but requires all edge weights to be non-negative.",
+      "source_id": "faculty_notes_dsa",
+      "page": 4,
+      "claim_type": "rule",
+      "id": "claim_22",
+      "status": "trusted"
+    },
+    {
+      "concept_id": "shortest_paths",
+      "statement": "The Bellman-Ford algorithm should be used when a graph contains negative edge weights.",
+      "quote": "When a graph has negative edge weights, use the Bellman-Ford algorithm instead.",
+      "source_id": "faculty_notes_dsa",
+      "page": 4,
+      "claim_type": "rule",
+      "id": "claim_23",
+      "status": "trusted"
+    },
+    {
+      "concept_id": "arrays",
+      "statement": "Appending to a dynamic array takes amortized O(1) time because the array occasionally doubles its capacity.",
+      "quote": "Appending to a dynamic array takes amortized O(1) time, because the array occasionally doubles its capacity.",
+      "source_id": "textbook_dsa_2024",
+      "page": 1,
+      "claim_type": "fact",
+      "id": "claim_24",
+      "status": "trusted"
+    },
+    {
+      "concept_id": "hashing",
+      "statement": "A hash table provides O(1) lookup on average, but its worst case is O(n) when many keys collide into the same bucket.",
+      "quote": "A hash table gives O(1) lookup on average, but the worst case is O(n) when many keys collide into the same bucket.",
+      "source_id": "textbook_dsa_2024",
+      "page": 1,
+      "claim_type": "fact",
+      "id": "claim_25",
+      "status": "trusted"
+    },
+    {
+      "concept_id": "hashing",
+      "statement": "Since Python 3.7, dictionaries are guaranteed to preserve insertion order as part of the language specification.",
+      "quote": "Since Python 3.7, dictionaries are guaranteed to preserve insertion order as part of the language specification.",
+      "source_id": "textbook_dsa_2024",
+      "page": 1,
+      "claim_type": "fact",
+      "id": "claim_26",
+      "status": "trusted"
+    },
+    {
+      "concept_id": "sorting",
+      "statement": "Python's built-in sort algorithm uses Timsort, which is a stable algorithm that runs in O(n log n) time in the worst case.",
+      "quote": "Python's built-in sort uses Timsort, which is stable and runs in O(n log n) time in the worst case.",
+      "source_id": "textbook_dsa_2024",
+      "page": 1,
+      "claim_type": "fact",
+      "id": "claim_27",
+      "status": "trusted"
+    },
+    {
+      "concept_id": "sorting",
+      "statement": "Quicksort degrades to O(n^2) time complexity on already sorted input when the first element is always chosen as the pivot.",
+      "quote": "Quicksort degrades to O(n^2) on already sorted input when the first element is always chosen as the pivot",
+      "source_id": "textbook_dsa_2024",
+      "page": 1,
+      "claim_type": "fact",
+      "id": "claim_28",
+      "status": "trusted"
+    },
+    {
+      "concept_id": "sorting",
+      "statement": "Merge sort is stable and guarantees O(n log n), while quicksort is often faster in practice due to cache behavior, meaning neither is always faster.",
+      "quote": "Merge sort is stable and guarantees O(n log n), while quicksort is often faster in practice because of cache behaviour, so neither is always faster.",
+      "source_id": "textbook_dsa_2024",
+      "page": 1,
+      "claim_type": "opinion",
+      "id": "claim_29",
+      "status": "trusted"
+    },
+    {
+      "concept_id": "shortest_paths",
+      "statement": "Using a binary heap, Dijkstra's algorithm runs in O((V + E) log V) time and is only correct when all edge weights are non-negative.",
+      "quote": "Dijkstra's algorithm with a binary heap runs in O((V + E) log V) time and is only correct when every edge weight is non-negative.",
+      "source_id": "textbook_dsa_2024",
+      "page": 2,
+      "claim_type": "fact",
+      "id": "claim_30",
+      "status": "trusted"
+    },
+    {
+      "concept_id": "shortest_paths",
+      "statement": "The Bellman-Ford algorithm handles negative edge weights in O(V * E) time and can also detect negative cycles in a graph.",
+      "quote": "The Bellman-Ford algorithm handles negative edge weights in O(V * E) time and can also detect negative cycles.",
+      "source_id": "textbook_dsa_2024",
+      "page": 2,
+      "claim_type": "fact",
+      "id": "claim_31",
+      "status": "trusted"
+    },
+    {
+      "concept_id": "dynamic_programming",
+      "statement": "Dynamic programming solves problems that exhibit overlapping subproblems and optimal substructure.",
+      "quote": "Dynamic programming solves problems that have overlapping subproblems and optimal substructure.",
+      "source_id": "textbook_dsa_2024",
+      "page": 2,
+      "claim_type": "definition",
+      "id": "claim_32",
+      "status": "trusted"
+    },
+    {
+      "concept_id": "dynamic_programming",
+      "statement": "Memoization stores results of recursive calls in a top-down manner, while tabulation fills a table in a bottom-up manner.",
+      "quote": "Memoization stores the results of recursive calls top-down, while tabulation fills a table bottom-up.",
+      "source_id": "textbook_dsa_2024",
+      "page": 2,
+      "claim_type": "fact",
+      "id": "claim_33",
+      "status": "trusted"
+    },
+    {
+      "concept_id": "dynamic_programming",
+      "statement": "The 0/1 knapsack problem and the longest common subsequence problem are considered classic examples of dynamic programming.",
+      "quote": "The 0/1 knapsack problem and the longest common subsequence problem are classic dynamic programming examples.",
+      "source_id": "textbook_dsa_2024",
+      "page": 2,
+      "claim_type": "fact",
+      "id": "claim_34",
+      "status": "trusted"
+    },
+    {
+      "concept_id": "array_techniques",
+      "statement": "The sliding window technique maintains a moving range over an array to solve subarray problems in O(n) time instead of O(n^2).",
+      "quote": "The sliding window technique keeps a moving range over an array to solve subarray problems in O(n) time instead of O(n^2).",
+      "source_id": "textbook_dsa_2024",
+      "page": 2,
+      "claim_type": "fact",
+      "id": "claim_35",
+      "status": "trusted"
+    },
+    {
+      "concept_id": "array_techniques",
+      "statement": "The two pointers technique moves two indices through a sorted array to find specific pairs, such as those with a given sum, in O(n) time.",
+      "quote": "The two pointers technique moves two indices through a sorted array, for example to find a pair with a given sum in O(n) time.",
+      "source_id": "textbook_dsa_2024",
+      "page": 2,
+      "claim_type": "fact",
+      "id": "claim_36",
+      "status": "trusted"
+    },
+    {
+      "concept_id": "hashing",
+      "statement": "Hash table lookup is always O(1) regardless of the keys that are inserted into the table.",
+      "quote": "Hash table lookup is always O(1), no matter what keys you insert.",
+      "source_id": "web_dsa_cheatsheet_2015",
+      "page": 1,
+      "claim_type": "fact",
+      "id": "claim_37",
+      "status": "superseded"
+    },
+    {
+      "concept_id": "sorting",
+      "statement": "Quicksort is always faster than merge sort and should be used in all interview settings.",
+      "quote": "Quicksort is always faster than merge sort, so always use quicksort in interviews.",
+      "source_id": "web_dsa_cheatsheet_2015",
+      "page": 1,
+      "claim_type": "opinion",
+      "id": "claim_38",
+      "status": "superseded"
+    },
+    {
+      "concept_id": "shortest_paths",
+      "statement": "Dijkstra's algorithm can handle negative edge weights as long as the graph does not contain a negative cycle.",
+      "quote": "Dijkstra's algorithm works fine with negative edge weights as long as the graph has no negative cycle.",
+      "source_id": "web_dsa_cheatsheet_2015",
+      "page": 2,
+      "claim_type": "fact",
+      "id": "claim_39",
+      "status": "superseded"
+    },
+    {
+      "concept_id": "recursion",
+      "statement": "Recursive solutions are always slower than iterative ones and should be avoided in coding interviews.",
+      "quote": "Recursion is always slower than iteration, so avoid recursive solutions in coding interviews.",
+      "source_id": "web_dsa_cheatsheet_2015",
+      "page": 2,
+      "claim_type": "opinion",
+      "id": "claim_40",
+      "status": "unreliable"
+    },
+    {
+      "concept_id": "arrays",
+      "statement": "Candidates for a product company software engineer role must have strong problem-solving skills involving arrays, strings, hashing, and trees.",
+      "quote": "Strong problem solving with arrays, strings, hashing and trees.",
+      "source_id": "jd_sde_product",
+      "page": 1,
+      "claim_type": "requirement",
+      "id": "claim_41",
+      "status": "trusted"
+    },
+    {
+      "concept_id": "graphs",
+      "statement": "A product company software engineer must know graph algorithms including BFS, DFS, and shortest paths.",
+      "quote": "Graph algorithms including BFS, DFS and shortest paths.",
+      "source_id": "jd_sde_product",
+      "page": 1,
+      "claim_type": "requirement",
+      "id": "claim_42",
+      "status": "trusted"
+    },
+    {
+      "concept_id": "dynamic_programming",
+      "statement": "Candidates must apply dynamic programming to solve optimization problems for a product company role.",
+      "quote": "Dynamic programming for optimisation problems.",
+      "source_id": "jd_sde_product",
+      "page": 1,
+      "claim_type": "requirement",
+      "id": "claim_43",
+      "status": "trusted"
+    },
+    {
+      "concept_id": "array_techniques",
+      "statement": "Job applicants need to use sliding window and two pointers techniques for efficient array and string processing.",
+      "quote": "Sliding window and two pointers techniques for efficient array and string processing.",
+      "source_id": "jd_sde_product",
+      "page": 1,
+      "claim_type": "requirement",
+      "id": "claim_44",
+      "status": "trusted"
+    },
+    {
+      "concept_id": "complexity_analysis",
+      "statement": "Software engineers must be able to analyze time and space complexity using Big-O notation.",
+      "quote": "Ability to analyse time and space complexity using Big-O notation.",
+      "source_id": "jd_sde_product",
+      "page": 1,
+      "claim_type": "requirement",
+      "id": "claim_45",
+      "status": "trusted"
+    },
+    {
+      "concept_id": "complexity_analysis",
+      "statement": "Candidates are expected to have experience in Python, Java, or C++, as well as familiarity with Git.",
+      "quote": "Experience in Python, Java or C++ and familiarity with Git.",
+      "source_id": "jd_sde_product",
+      "page": 1,
+      "claim_type": "requirement",
+      "id": "claim_46",
+      "status": "trusted"
+    },
+    {
+      "concept_id": "heaps",
+      "statement": "A backend engineer for a fintech company must use heaps and priority queues for scheduling payment retries.",
+      "quote": "Heaps and priority queues for scheduling payment retries.",
+      "source_id": "jd_sde_fintech",
+      "page": 1,
+      "claim_type": "requirement",
+      "id": "claim_47",
+      "status": "trusted"
+    },
+    {
+      "concept_id": "hashing",
+      "statement": "Backend engineers must use hash maps for fast lookups, utilizing Python dictionaries' insertion order preservation for ordered event processing.",
+      "quote": "Hash maps for fast lookups, and Python dictionaries, which preserve insertion order, for ordered event processing.",
+      "source_id": "jd_sde_fintech",
+      "page": 1,
+      "claim_type": "requirement",
+      "id": "claim_48",
+      "status": "trusted"
+    },
+    {
+      "concept_id": "dynamic_programming",
+      "statement": "Candidates need dynamic programming and graph algorithms skills to handle fraud detection and routing problems in fintech.",
+      "quote": "Dynamic programming and graph algorithms for fraud detection and routing problems.",
+      "source_id": "jd_sde_fintech",
+      "page": 1,
+      "claim_type": "requirement",
+      "id": "claim_49",
+      "status": "trusted"
+    },
+    {
+      "concept_id": "complexity_analysis",
+      "statement": "Fintech backend engineers must have a clear understanding of time and space complexity.",
+      "quote": "Clear understanding of time and space complexity.",
+      "source_id": "jd_sde_fintech",
+      "page": 1,
+      "claim_type": "requirement",
+      "id": "claim_50",
+      "status": "trusted"
+    }
+  ],
+  "conflicts": [
+    {
+      "id": "conflict_1",
+      "concept_id": "hashing",
+      "topic": "Hash table worst-case lookup complexity",
+      "type": "contradiction",
+      "summary": "The web cheatsheet claims hash lookups are always O(1), while the textbook notes the worst case is O(n) when collisions occur.",
+      "sides": [
+        {
+          "label": "Hash table lookup is always O(1) regardless of keys",
+          "claim_ids": [
+            "claim_37"
+          ],
+          "is_specific": false,
+          "is_absolute": true,
+          "score": {
+            "factors": {
+              "recency": 0.0,
+              "authority": 0.4,
+              "agreement": 0.5,
+              "specificity": 0.0
+            },
+            "absolute_penalty": true,
+            "sources": [
+              "web_dsa_cheatsheet_2015"
+            ],
+            "newest_year": 2015,
+            "trust": 0.095
+          }
+        },
+        {
+          "label": "Hash table worst-case lookup is O(n) due to collisions",
+          "claim_ids": [
+            "claim_25"
+          ],
+          "is_specific": true,
+          "is_absolute": false,
+          "score": {
+            "factors": {
+              "recency": 0.8,
+              "authority": 0.85,
+              "agreement": 0.5,
+              "specificity": 1.0
+            },
+            "absolute_penalty": false,
+            "sources": [
+              "textbook_dsa_2024"
+            ],
+            "newest_year": 2024,
+            "trust": 0.76
+          }
+        }
+      ],
+      "decided_by": "agent",
+      "explanation": "Trusted \"Hash table worst-case lookup is O(n) due to collisions\" over \"Hash table lookup is always O(1) regardless of keys\" because of: newer source (2024 vs 2015), higher-authority source, more specific (gives versions or reasons), the other side makes an absolute 'always/never' claim.",
+      "decision": "resolved",
+      "winner_side": 1,
+      "margin": 0.665
+    },
+    {
+      "id": "conflict_2",
+      "concept_id": "hashing",
+      "topic": "Python dictionary insertion order",
+      "type": "outdated",
+      "summary": "The 2016 faculty notes state Python dictionaries do not preserve insertion order, but the 2024 textbook and current job descriptions confirm that since Python 3.7 they do.",
+      "sides": [
+        {
+          "label": "Python dictionaries do not preserve insertion order",
+          "claim_ids": [
+            "claim_14"
+          ],
+          "is_specific": false,
+          "is_absolute": true,
+          "score": {
+            "factors": {
+              "recency": 0.0,
+              "authority": 0.9,
+              "agreement": 0.33,
+              "specificity": 0.0
+            },
+            "absolute_penalty": true,
+            "sources": [
+              "faculty_notes_dsa"
+            ],
+            "newest_year": 2016,
+            "trust": 0.203
+          }
+        },
+        {
+          "label": "Python dictionaries preserve insertion order since Python 3.7",
+          "claim_ids": [
+            "claim_26",
+            "claim_48"
+          ],
+          "is_specific": true,
+          "is_absolute": false,
+          "score": {
+            "factors": {
+              "recency": 1.0,
+              "authority": 0.85,
+              "agreement": 0.67,
+              "specificity": 1.0
+            },
+            "absolute_penalty": false,
+            "sources": [
+              "jd_sde_fintech",
+              "textbook_dsa_2024"
+            ],
+            "newest_year": 2026,
+            "trust": 0.872
+          }
+        }
+      ],
+      "decided_by": "agent",
+      "explanation": "Trusted \"Python dictionaries preserve insertion order since Python 3.7\" over \"Python dictionaries do not preserve insertion order\" because of: newer source (2026 vs 2016), 2 sources agree vs 1, more specific (gives versions or reasons), the other side makes an absolute 'always/never' claim.",
+      "decision": "resolved",
+      "winner_side": 1,
+      "margin": 0.669
+    },
+    {
+      "id": "conflict_3",
+      "concept_id": "sorting",
+      "topic": "Quicksort vs Merge sort performance",
+      "type": "contradiction",
+      "summary": "The web cheatsheet claims quicksort is always faster and should always be used, while the textbook and notes describe nuanced trade-offs where merge sort guarantees O(n log n) and quicksort can degrade to O(n^2).",
+      "sides": [
+        {
+          "label": "Quicksort is always faster than merge sort and should always be used",
+          "claim_ids": [
+            "claim_38"
+          ],
+          "is_specific": false,
+          "is_absolute": true,
+          "score": {
+            "factors": {
+              "recency": 0.0,
+              "authority": 0.4,
+              "agreement": 0.33,
+              "specificity": 0.0
+            },
+            "absolute_penalty": true,
+            "sources": [
+              "web_dsa_cheatsheet_2015"
+            ],
+            "newest_year": 2015,
+            "trust": 0.053
+          }
+        },
+        {
+          "label": "Neither quicksort nor merge sort is always faster; merge sort guarantees O(n log n) while quicksort is often faster due to cache behavior",
+          "claim_ids": [
+            "claim_29",
+            "claim_11",
+            "claim_28"
+          ],
+          "is_specific": true,
+          "is_absolute": false,
+          "score": {
+            "factors": {
+              "recency": 0.8,
+              "authority": 0.9,
+              "agreement": 0.67,
+              "specificity": 1.0
+            },
+            "absolute_penalty": false,
+            "sources": [
+              "faculty_notes_dsa",
+              "textbook_dsa_2024"
+            ],
+            "newest_year": 2024,
+            "trust": 0.817
+          }
+        }
+      ],
+      "decided_by": "agent",
+      "explanation": "Trusted \"Neither quicksort nor merge sort is always faster; merge sort guarantees O(n log n) while quicksort is often faster due to cache behavior\" over \"Quicksort is always faster than merge sort and should always be used\" because of: newer source (2024 vs 2015), 2 sources agree vs 1, higher-authority source, more specific (gives versions or reasons), the other side makes an absolute 'always/never' claim.",
+      "decision": "resolved",
+      "winner_side": 1,
+      "margin": 0.764
+    },
+    {
+      "id": "conflict_4",
+      "concept_id": "shortest_paths",
+      "topic": "Dijkstra's algorithm with negative edge weights",
+      "type": "contradiction",
+      "summary": "The web cheatsheet claims Dijkstra works with negative weights if no negative cycles exist, while the notes and textbook state Dijkstra requires all non-negative edge weights.",
+      "sides": [
+        {
+          "label": "Dijkstra's algorithm can handle negative edge weights if there are no negative cycles",
+          "claim_ids": [
+            "claim_39"
+          ],
+          "is_specific": true,
+          "is_absolute": false,
+          "score": {
+            "factors": {
+              "recency": 0.0,
+              "authority": 0.4,
+              "agreement": 0.33,
+              "specificity": 1.0
+            },
+            "absolute_penalty": false,
+            "sources": [
+              "web_dsa_cheatsheet_2015"
+            ],
+            "newest_year": 2015,
+            "trust": 0.303
+          }
+        },
+        {
+          "label": "Dijkstra's algorithm requires all edge weights to be non-negative",
+          "claim_ids": [
+            "claim_22",
+            "claim_30"
+          ],
+          "is_specific": true,
+          "is_absolute": false,
+          "score": {
+            "factors": {
+              "recency": 0.8,
+              "authority": 0.9,
+              "agreement": 0.67,
+              "specificity": 1.0
+            },
+            "absolute_penalty": false,
+            "sources": [
+              "faculty_notes_dsa",
+              "textbook_dsa_2024"
+            ],
+            "newest_year": 2024,
+            "trust": 0.817
+          }
+        }
+      ],
+      "decided_by": "agent",
+      "explanation": "Trusted \"Dijkstra's algorithm requires all edge weights to be non-negative\" over \"Dijkstra's algorithm can handle negative edge weights if there are no negative cycles\" because of: newer source (2024 vs 2015), 2 sources agree vs 1, higher-authority source.",
+      "decision": "resolved",
+      "winner_side": 1,
+      "margin": 0.514
+    },
+    {
+      "id": "conflict_5",
+      "concept_id": "recursion",
+      "topic": "Recursive vs iterative performance",
+      "type": "unreliable",
+      "summary": "The web cheatsheet over-generalizes by claiming recursion is always slower and should always be avoided, ignoring cases where recursion is appropriate and no other source directly addresses this specific claim.",
+      "sides": [
+        {
+          "label": "Recursive solutions are always slower than iterative ones and should be avoided",
+          "claim_ids": [
+            "claim_40"
+          ],
+          "is_specific": false,
+          "is_absolute": true,
+          "score": {
+            "factors": {
+              "recency": 0.0,
+              "authority": 0.4,
+              "agreement": 0.5,
+              "specificity": 0.0
+            },
+            "absolute_penalty": true,
+            "sources": [
+              "web_dsa_cheatsheet_2015"
+            ],
+            "newest_year": 2015,
+            "trust": 0.095
+          }
+        }
+      ],
+      "decision": "flagged_unreliable",
+      "decided_by": "agent",
+      "explanation": "Flagged \"Recursive solutions are always slower than iterative ones and should be avoided\": low trust score (0.095) from an old, low-authority or absolute claim."
+    }
+  ],
+  "freshness_report": {
+    "score": 66,
+    "skills": [
+      {
+        "skill": "Arrays and strings problem solving",
+        "concept_id": "arrays",
+        "demanded_by": [
+          "claim_41"
+        ],
+        "faculty_coverage": "covered",
+        "note": "Faculty notes cover array operations and complexity, which aligns with the demand for array/string problem solving."
+      },
+      {
+        "skill": "Hashing",
+        "concept_id": "hashing",
+        "demanded_by": [
+          "claim_41",
+          "claim_48"
+        ],
+        "faculty_coverage": "outdated",
+        "note": "Faculty notes cover hash tables but incorrectly state Python dictionaries do not preserve insertion order, which is outdated since Python 3.7."
+      },
+      {
+        "skill": "Trees",
+        "concept_id": "trees",
+        "demanded_by": [
+          "claim_41"
+        ],
+        "faculty_coverage": "covered",
+        "note": "Faculty notes cover binary trees, BST, and traversal, matching the job description requirement."
+      },
+      {
+        "skill": "Graph algorithms (BFS, DFS, shortest paths)",
+        "concept_id": "graphs",
+        "demanded_by": [
+          "claim_42",
+          "claim_49"
+        ],
+        "faculty_coverage": "covered",
+        "note": "Faculty notes cover graph representations, BFS, DFS, and shortest path algorithms like Dijkstra and Bellman-Ford."
+      },
+      {
+        "skill": "Dynamic programming",
+        "concept_id": "dynamic_programming",
+        "demanded_by": [
+          "claim_43",
+          "claim_49"
+        ],
+        "faculty_coverage": "missing",
+        "note": "The faculty notes do not include any claims about dynamic programming; it is covered only in the textbook."
+      },
+      {
+        "skill": "Sliding window and two pointers techniques",
+        "concept_id": "array_techniques",
+        "demanded_by": [
+          "claim_44"
+        ],
+        "faculty_coverage": "missing",
+        "note": "The faculty notes do not mention sliding window or two pointers; these are covered only in the textbook."
+      },
+      {
+        "skill": "Time and space complexity analysis using Big-O",
+        "concept_id": "complexity_analysis",
+        "demanded_by": [
+          "claim_45",
+          "claim_50"
+        ],
+        "faculty_coverage": "covered",
+        "note": "Faculty notes explain Big-O notation and its use in analyzing algorithm running time."
+      },
+      {
+        "skill": "Heaps and priority queues",
+        "concept_id": "heaps",
+        "demanded_by": [
+          "claim_47"
+        ],
+        "faculty_coverage": "covered",
+        "note": "Faculty notes describe binary heaps and their O(log n) insert/extract operations."
+      }
+    ],
+    "missing": [
+      "Dynamic programming",
+      "Sliding window and two pointers techniques"
+    ],
+    "outdated": [
+      "Hashing"
+    ]
+  }
+}

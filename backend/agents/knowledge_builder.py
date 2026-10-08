@@ -4,7 +4,7 @@ from pathlib import Path
 
 import networkx as nx
 
-from backend.models import KnowledgeExtraction
+from backend.models import KnowledgeExtraction, PrerequisiteMap
 from backend.tools.agnes_client import chat_json
 from backend.tools.parsers import chunks_to_prompt, load_sources
 from backend.tools.verify import find_quote_anywhere, quote_exists
@@ -36,6 +36,32 @@ Your job is to extract three things.
    - No cycles.
 """
 
+PREREQ_PROMPT = """You are the curriculum designer of VidyaPath. You get the list of concepts in one course,
+in the order the course material presents them, with a description and a few facts about each.
+
+For EVERY concept, list its DIRECT prerequisites: the other concepts from this list that a student must
+already understand to learn it properly. Go through the concepts one by one; do not skip any.
+- Use only ids from the list. Never list a concept as its own prerequisite.
+- Direct only: if A is needed for B and B for C, list A under B and B under C, not A under C.
+- Think about what each concept is BUILT ON (e.g. a structure built from another structure, an algorithm that
+  uses a structure, a technique that applies an earlier technique).
+- Only the truly foundational concepts should have an empty list; in a typical course most concepts need 1-2.
+- Never create a cycle.
+"""
+
+
+def _map_prerequisites(concepts, claims):
+    """Second, focused call: one prerequisite entry per concept (much more complete than the extraction pass)."""
+    facts = {}
+    for c in claims:
+        facts.setdefault(c["concept_id"], [])
+        if len(facts[c["concept_id"]]) < 3:
+            facts[c["concept_id"]].append(c["statement"])
+    payload = [{"id": cid, "name": c["name"], "description": c["description"], "facts": facts.get(cid, [])}
+               for cid, c in concepts.items()]
+    return chat_json(PREREQ_PROMPT, "CONCEPTS:\n" + json.dumps(payload, ensure_ascii=False, indent=1), PrerequisiteMap)
+
+
 def build_knowledge(data_dir="sample_data"):
     meta, chunks = load_sources(data_dir)
     print(f"Loaded {len(meta['sources'])} sources, {len(chunks)} pages. Calling Agnes (one large-context call)...")
@@ -62,17 +88,35 @@ def build_knowledge(data_dir="sample_data"):
             rejected.append({**c, "reject_reason": "quote not found in source"})
 
     # ---- 3. Prerequisite graph (must be a DAG: no cycles) ----
+    # Edges from the focused prerequisite pass, plus any extra ones the extraction pass found
+    print("Mapping prerequisites for every concept (focused call)...")
+    prereq_map = _map_prerequisites(concepts, verified)
+    candidates = [(n, c.concept_id, c.reason) for c in prereq_map.concepts for n in c.needs]
+    candidates += [(p.before, p.after, p.reason) for p in extraction.prerequisites]
     graph = nx.DiGraph()
     graph.add_nodes_from(concepts)
-    for p in extraction.prerequisites:
-        if p.before in concepts and p.after in concepts and p.before != p.after:
-            graph.add_edge(p.before, p.after, reason=p.reason)
+    for before, after, reason in candidates:
+        if before in concepts and after in concepts and before != after and not graph.has_edge(before, after):
+            graph.add_edge(before, after, reason=reason)
 
     removed_edges = []
     while not nx.is_directed_acyclic_graph(graph):
         u, v = nx.find_cycle(graph)[-1][:2]   # break the cycle by dropping one edge
         graph.remove_edge(u, v)
         removed_edges.append((u, v))
+
+    # Keep only DIRECT prerequisites: drop A->C when A->B->C already exists
+    reduced = nx.transitive_reduction(graph)
+    reduced.add_nodes_from(graph.nodes)
+    reduced.add_edges_from((u, v, graph.edges[u, v]) for u, v in reduced.edges)
+    graph = reduced
+
+    # Learning order: prerequisites first; otherwise follow the order the course material introduces concepts
+    # (claims are in reading order: sources in order, pages in order), falling back to the extraction order
+    first_seen = {cid: len(verified) + i for i, cid in enumerate(concepts)}
+    for i, c in enumerate(verified):
+        first_seen[c["concept_id"]] = min(first_seen[c["concept_id"]], i)
+    learning_order = list(nx.lexicographical_topological_sort(graph, key=lambda c: first_seen[c]))
 
     knowledge_base = {
         "sources": meta["sources"],
@@ -83,7 +127,7 @@ def build_knowledge(data_dir="sample_data"):
         "prerequisites": [
             {"before": u, "after": v, "reason": d.get("reason", "")} for u, v, d in graph.edges(data=True)
         ],
-        "learning_order": list(nx.topological_sort(graph)),
+        "learning_order": learning_order,
         "removed_cycle_edges": removed_edges,
     }
 

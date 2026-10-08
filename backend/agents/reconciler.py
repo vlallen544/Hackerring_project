@@ -29,8 +29,9 @@ TASK 1 - CONFLICTS. Find every place where claims disagree or a claim is mislead
   states the opposite, report a "contradiction" or "outdated" conflict with BOTH sides,
   and put every agreeing claim from every source on its side.
 
-TASK 2 - INDUSTRY SKILLS. List the database and SQL skills the job descriptions ask for
-  (ignore non-database skills such as Python, Excel or BI tools).
+TASK 2 - INDUSTRY SKILLS. List the skills the job descriptions ask for that belong to THIS course's subject
+  (the topics covered by the faculty notes and textbook). Ignore skills outside the subject, such as
+  programming languages, tools, soft skills or a different technical area.
   For each, rate how the FACULTY NOTES (source type faculty_notes) handle it:
   covered, partial, outdated (notes cover it but with outdated information) or missing.
 """

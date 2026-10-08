@@ -64,43 +64,48 @@
   "prerequisites": [
     {
       "before": "relational_model",
-      "after": "keys",
-      "reason": "Understanding what a tuple and attribute are is required to understand how keys uniquely identify tuples."
+      "after": "indexing",
+      "reason": "Indexes are data structures built on top of relational tables to improve retrieval performance."
     },
     {
       "before": "relational_model",
-      "after": "normalization",
-      "reason": "Normalization is the process of organizing relations, so the relational model is the foundational concept."
+      "after": "basic_queries",
+      "reason": "SQL queries operate on the tables and attributes defined by the relational model."
+    },
+    {
+      "before": "relational_model",
+      "after": "keys",
+      "reason": "Keys are attributes defined within the relations (tables) of the relational model."
     },
     {
       "before": "keys",
       "after": "joins",
-      "reason": "Joins connect tables through keys, so an understanding of primary and foreign keys is necessary to write effective joins."
+      "reason": "Joins combine tables based on relationships established by keys, extending basic query operations."
     },
     {
       "before": "keys",
       "after": "constraints",
-      "reason": "Constraint types like PRIMARY KEY and FOREIGN KEY are fundamentally based on key concepts."
+      "reason": "Constraints enforce rules on relational data and are often defined using primary and foreign keys."
     },
     {
-      "before": "basic_queries",
-      "after": "aggregation",
-      "reason": "Aggregation builds upon the basic SELECT...FROM structure, adding functions and grouping clauses."
-    },
-    {
-      "before": "basic_queries",
-      "after": "subqueries",
-      "reason": "A subquery is a query nested inside another query, so the basic query structure must be understood first."
+      "before": "keys",
+      "after": "normalization",
+      "reason": "Normalization is the process of structuring relations to minimize redundancy based on functional dependencies between attributes and keys."
     },
     {
       "before": "basic_queries",
       "after": "joins",
-      "reason": "Joins are an extension of the basic SELECT statement involving multiple tables."
+      "reason": "Joins combine tables based on relationships established by keys, extending basic query operations."
     },
     {
-      "before": "aggregation",
-      "after": "window_functions",
-      "reason": "Window functions perform calculations across rows and are often compared to or used alongside GROUP BY aggregation."
+      "before": "basic_queries",
+      "after": "aggregation",
+      "reason": "Aggregation functions and GROUP BY extend basic SELECT statements to process grouped data."
+    },
+    {
+      "before": "basic_queries",
+      "after": "subqueries",
+      "reason": "Subqueries are nested versions of basic SQL queries used for conditional filtering."
     },
     {
       "before": "aggregation",
@@ -108,24 +113,44 @@
       "reason": "Optimizing queries often involves understanding how aggregated data is retrieved and grouped."
     },
     {
+      "before": "aggregation",
+      "after": "window_functions",
+      "reason": "Window functions perform calculations similar to aggregation but without collapsing rows, requiring understanding of grouping and selection."
+    },
+    {
+      "before": "joins",
+      "after": "query_performance",
+      "reason": "Optimizing performance requires understanding how complex operations like joins and subqueries interact with indexes."
+    },
+    {
       "before": "subqueries",
       "after": "cte",
-      "reason": "CTEs are an alternative to deeply nested subqueries, making an understanding of subqueries a useful prerequisite."
+      "reason": "CTEs provide a readable way to manage complex multi-step logic that might otherwise use nested subqueries."
+    },
+    {
+      "before": "subqueries",
+      "after": "query_performance",
+      "reason": "Optimizing performance requires understanding how complex operations like joins and subqueries interact with indexes."
+    },
+    {
+      "before": "indexing",
+      "after": "query_performance",
+      "reason": "Optimizing performance requires understanding how complex operations like joins and subqueries interact with indexes."
     }
   ],
   "learning_order": [
     "relational_model",
-    "basic_queries",
-    "indexing",
     "keys",
-    "normalization",
-    "aggregation",
-    "subqueries",
-    "joins",
     "constraints",
+    "basic_queries",
+    "aggregation",
+    "joins",
     "window_functions",
-    "query_performance",
-    "cte"
+    "normalization",
+    "indexing",
+    "subqueries",
+    "cte",
+    "query_performance"
   ],
   "sources": [
     {
@@ -333,7 +358,7 @@
       "page": 1,
       "claim_type": "fact",
       "id": "claim_17",
-      "status": "superseded"
+      "status": "unreliable"
     },
     {
       "concept_id": "query_performance",
@@ -442,32 +467,32 @@
       "concept_id": "constraints",
       "topic": "MySQL CHECK constraint enforcement",
       "type": "outdated",
-      "summary": "A 2019 faculty note claims that MySQL ignores CHECK constraints and that triggers are required, whereas a 2023 textbook states that MySQL 8.0.16 and later enforce CHECK constraints, so the faculty statement is outdated.",
+      "summary": "Older sources claimed MySQL ignored CHECK constraints, but newer sources note that MySQL 8.0.16 and later enforce them.",
       "sides": [
         {
-          "label": "CHECK constraints are parsed but ignored in MySQL; triggers must be used.",
+          "label": "CHECK constraints are parsed but ignored in MySQL",
           "claim_ids": [
             "claim_4"
           ],
-          "is_specific": false,
+          "is_specific": true,
           "is_absolute": false,
           "score": {
             "factors": {
               "recency": 0.3,
               "authority": 0.9,
               "agreement": 0.5,
-              "specificity": 0.0
+              "specificity": 1.0
             },
             "absolute_penalty": false,
             "sources": [
               "faculty_notes_dbms"
             ],
             "newest_year": 2019,
-            "trust": 0.5
+            "trust": 0.6
           }
         },
         {
-          "label": "Since MySQL 8.0.16, CHECK constraints are enforced and rows violating the condition are rejected.",
+          "label": "CHECK constraints are enforced since MySQL 8.0.16",
           "claim_ids": [
             "claim_11"
           ],
@@ -490,25 +515,25 @@
         }
       ],
       "decided_by": "agent",
-      "explanation": "Trusted \"Since MySQL 8.0.16, CHECK constraints are enforced and rows violating the condition are rejected.\" over \"CHECK constraints are parsed but ignored in MySQL; triggers must be used.\" because of: newer source (2023 vs 2019), more specific (gives versions or reasons).",
+      "explanation": "Trusted \"CHECK constraints are enforced since MySQL 8.0.16\" over \"CHECK constraints are parsed but ignored in MySQL\" because of: newer source (2023 vs 2019).",
       "decision": "resolved",
       "winner_side": 1,
-      "margin": 0.225
+      "margin": 0.125
     },
     {
       "id": "conflict_2",
       "concept_id": "window_functions",
-      "topic": "MySQL support for window functions",
+      "topic": "MySQL window function support",
       "type": "outdated",
-      "summary": "A 2019 faculty note states that MySQL does not support window functions and recommends subqueries, whereas a 2023 textbook says MySQL 8.0 and later supports them, and a 2026 fintech JD treats window functions as daily practice.",
+      "summary": "Faculty notes state that MySQL does not support window functions, whereas the textbook and industry job descriptions confirm that MySQL 8.0+ supports them.",
       "sides": [
         {
-          "label": "MySQL does not support window functions, so ranking and running totals must use subqueries or application code.",
+          "label": "MySQL does not support window functions",
           "claim_ids": [
             "claim_8"
           ],
           "is_specific": false,
-          "is_absolute": false,
+          "is_absolute": true,
           "score": {
             "factors": {
               "recency": 0.3,
@@ -516,16 +541,16 @@
               "agreement": 0.33,
               "specificity": 0.0
             },
-            "absolute_penalty": false,
+            "absolute_penalty": true,
             "sources": [
               "faculty_notes_dbms"
             ],
             "newest_year": 2019,
-            "trust": 0.458
+            "trust": 0.308
           }
         },
         {
-          "label": "MySQL supports window functions from version 8.0 onwards, and the fintech JD lists daily use of window functions such as ROW_NUMBER, RANK, LAG and running totals.",
+          "label": "MySQL supports window functions from 8.0 onwards",
           "claim_ids": [
             "claim_15",
             "claim_21"
@@ -550,20 +575,20 @@
         }
       ],
       "decided_by": "agent",
-      "explanation": "Trusted \"MySQL supports window functions from version 8.0 onwards, and the fintech JD lists daily use of window functions such as ROW_NUMBER, RANK, LAG and running totals.\" over \"MySQL does not support window functions, so ranking and running totals must use subqueries or application code.\" because of: newer source (2026 vs 2019), 2 sources agree vs 1, more specific (gives versions or reasons).",
+      "explanation": "Trusted \"MySQL supports window functions from 8.0 onwards\" over \"MySQL does not support window functions\" because of: newer source (2026 vs 2019), 2 sources agree vs 1, more specific (gives versions or reasons), the other side makes an absolute 'always/never' claim.",
       "decision": "resolved",
       "winner_side": 1,
-      "margin": 0.414
+      "margin": 0.564
     },
     {
       "id": "conflict_3",
       "concept_id": "normalization",
-      "topic": "3NF vs BCNF relationship",
-      "type": "contradiction",
-      "summary": "A web tutorial claims that 3NF and BCNF are the same, but a faculty note (and the underlying relational theory) says BCNF is a stricter form that 3NF does not always satisfy.",
+      "topic": "3NF vs BCNF distinction",
+      "type": "unreliable",
+      "summary": "A web tutorial incorrectly states that 3NF and BCNF are the same thing, even though faculty notes explicitly indicate that BCNF is stricter.",
       "sides": [
         {
-          "label": "3NF and BCNF are the same; being in 3NF already means being in BCNF.",
+          "label": "3NF and BCNF are the same",
           "claim_ids": [
             "claim_17"
           ],
@@ -583,45 +608,21 @@
             "newest_year": 2016,
             "trust": 0.095
           }
-        },
-        {
-          "label": "BCNF is stricter than 3NF: in BCNF, every functional dependency X → Y must have X as a super key.",
-          "claim_ids": [
-            "claim_9"
-          ],
-          "is_specific": false,
-          "is_absolute": false,
-          "score": {
-            "factors": {
-              "recency": 0.3,
-              "authority": 0.9,
-              "agreement": 0.5,
-              "specificity": 0.0
-            },
-            "absolute_penalty": false,
-            "sources": [
-              "faculty_notes_dbms"
-            ],
-            "newest_year": 2019,
-            "trust": 0.5
-          }
         }
       ],
+      "decision": "flagged_unreliable",
       "decided_by": "agent",
-      "explanation": "Trusted \"BCNF is stricter than 3NF: in BCNF, every functional dependency X → Y must have X as a super key.\" over \"3NF and BCNF are the same; being in 3NF already means being in BCNF.\" because of: newer source (2019 vs 2016), higher-authority source, the other side makes an absolute 'always/never' claim.",
-      "decision": "resolved",
-      "winner_side": 1,
-      "margin": 0.405
+      "explanation": "Flagged \"3NF and BCNF are the same\": low trust score (0.095) from an old, low-authority or absolute claim."
     },
     {
       "id": "conflict_4",
       "concept_id": "query_performance",
-      "topic": "Relative speed of subqueries vs joins",
+      "topic": "Subqueries vs joins performance",
       "type": "unreliable",
-      "summary": "The web tutorial's blanket claim that subqueries are always faster than joins is unreliable; actual performance depends on the query, indexes and database engine, and other sources do not support this absolute statement.",
+      "summary": "A web tutorial makes the absolute claim that subqueries are always faster than joins, which is misleading since query planner choice and indexing drive performance.",
       "sides": [
         {
-          "label": "Subqueries are always faster than joins, so prefer subqueries in interviews.",
+          "label": "Subqueries are always faster than joins",
           "claim_ids": [
             "claim_18"
           ],
@@ -645,17 +646,17 @@
       ],
       "decision": "flagged_unreliable",
       "decided_by": "agent",
-      "explanation": "Flagged \"Subqueries are always faster than joins, so prefer subqueries in interviews.\": low trust score (0.095) from an old, low-authority or absolute claim."
+      "explanation": "Flagged \"Subqueries are always faster than joins\": low trust score (0.095) from an old, low-authority or absolute claim."
     },
     {
       "id": "conflict_5",
       "concept_id": "indexing",
-      "topic": "Adding indexes on every column",
+      "topic": "Indexing strategy",
       "type": "unreliable",
-      "summary": "The web tutorial's advice to always index every column is misleading; over-indexing can hurt write performance and is not a generally sound practice.",
+      "summary": "A web tutorial advises always adding an index on every column, which is bad advice because excessive indexes can degrade write performance and optimizer choices.",
       "sides": [
         {
-          "label": "Always add an index on every column to make queries faster.",
+          "label": "Always index every column to speed queries",
           "claim_ids": [
             "claim_19"
           ],
@@ -679,84 +680,83 @@
       ],
       "decision": "flagged_unreliable",
       "decided_by": "agent",
-      "explanation": "Flagged \"Always add an index on every column to make queries faster.\": low trust score (0.095) from an old, low-authority or absolute claim."
+      "explanation": "Flagged \"Always index every column to speed queries\": low trust score (0.095) from an old, low-authority or absolute claim."
     }
   ],
   "freshness_report": {
-    "score": 61,
+    "score": 54,
     "skills": [
       {
-        "skill": "Joins across multiple tables including LEFT JOIN and self join",
+        "skill": "Joins across multiple tables (LEFT JOIN, self join)",
         "concept_id": "joins",
         "demanded_by": [
-          "jd_data_analyst_fintech"
+          "claim_20"
         ],
-        "faculty_coverage": "covered",
-        "note": "Faculty notes explain LEFT JOIN behavior and self join as a type of join, matching the JD requirement."
+        "faculty_coverage": "partial",
+        "note": "Faculty notes explain LEFT JOIN but do not explicitly cover self joins."
       },
       {
-        "skill": "Window functions such as ROW_NUMBER, RANK, LAG and running totals",
+        "skill": "Window functions (ROW_NUMBER, RANK, LAG, running totals)",
         "concept_id": "window_functions",
         "demanded_by": [
-          "jd_data_analyst_fintech",
-          "jd_data_analyst_ecommerce"
+          "claim_21"
         ],
         "faculty_coverage": "outdated",
-        "note": "Faculty notes state MySQL does not support window functions and recommend subqueries, which is outdated because MySQL 8.0 and later support them and the JDs require daily use."
+        "note": "Faculty notes say MySQL does not support window functions, whereas modern versions and industry practice do support them."
       },
       {
-        "skill": "Common Table Expressions (CTEs) for readable multi-step queries",
+        "skill": "Common Table Expressions (CTEs)",
         "concept_id": "cte",
         "demanded_by": [
-          "jd_data_analyst_fintech",
-          "jd_data_analyst_ecommerce"
+          "claim_22",
+          "claim_25"
         ],
         "faculty_coverage": "missing",
-        "note": "The faculty notes do not cover CTEs, even though both JDs ask for them."
+        "note": "Faculty notes do not include a claim about CTEs, so the topic is missing from the notes."
       },
       {
-        "skill": "GROUP BY and HAVING for aggregated reporting",
+        "skill": "GROUP BY and HAVING aggregation",
         "concept_id": "aggregation",
         "demanded_by": [
-          "jd_data_analyst_fintech",
-          "jd_data_analyst_ecommerce"
+          "claim_23",
+          "claim_27"
         ],
         "faculty_coverage": "covered",
-        "note": "Faculty notes explain the difference between WHERE and HAVING, addressing the aggregation grouping requirements in the JDs."
+        "note": "Faculty notes explicitly distinguish WHERE filtering rows from HAVING filtering groups."
       },
       {
-        "skill": "Understanding indexes and reading EXPLAIN output to speed up slow queries",
+        "skill": "Understanding indexes and reading EXPLAIN output",
         "concept_id": "query_performance",
         "demanded_by": [
-          "jd_data_analyst_fintech"
+          "claim_24"
         ],
         "faculty_coverage": "partial",
-        "note": "Faculty notes cover B+ tree indexing generally but do not mention reading EXPLAIN output or practical query performance tuning required by the JD."
+        "note": "Faculty notes discuss index structures (B+ trees) but do not explicitly cover EXPLAIN output interpretation."
       },
       {
-        "skill": "SQL subqueries alongside joins, CTEs and window functions",
+        "skill": "SQL subqueries",
         "concept_id": "subqueries",
         "demanded_by": [
-          "jd_data_analyst_ecommerce"
+          "claim_25"
         ],
         "faculty_coverage": "partial",
-        "note": "Faculty notes do not explicitly cover subquery patterns as a standalone skill, although they mention subqueries as an alternative to window functions."
+        "note": "Faculty notes refer to subqueries as an alternative when MySQL lacks window functions, but they do not give a standalone coverage of subquery techniques."
       },
       {
-        "skill": "Data integrity including primary keys, foreign keys and constraints",
+        "skill": "Data integrity: primary keys, foreign keys, and constraints",
         "concept_id": "keys",
         "demanded_by": [
-          "jd_data_analyst_ecommerce"
+          "claim_26"
         ],
         "faculty_coverage": "covered",
-        "note": "Faculty notes define primary keys, candidate keys, foreign keys and referential integrity, matching the JD requirement."
+        "note": "Faculty notes define primary/foreign keys and constraints, including a CHECK constraint discussion."
       }
     ],
     "missing": [
-      "Common Table Expressions (CTEs) for readable multi-step queries"
+      "Common Table Expressions (CTEs)"
     ],
     "outdated": [
-      "Window functions such as ROW_NUMBER, RANK, LAG and running totals"
+      "Window functions (ROW_NUMBER, RANK, LAG, running totals)"
     ]
   }
 }

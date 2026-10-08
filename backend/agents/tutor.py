@@ -16,7 +16,7 @@ CHECK_WEIGHT = 0.3  # one practice answer moves mastery less than a full viva
 LEVEL_GUIDE = {
     "foundation": "Start from the basics. Recap the prerequisite claims first. Use simple words, an everyday analogy "
                   "and a small worked example.",
-    "standard": "Explain clearly with one worked SQL example.",
+    "standard": "Explain clearly with one worked example (code, query or step-by-step trace, whichever fits the topic).",
     "challenge": "Be concise on basics. Add an interview-style edge case and how this is used in industry.",
 }
 FORMAT_GUIDE = {
@@ -37,9 +37,9 @@ Rules:
   rules or database-specific behaviour that are not in the trusted claims.
 - INDUSTRY CONTEXT (if given) may be mentioned to show why the topic matters, but never cite it as a fact.
 - Practice questions: no yes/no questions and no questions that reveal the answer. Ask the student to write
-  or fix a short SQL query, or to explain why/when something is used.
+  or fix a short piece of code or query, trace an algorithm on a small input, or explain why/when something is used.
 - Write EVERYTHING (title, segments, practice, misconception_fix, audio_script) in {language}.
-  If the language is Hindi, use natural Hinglish in Roman script (no Devanagari), keeping SQL terms in English.
+  If the language is Hindi, use natural Hinglish in Roman script (no Devanagari), keeping technical terms in English.
 - Level: {level}. {level_guide}
 - Format: {fmt}. {format_guide}
 - If MISCONCEPTIONS are listed, fill misconception_fix with a short, kind correction.
