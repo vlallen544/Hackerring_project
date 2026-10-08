@@ -134,6 +134,9 @@ def reconcile():
     # ---- Syllabus Freshness Report (score calculated in code) ----
     coverage_points = {"covered": 1.0, "partial": 0.5, "outdated": 0.25, "missing": 0.0}
     skills = [s.model_dump() for s in result.industry_skills]
+    for s in skills:  # the model sometimes cites claim ids instead of source ids: map them to their source
+        ids = [claims_by_id[x]["source_id"] if x in claims_by_id else x for x in s["demanded_by"]]
+        s["demanded_by"] = list(dict.fromkeys(x for x in ids if x in sources_by_id))
     freshness = round(100 * sum(coverage_points[s["faculty_coverage"]] for s in skills) / len(skills)) if skills else None
 
     claims_out = [{**c, "status": status[c["id"]]} for c in kb["claims"]]

@@ -123,11 +123,56 @@ function emptyState(text) {
     return `<div class="border-4 border-dashed border-black p-8 text-center font-bold uppercase bg-white/70">${esc(text)}</div>`;
 }
 
-// Shows which course is active next to the logo on every page (switch with scripts/switch_course.py)
+// Course switcher next to the logo on every page: every view then shows the chosen course
+async function switchCourse(courseId) {
+    const overlay = document.createElement("div");
+    overlay.className = "fixed inset-0 z-50 bg-black/60 flex items-center justify-center";
+    overlay.innerHTML = `<div class="card p-8 text-center font-bold uppercase animate-slam">
+        <i class="ph-bold ph-spinner animate-spin text-4xl"></i>
+        <p class="mt-3">Switching course...</p>
+        <p class="text-xs normal-case font-normal mt-1">A course that was never built takes about a minute.</p></div>`;
+    document.body.appendChild(overlay);
+    try {
+        await post("/api/course/switch", { course: courseId });
+        location.reload();  // every page re-reads the active course's data
+    } catch (err) {
+        overlay.remove();
+        toast(err.message, "error");
+    }
+}
+
+function courseSelect(course, extraClass = "") {
+    return `<select class="field !w-auto !py-1 !text-xs font-bold uppercase bg-neo-blue ${extraClass}" aria-label="Course"
+                    title="Switch course" onchange="switchCourse(this.value)">
+        ${Object.entries(course.available).map(([id, title]) =>
+            `<option value="${esc(id)}" ${id === course.id ? "selected" : ""}>${esc(title)}</option>`).join("")}
+    </select>`;
+}
+
+let ACTIVE_COURSE = null;
+
 document.addEventListener("DOMContentLoaded", async () => {
     try {
-        const course = await api("/api/course");
+        ACTIVE_COURSE = await api("/api/course");
         const logo = document.querySelector("nav a[href='index.html']");
-        if (logo) logo.insertAdjacentHTML("afterend", `<span class="chip bg-neo-blue ml-2 hidden md:inline-block" title="Active course">${esc(course.title)}</span>`);
+        if (logo) logo.insertAdjacentHTML("afterend", `<label class="hidden md:flex items-center gap-2 ml-3">
+            <i class="ph-bold ph-books text-xl"></i>${courseSelect(ACTIVE_COURSE)}</label>`);
+        const box = $("course-list");  // home page only
+        if (box) renderCourseList(ACTIVE_COURSE);
     } catch { /* older backend without /api/course */ }
 });
+
+function renderCourseList(course) {
+    $("course-list").innerHTML = Object.entries(course.available).map(([id, title]) => {
+        const active = id === course.id;
+        return `
+            <div class="border-4 border-black p-4 ${active ? "bg-neo-yellow shadow-brutal-sm" : "bg-white"} flex flex-wrap justify-between items-center gap-3">
+                <div>
+                    <p class="font-display text-xl uppercase leading-tight">${esc(title)}</p>
+                    <p class="text-xs font-bold uppercase">${active ? "Active course" : "Available"}</p>
+                </div>
+                ${active ? '<span class="chip bg-neo-black text-white">Active</span>'
+                    : `<button class="btn" onclick="switchCourse('${esc(id)}')">Switch -></button>`}
+            </div>`;
+    }).join("");
+}

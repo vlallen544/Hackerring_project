@@ -980,7 +980,7 @@
         "skill": "Arrays and strings problem solving",
         "concept_id": "arrays",
         "demanded_by": [
-          "claim_41"
+          "jd_sde_product"
         ],
         "faculty_coverage": "covered",
         "note": "Faculty notes cover array operations and complexity, which aligns with the demand for array/string problem solving."
@@ -989,8 +989,8 @@
         "skill": "Hashing",
         "concept_id": "hashing",
         "demanded_by": [
-          "claim_41",
-          "claim_48"
+          "jd_sde_product",
+          "jd_sde_fintech"
         ],
         "faculty_coverage": "outdated",
         "note": "Faculty notes cover hash tables but incorrectly state Python dictionaries do not preserve insertion order, which is outdated since Python 3.7."
@@ -999,7 +999,7 @@
         "skill": "Trees",
         "concept_id": "trees",
         "demanded_by": [
-          "claim_41"
+          "jd_sde_product"
         ],
         "faculty_coverage": "covered",
         "note": "Faculty notes cover binary trees, BST, and traversal, matching the job description requirement."
@@ -1008,8 +1008,8 @@
         "skill": "Graph algorithms (BFS, DFS, shortest paths)",
         "concept_id": "graphs",
         "demanded_by": [
-          "claim_42",
-          "claim_49"
+          "jd_sde_product",
+          "jd_sde_fintech"
         ],
         "faculty_coverage": "covered",
         "note": "Faculty notes cover graph representations, BFS, DFS, and shortest path algorithms like Dijkstra and Bellman-Ford."
@@ -1018,8 +1018,8 @@
         "skill": "Dynamic programming",
         "concept_id": "dynamic_programming",
         "demanded_by": [
-          "claim_43",
-          "claim_49"
+          "jd_sde_product",
+          "jd_sde_fintech"
         ],
         "faculty_coverage": "missing",
         "note": "The faculty notes do not include any claims about dynamic programming; it is covered only in the textbook."
@@ -1028,7 +1028,7 @@
         "skill": "Sliding window and two pointers techniques",
         "concept_id": "array_techniques",
         "demanded_by": [
-          "claim_44"
+          "jd_sde_product"
         ],
         "faculty_coverage": "missing",
         "note": "The faculty notes do not mention sliding window or two pointers; these are covered only in the textbook."
@@ -1037,8 +1037,8 @@
         "skill": "Time and space complexity analysis using Big-O",
         "concept_id": "complexity_analysis",
         "demanded_by": [
-          "claim_45",
-          "claim_50"
+          "jd_sde_product",
+          "jd_sde_fintech"
         ],
         "faculty_coverage": "covered",
         "note": "Faculty notes explain Big-O notation and its use in analyzing algorithm running time."
@@ -1047,7 +1047,7 @@
         "skill": "Heaps and priority queues",
         "concept_id": "heaps",
         "demanded_by": [
-          "claim_47"
+          "jd_sde_fintech"
         ],
         "faculty_coverage": "covered",
         "note": "Faculty notes describe binary heaps and their O(log n) insert/extract operations."

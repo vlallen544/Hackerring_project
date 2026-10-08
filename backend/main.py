@@ -63,6 +63,27 @@ def course_info():
             "available": {k: v["title"] for k, v in courses.COURSES.items()}}
 
 
+class CourseSwitch(BaseModel):
+    course: str
+
+
+@app.post("/api/course/switch")
+def switch_course(body: CourseSwitch):
+    """Makes another course active. Builds it first if it has never been built (about a minute)."""
+    try:
+        courses.switch(body.course)
+    except ValueError as err:
+        raise HTTPException(400, str(err))
+    db.init_db()  # each course has its own student database
+    if not courses.is_built():
+        from backend.agents.knowledge_builder import build_knowledge
+        from backend.agents.reconciler import reconcile
+
+        build_knowledge(str(courses.data_dir()))
+        reconcile()
+    return course_info()
+
+
 @app.get("/api/sources")
 def list_sources():
     return json.loads(_sources_json().read_text(encoding="utf-8"))["sources"]
