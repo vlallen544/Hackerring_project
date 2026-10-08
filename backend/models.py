@@ -26,3 +26,34 @@ class KnowledgeExtraction(BaseModel):
     concepts: list[Concept]
     claims: list[Claim]
     prerequisites: list[Prerequisite]
+
+# ---------- Source Reconciler output ----------
+class ConflictSide(BaseModel):
+    label: str = Field(description="Short summary of this side's position, e.g. 'MySQL supports window functions'")
+    claim_ids: list[str] = Field(description="ids of the claims that take this position")
+    is_specific: bool = Field(description="True if these claims give versions, dates or reasons")
+    is_absolute: bool = Field(description="True if these claims use absolute words like always, never, every")
+
+
+class DetectedConflict(BaseModel):
+    concept_id: str
+    topic: str = Field(description="What the disagreement is about, in a few words")
+    conflict_type: Literal["contradiction", "outdated", "unreliable"] = Field(
+        description="contradiction: sources disagree; outdated: one side was true earlier but is no longer; "
+                    "unreliable: a single claim that is misleading or over-generalised (one side only)")
+    sides: list[ConflictSide] = Field(description="2 sides for contradiction/outdated, 1 side for unreliable")
+    summary: str = Field(description="One sentence describing the disagreement. Do NOT say who is right.")
+
+
+class IndustrySkill(BaseModel):
+    skill: str = Field(description="A database/SQL skill employers ask for, e.g. 'Window functions'")
+    concept_id: str | None = Field(description="Matching concept id, or null if none")
+    demanded_by: list[str] = Field(description="source ids of the job descriptions asking for it")
+    faculty_coverage: Literal["covered", "partial", "outdated", "missing"] = Field(
+        description="How the FACULTY NOTES handle this skill")
+    note: str = Field(description="One short sentence explaining the coverage rating")
+
+
+class ReconcilerOutput(BaseModel):
+    conflicts: list[DetectedConflict]
+    industry_skills: list[IndustrySkill]
