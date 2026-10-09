@@ -726,8 +726,11 @@ async function renderLesson(L) {
         for (const [i, d] of diagrams.entries()) {
             let drawn = false;
             for (const variant of [d.mermaid, quoteMermaidLabels(d.mermaid)]) {
+                const id = `mmd-${Date.now()}-${i}`;
                 try {
-                    const { svg } = await mermaid.render(`mmd-${Date.now()}-${i}`, variant);
+                    // Check first: a failed render() leaves Mermaid's "Syntax error in text" graphic at the end of the page
+                    if (await mermaid.parse(variant, { suppressErrors: true }) === false) continue;
+                    const { svg } = await mermaid.render(id, variant);
                     $(`diagram-${i}`).innerHTML = svg;
                     // Natural size, so wide diagrams scroll sideways instead of shrinking to unreadable text
                     const el = $(`diagram-${i}`).querySelector("svg");
@@ -739,9 +742,18 @@ async function renderLesson(L) {
                     }
                     drawn = true;
                     break;
-                } catch { /* try the next variant */ }
+                } catch {
+                    /* try the next variant */
+                } finally {
+                    // Mermaid draws in a temporary element on <body>; never leave it (or its error graphic) behind
+                    for (const leftover of [document.getElementById(`d${id}`), document.getElementById(id)]) {
+                        if (leftover && !leftover.closest(".diagram")) leftover.remove();
+                    }
+                }
             }
-            if (!drawn) $(`diagram-${i}`).innerHTML = `<pre class="text-xs whitespace-pre-wrap">${esc(d.mermaid)}</pre>`;
+            if (!drawn) $(`diagram-${i}`).innerHTML = `
+                <p class="text-xs font-bold uppercase text-gray-500 mb-1">// Diagram (as text: it could not be drawn)</p>
+                <pre class="text-xs whitespace-pre-wrap">${esc(d.mermaid)}</pre>`;
         }
     }
 }
