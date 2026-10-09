@@ -152,6 +152,9 @@
                         <div class="bg-neo-pink text-white p-2 border-2 border-black"><i class="ph-bold ph-lock-key text-2xl"></i></div>
                         <h3 class="font-display text-2xl uppercase">Change password</h3>
                     </div>
+                    <p id="change-required" class="hidden border-4 border-black bg-neo-yellow p-3 mb-4 font-bold">
+                        <i class="ph-bold ph-warning"></i> You are using the default password. Anyone who knows it can log in
+                        as faculty, so please change it now.</p>
                     <form class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end" onsubmit="changePassword(event)">
                         <label><span class="block font-bold uppercase text-xs mb-1">Current</span>
                             <input name="current" type="password" autocomplete="current-password" class="brutal-input" required></label>
@@ -243,7 +246,14 @@
                     body: { current_password: form.current.value, new_password: form.next.value } });
                 form.reset();
                 toast(r.message);
+                $("change-required").classList.add("hidden");
+                const auth = getAuth();
+                if (auth && auth.user) setAuth({ user: { ...auth.user, must_change_password: false } });
             });
+        }
+        if (new URLSearchParams(location.search).get("change") === "1") {
+            $("change-required").classList.remove("hidden");
+            $("change-required").scrollIntoView({ block: "center" });
         }
 
         const tile = (title, sub, color = "bg-white") => `

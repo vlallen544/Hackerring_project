@@ -2,7 +2,8 @@
 // The UI is served by FastAPI at /ui, so every API call is same-origin.
 
 // --------------------------------------------------------------------------- //
-// Login state: the JWT from /api/auth/login is kept in this browser and sent as a Bearer token
+// Login state: the session is an HttpOnly cookie set by the server, which page scripts can never read. This browser
+// only remembers who is logged in (name, role) to draw the pages; the server checks the cookie on every request.
 // --------------------------------------------------------------------------- //
 const AUTH_KEY = "vp-auth";
 
@@ -30,9 +31,8 @@ function setCourse(id) {
 }
 
 function authHeaders() {
-    const auth = getAuth();
     const course = getCourse();
-    return { ...(auth && auth.token ? { Authorization: `Bearer ${auth.token}` } : {}), ...(course ? { "X-Course": course } : {}) };
+    return course ? { "X-Course": course } : {};  // the login cookie travels by itself
 }
 
 const homeFor = user => (user.role === "faculty" ? "faculty.html" : "student.html");
@@ -43,7 +43,8 @@ function goLogin() {
     location.href = `login.html?next=${encodeURIComponent(back)}`;
 }
 
-function logout() {
+async function logout() {
+    try { await fetch("/api/auth/logout", { method: "POST" }); } catch { /* offline: the cookie still expires */ }
     clearAuth();
     location.href = "login.html";
 }
@@ -51,7 +52,7 @@ function logout() {
 // Call at the top of a page: returns the logged-in user, or redirects (to login, or to the user's own page)
 function requireRole(role) {
     const auth = getAuth();
-    if (!auth || !auth.token) {
+    if (!auth || !auth.user) {
         goLogin();
         return null;
     }

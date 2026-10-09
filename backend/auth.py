@@ -1,5 +1,8 @@
-# Authentication: user accounts (faculty + students), salted password hashes, JWT tokens and profiles.
+# Authentication: user accounts (faculty + students), salted password hashes, JWT sessions and profiles.
 # Accounts are global (one login works for every course); student progress stays in each course's database.
+# The browser keeps the JWT in an HttpOnly, Secure, SameSite=Strict cookie that page scripts cannot read; scripts and
+# tests may send it as a Bearer token instead. Every token has an id (jti) so logout can revoke it, and a version:
+# changing or resetting a password, or removing a login, bumps the version and so ends every session of that account.
 import hashlib
 import hmac
 import os
@@ -9,7 +12,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import jwt
-from fastapi import Depends, HTTPException
+from fastapi import Depends, HTTPException, Request
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from backend import sql
@@ -17,6 +20,7 @@ from backend import sql
 AUTH_DB = Path("data/auth.db")
 SECRET_FILE = Path("data/.jwt_secret")  # generated once if JWT_SECRET is not set in .env (gitignored)
 TOKEN_HOURS = 12
+COOKIE_NAME = "vp_session"
 HASH_ITERATIONS = 200_000
 DEFAULT_ADMIN = ("admin", os.getenv("ADMIN_PASSWORD") or "admin123")  # master faculty login, created on first start
 STUDENT_FIELDS = ("name", "stated_style", "pace", "target_role")
@@ -39,6 +43,16 @@ CREATE TABLE IF NOT EXISTS student_registry (
     stated_style TEXT,
     pace TEXT,
     target_role TEXT
+);
+
+CREATE TABLE IF NOT EXISTS token_versions (
+    username TEXT PRIMARY KEY,       -- bumped to end every session of an account
+    version INTEGER NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS revoked_tokens (
+    jti TEXT PRIMARY KEY,            -- sessions ended by logout, kept until they would have expired anyway
+    expires_at TEXT NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS profiles (
@@ -93,8 +107,55 @@ def verify_password(password, stored):
 def create_token(user):
     now = datetime.now(timezone.utc)
     claims = {"sub": user["username"], "role": user["role"], "sid": user["student_id"],
+              "jti": secrets.token_urlsafe(16), "ver": _version(user["username"]),
               "iat": now, "exp": now + timedelta(hours=TOKEN_HOURS)}
     return jwt.encode(claims, _secret(), algorithm="HS256")
+
+
+def _version(username):
+    with _conn() as conn:
+        row = conn.execute("SELECT version FROM token_versions WHERE username = ?", (username,)).fetchone()
+    return row["version"] if row else 0
+
+
+def end_all_sessions(username):
+    """Every token issued to this account so far stops working."""
+    with _conn() as conn:
+        conn.execute("INSERT INTO token_versions (username, version) VALUES (?, 1) "
+                     "ON CONFLICT (username) DO UPDATE SET version = token_versions.version + 1", (username,))
+
+
+def revoke(token):
+    """Logout: this one session stops working (other devices stay signed in)."""
+    try:
+        claims = jwt.decode(token, _secret(), algorithms=["HS256"])
+    except jwt.InvalidTokenError:
+        return  # already invalid
+    now = datetime.now(timezone.utc).isoformat(timespec="seconds")
+    expires = datetime.fromtimestamp(claims["exp"], timezone.utc).isoformat(timespec="seconds")
+    with _conn() as conn:
+        conn.execute("DELETE FROM revoked_tokens WHERE expires_at < ?", (now,))  # tidy up old entries
+        conn.execute("INSERT INTO revoked_tokens (jti, expires_at) VALUES (?, ?) ON CONFLICT (jti) DO NOTHING",
+                     (claims.get("jti", ""), expires))
+
+
+def user_from_token(token):
+    """The account a token belongs to, or an HTTPException(401) saying why it is not valid."""
+    headers = {"WWW-Authenticate": "Bearer"}
+    try:
+        claims = jwt.decode(token, _secret(), algorithms=["HS256"], options={"require": ["exp", "sub", "jti"]})
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(401, "Your session has expired. Please log in again.", headers=headers)
+    except jwt.InvalidTokenError:
+        raise HTTPException(401, "Please log in again", headers=headers)
+    with _conn() as conn:
+        revoked = conn.execute("SELECT 1 FROM revoked_tokens WHERE jti = ?", (claims["jti"],)).fetchone()
+    if revoked or claims.get("ver", 0) != _version(claims["sub"]):
+        raise HTTPException(401, "You were signed out. Please log in again.", headers=headers)
+    user = get_user(claims["sub"])  # the account may have been removed since the token was issued
+    if not user:
+        raise HTTPException(401, "This login no longer exists", headers=headers)
+    return user
 
 
 def _public(user):
@@ -165,12 +226,14 @@ def set_password(username, password):
                                (hash_password(password), username)).rowcount
     if not changed:
         raise ValueError(f"No login named '{username}'")
+    end_all_sessions(username)  # a new password signs out every device that used the old one
 
 
 def delete_login(username):
     with _conn() as conn:
         conn.execute("DELETE FROM users WHERE username = ? AND role = 'student'", (username,))
         conn.execute("DELETE FROM profiles WHERE username = ?", (username,))
+    end_all_sessions(username)
 
 
 def get_profile(username):
@@ -198,19 +261,27 @@ def save_profile(username, data):
 _bearer = HTTPBearer(auto_error=False)
 
 
-def current_user(credentials: HTTPAuthorizationCredentials | None = Depends(_bearer)):
-    if credentials is None:
+def request_token(request, credentials=None):
+    """The session cookie, or a Bearer token for scripts and tests."""
+    return credentials.credentials if credentials else request.cookies.get(COOKIE_NAME)
+
+
+def current_user(request: Request, credentials: HTTPAuthorizationCredentials | None = Depends(_bearer)):
+    token = request_token(request, credentials)
+    if not token:
         raise HTTPException(401, "Please log in", headers={"WWW-Authenticate": "Bearer"})
+    return user_from_token(token)
+
+
+def session_user(request):
+    """For page requests: the logged-in user, or None."""
+    token = request.cookies.get(COOKIE_NAME)
+    if not token:
+        return None
     try:
-        claims = jwt.decode(credentials.credentials, _secret(), algorithms=["HS256"])
-    except jwt.ExpiredSignatureError:
-        raise HTTPException(401, "Your session has expired. Please log in again.", headers={"WWW-Authenticate": "Bearer"})
-    except jwt.InvalidTokenError:
-        raise HTTPException(401, "Invalid login token", headers={"WWW-Authenticate": "Bearer"})
-    user = get_user(claims["sub"])  # the account may have been removed since the token was issued
-    if not user:
-        raise HTTPException(401, "This login no longer exists", headers={"WWW-Authenticate": "Bearer"})
-    return user
+        return user_from_token(token)
+    except HTTPException:
+        return None
 
 
 def require_faculty(user=Depends(current_user)):

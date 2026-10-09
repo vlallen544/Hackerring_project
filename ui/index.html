@@ -58,7 +58,7 @@
 
         async function init() {
             const auth = getAuth();
-            if (!auth || !auth.token) {
+            if (!auth || !auth.user) {
                 $("home-actions").innerHTML = `
                     <section class="card p-8 flex flex-wrap justify-between items-center gap-6">
                         <div>

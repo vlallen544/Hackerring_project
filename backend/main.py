@@ -7,9 +7,11 @@ from contextlib import asynccontextmanager
 from datetime import datetime
 from pathlib import Path
 
-from fastapi import Depends, FastAPI, File, Form, Header, HTTPException, Request, UploadFile
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, RedirectResponse
+from urllib.parse import quote, urlsplit
+
+from fastapi import Depends, FastAPI, File, Form, Header, HTTPException, Request, Response, UploadFile
+from fastapi.responses import FileResponse, JSONResponse, RedirectResponse
+from starlette.concurrency import run_in_threadpool
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
@@ -42,18 +44,66 @@ async def use_request_course(x_course: str | None = Header(None)):
     courses.use(x_course)
 
 
-app = FastAPI(title="VidyaPath API", lifespan=lifespan, dependencies=[Depends(use_request_course)])
-app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
+# The UI is served from this same server, so no cross-origin access is allowed (no CORS middleware).
+# The interactive API docs stay available locally but are hidden on the hosted site.
+app = FastAPI(title="VidyaPath API", lifespan=lifespan, dependencies=[Depends(use_request_course)],
+              docs_url=None if sql.ON_RAILWAY else "/docs", redoc_url=None,
+              openapi_url=None if sql.ON_RAILWAY else "/openapi.json")
 app.mount("/ui", StaticFiles(directory=UI_DIR, html=True), name="ui")  # the VidyaPath web UI
+
+PROTECTED_PAGES = {"/ui/student.html": None, "/ui/profile.html": None, "/ui/faculty.html": "faculty"}  # page -> role
+UNSAFE_METHODS = {"POST", "PUT", "PATCH", "DELETE"}
+SECURITY_HEADERS = {
+    "X-Frame-Options": "DENY",                       # no framing by other sites (clickjacking)
+    "X-Content-Type-Options": "nosniff",
+    "Referrer-Policy": "strict-origin-when-cross-origin",
+    "Permissions-Policy": "camera=(), geolocation=(), microphone=(self)",  # the mic is used for spoken answers
+}
+
+
+def _https(request):
+    return request.headers.get("x-forwarded-proto", request.url.scheme) == "https"
+
+
+def _cross_site(request):
+    """A browser request sent from another website (blocked for anything that changes data)."""
+    if request.headers.get("sec-fetch-site") == "cross-site":
+        return True
+    origin = request.headers.get("origin")
+    host = request.headers.get("x-forwarded-host") or request.headers.get("host", "")
+    return bool(origin) and urlsplit(origin).netloc != host
 
 
 @app.middleware("http")
-async def fresh_ui(request: Request, call_next):
-    """Browsers re-check the UI files on every load (cheap: unchanged files answer 304), so a new deploy shows at once."""
+async def security(request: Request, call_next):
+    path = request.url.path
+    if request.method in UNSAFE_METHODS and path.startswith("/api/") and _cross_site(request):
+        return JSONResponse({"detail": "Requests from other websites are not allowed"}, status_code=403)
+    if path in PROTECTED_PAGES:  # checked on the server, before the page loads: a shared link shows the login page
+        user = await run_in_threadpool(auth.session_user, request)
+        if not user:
+            back = path.removeprefix("/ui/") + (f"?{request.url.query}" if request.url.query else "")
+            return RedirectResponse(f"/ui/login.html?next={quote(back, safe='')}", status_code=303)
+        if PROTECTED_PAGES[path] and user["role"] != PROTECTED_PAGES[path]:
+            return RedirectResponse("/ui/student.html", status_code=303)
     response = await call_next(request)
-    if request.url.path.startswith("/ui"):
-        response.headers["Cache-Control"] = "no-cache"
+    for name, value in SECURITY_HEADERS.items():
+        response.headers.setdefault(name, value)
+    if _https(request):
+        response.headers.setdefault("Strict-Transport-Security", "max-age=31536000")
+    if path.startswith("/ui"):
+        # Browsers re-check UI files on every load (unchanged files answer 304), so a new deploy shows at once
+        response.headers["Cache-Control"] = "no-store" if path in PROTECTED_PAGES else "no-cache"
     return response
+
+
+def _set_session(response, request, user):
+    """The login cookie: HttpOnly (page scripts can't read it), Secure on HTTPS, SameSite=Strict (never sent from
+    another site). Returns the token."""
+    token = auth.create_token(user)
+    response.set_cookie(auth.COOKIE_NAME, token, max_age=auth.TOKEN_HOURS * 3600, path="/",
+                        httponly=True, secure=_https(request), samesite="strict")
+    return token
 
 
 @app.get("/", include_in_schema=False)
@@ -136,9 +186,15 @@ LOGIN_LOCK_SECONDS = 300
 _failed_logins = {}  # (client ip, username) -> recent failure times; slows down password guessing
 
 
+def _client_ip(request):
+    """The visitor's address: behind Railway's proxy every request comes from the proxy, so read X-Forwarded-For."""
+    forwarded = request.headers.get("x-forwarded-for", "")
+    return forwarded.split(",")[0].strip() or (request.client.host if request.client else "?")
+
+
 @app.post("/api/auth/login")
-def login(body: Login, request: Request):
-    key = (request.client.host if request.client else "?", body.username.strip().lower())
+def login(body: Login, request: Request, response: Response):
+    key = (_client_ip(request), body.username.strip().lower())
     now = time.time()
     recent = [t for t in _failed_logins.get(key, []) if now - t < LOGIN_LOCK_SECONDS]
     if len(recent) >= LOGIN_MAX_FAILURES:
@@ -149,8 +205,23 @@ def login(body: Login, request: Request):
         _failed_logins[key] = recent + [now]
         raise HTTPException(401, "Wrong username or password")
     _failed_logins.pop(key, None)
-    return {"token": auth.create_token(user), "token_type": "bearer", "expires_in_hours": auth.TOKEN_HOURS,
-            "user": {**user, "name": _display_name(user)}}
+    token = _set_session(response, request, user)
+    # still returned for scripts and tests (Bearer); the web UI never stores it
+    must_change = user["role"] == "faculty" and body.password == "admin123"  # the well-known default password
+    return {"token": token, "token_type": "bearer", "expires_in_hours": auth.TOKEN_HOURS,
+            "user": {**user, "name": _display_name(user), "must_change_password": must_change}}
+
+
+@app.post("/api/auth/logout")
+def logout(request: Request, response: Response):
+    """Ends this session on the server (the token stops working everywhere), and clears the cookie."""
+    token = auth.request_token(request)
+    if not token and request.headers.get("authorization", "").lower().startswith("bearer "):
+        token = request.headers["authorization"][7:]
+    if token:
+        auth.revoke(token)
+    response.delete_cookie(auth.COOKIE_NAME, path="/")
+    return {"message": "Logged out"}
 
 
 @app.get("/api/auth/me")
@@ -159,13 +230,16 @@ def me(user=Depends(auth.current_user)):
 
 
 @app.post("/api/auth/password")
-def change_password(body: PasswordChange, user=Depends(auth.current_user)):
+def change_password(body: PasswordChange, request: Request, response: Response, user=Depends(auth.current_user)):
     if not auth.authenticate(user["username"], body.current_password):
         raise HTTPException(400, "Current password is wrong")
     if len(body.new_password) < MIN_PASSWORD:
         raise HTTPException(400, f"New password must have at least {MIN_PASSWORD} characters")
-    auth.set_password(user["username"], body.new_password)
-    return {"message": "Password changed"}
+    if body.new_password == body.current_password:
+        raise HTTPException(400, "Choose a password different from the current one")
+    auth.set_password(user["username"], body.new_password)  # signs out every other session
+    _set_session(response, request, user)  # this browser stays signed in with a fresh session
+    return {"message": "Password changed. Other devices were signed out."}
 
 
 @app.get("/api/profile")

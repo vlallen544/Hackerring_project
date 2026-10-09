@@ -67,15 +67,15 @@
                     $("login-error").innerHTML = `<div class="border-4 border-black bg-neo-red text-white p-3 font-bold">${esc(data.detail || "Login failed")}</div>`;
                     return;
                 }
-                setAuth({ token: data.token, user: data.user });
-                location.href = nextPage(data.user);
+                setAuth({ user: data.user });  // the session itself is an HttpOnly cookie
+                location.href = data.user.must_change_password ? "profile.html?change=1" : nextPage(data.user);
             });
         }
 
         // Already logged in: go straight to the right page
         const existing = getAuth();
-        if (existing && existing.token) {
-            api("/api/auth/me").then(user => { setAuth({ ...existing, user }); location.href = nextPage(user); }).catch(() => clearAuth());
+        if (existing && existing.user) {
+            api("/api/auth/me").then(user => { setAuth({ user }); location.href = nextPage(user); }).catch(() => clearAuth());
         }
     </script>
 </body>
