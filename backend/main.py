@@ -13,7 +13,7 @@ from fastapi.responses import FileResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from backend import auth, courses, db, storage
+from backend import auth, courses, db, sql, storage
 from backend.tools.parsers import SUPPORTED_SUFFIXES, file_sha256, inspect_file, page_texts
 
 SOURCE_TYPES = {"faculty_notes", "textbook", "job_description", "web_link"}
@@ -24,6 +24,7 @@ UI_DIR = Path("ui")
 
 @asynccontextmanager
 async def lifespan(app):
+    sql.require_postgres_when_hosted()
     storage.restore()  # uploads, source lists and built course data saved in Supabase (Railway's disk is wiped on deploy)
     auth.init_auth()  # accounts + the master faculty login
     courses.migrate_layout()
@@ -70,7 +71,7 @@ def _load(path):
 # --------------------------------------------------------------------------- #
 @app.get("/health")
 def health():
-    return {"status": "ok"}
+    return {"status": "ok", "database": "postgres" if sql.POSTGRES else "sqlite"}
 
 
 # --------------------------------------------------------------------------- #
