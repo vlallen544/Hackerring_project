@@ -236,7 +236,7 @@ Absolute claims ("always", "never") are penalized. Source authority defaults are
 | **Text-to-speech** | Server: **Piper** (offline neural voices, default `en_US-lessac-medium`) with **pyttsx3** / espeak-ng as fallback, MP3 via lameenc, cached; the browser plays long texts a few sentences at a time. Browser `speechSynthesis` as the last fallback |
 | **Database** | **Supabase Postgres** (one schema per course for student progress, logins in `public`); local SQLite files when `DATABASE_URL` is empty |
 | **File persistence** | Uploaded documents, source lists, built course data and faculty overrides are saved to Supabase (Postgres, or Supabase Storage for documents) and restored on every start, because Railway's disk is wiped on each deploy |
-| **Auth** | JWT (HS256, 12 h), salted PBKDF2 password hashes, per-student access control |
+| **Auth** | JWT (HS256, 12 h) in an HttpOnly / Secure / SameSite=Strict cookie, server-side revocation (session ids + per-account versions), server-checked pages, salted PBKDF2 password hashes, per-student access control |
 | **Hosting** | Railway (Railpack build, `railpack.json` + `railway.json`), Supabase, both in Singapore |
 | **Reliability** | Rate limiting, retry with exponential backoff and a response cache for Agnes (`backend/tools/agnes_client.py`) |
 
@@ -260,8 +260,13 @@ Absolute claims ("always", "never") are penalized. Source authority defaults are
 - **Deterministic engine:** numbers (risk, trust, mastery) never need an LLM call
 
 ### Security
-- API keys and the database URL live **only on the server** (environment variables), never in the browser.
-- Students can only read and change their own data; faculty routes return 403 for students.
+- **Login sessions:** a JWT (HS256, 12 hours) in an **HttpOnly, Secure, SameSite=Strict cookie**. Page scripts can't read it and other websites can't send it, so it can't be stolen by injected scripts or used from another site. The browser only remembers the user's name and role to draw the pages.
+- **Real logout:** every session has an id; logging out revokes it on the server, so a copied token stops working. Changing or resetting a password, or removing a login, **signs out every session** of that account.
+- **Pages checked on the server:** the student, faculty and profile pages are only served to a valid session. A shared link opened without a login goes straight to the login page; a student opening the faculty page is sent to their own.
+- **Access control:** students can only read and change their own data; faculty-only routes return 403 for students.
+- **Cross-site protection:** requests that change data are refused when they come from another website; no CORS access is granted. Security headers block framing (clickjacking) and MIME sniffing, and HTTPS is enforced (HSTS).
+- **Passwords:** salted PBKDF2 hashes. After 5 wrong passwords a username is locked for 5 minutes for that visitor (real IP behind the proxy). Logging in with the default admin password leads straight to changing it.
+- **Secrets:** API keys, the database URL and the JWT secret live only on the server (environment variables). The API docs are hidden on the hosted site.
 
 ---
 
@@ -399,7 +404,8 @@ With `DATABASE_URL` empty, everything is stored locally (SQLite in `data/`), whi
 ### Logins
 - **Faculty master login:** `admin`, with the password from `ADMIN_PASSWORD` (default `admin123`), created the first time the database is empty. Change it on the **Profile** page.
 - **Students** are created by faculty on **Faculty → 5. Students** (student ID, name, password, learning style, pace, target role). A student logs in with their student ID and only sees their own viva, lessons, path, doubts and profile.
-- Login tokens last 12 hours. After 5 wrong passwords, a username is locked for 5 minutes for that address.
+- Sessions last 12 hours (an HttpOnly cookie; see Security). Logging out ends the session on the server, and changing a password signs out the other devices. If the admin still uses the default password, the next login goes straight to changing it.
+- Scripts and API clients can log in with `POST /api/auth/login` and send the returned token as `Authorization: Bearer <token>`.
 
 ### Courses and demo data
 Six demo courses are included, each with planted conflicts and an answer key (`expected_results.md`):
@@ -434,7 +440,7 @@ DB_POOL_SIZE=5
 
 # Logins
 ADMIN_PASSWORD=                       # used only when the admin login is first created
-JWT_SECRET=                           # set on a hosted server so logins survive restarts
+JWT_SECRET=                           # required on a hosted server: signs the login sessions (logins survive restarts)
 
 # Uploaded documents in Supabase Storage (optional; without it they are kept in Postgres)
 SUPABASE_URL=https://<project>.supabase.co
