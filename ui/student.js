@@ -476,7 +476,7 @@ async function renderLesson(L) {
 
     $("lesson-body").innerHTML = `
         <div class="grid grid-cols-1 xl:grid-cols-4 gap-8 animate-slam">
-            <aside class="card p-6 bg-neo-yellow h-fit xl:sticky xl:top-24">
+            <aside class="card p-6 bg-neo-yellow h-fit xl:sticky xl:top-24 order-2 xl:order-1">
                 <h3 class="font-display text-xl uppercase mb-3">Why this lesson looks like this</h3>
                 <p class="text-sm mb-2"><b>LEVEL: ${esc(a.level)}</b><br>${esc(a.level_reason)}</p>
                 <p class="text-sm mb-2"><b>FORMAT: ${esc(a.format)}</b><br>${esc(a.format_reason)}</p>
@@ -486,11 +486,11 @@ async function renderLesson(L) {
                 ${meter(L.material_share_percent / 100, "bg-neo-green")}
                 <p class="text-xs mt-2">Diagrams, walkthrough and code are AI-written illustrations checked against the course's trusted facts.</p>
             </aside>
-            <article class="card p-6 xl:col-span-3" data-speak>
+            <article class="card p-6 xl:col-span-3 order-1 xl:order-2" data-speak>
                 <p class="text-xs font-bold uppercase text-gray-500 no-read">// ${esc(cname(L.concept_id))} · lesson #${esc(L.lesson_id)}</p>
                 <h2 class="font-display text-3xl md:text-4xl uppercase leading-tight mb-3">${esc(L.title)}</h2>
                 ${L.overview ? `<p class="text-lg border-l-8 border-neo-pink pl-4 mb-4">${esc(L.overview)}</p>` : ""}
-                <nav class="flex flex-wrap gap-2 mb-2 sticky top-16 bg-white py-2 z-10 border-b-2 border-black">
+                <nav class="lesson-nav flex flex-wrap gap-2 mb-2 sticky top-16 bg-white py-2 z-10 border-b-2 border-black">
                     ${LESSON_SECTIONS.filter(([id]) => present[id]).map(([id, label]) =>
                         `<button class="chip bg-white hover:bg-neo-yellow" onclick="$('ls-${id}').scrollIntoView({behavior: 'smooth'})">${label}</button>`).join("")}
                 </nav>

@@ -343,6 +343,11 @@ function courseSelect(course, isFaculty, extraClass = "") {
 let ACTIVE_COURSE = null;
 
 document.addEventListener("DOMContentLoaded", async () => {
+    // On phones the top bar wraps onto two rows: pages pad their content by its real height (--nav-h in vp.css)
+    const topBar = document.querySelector("nav.top-bar");
+    if (topBar && "ResizeObserver" in window) {
+        new ResizeObserver(() => document.documentElement.style.setProperty("--nav-h", `${topBar.offsetHeight}px`)).observe(topBar);
+    }
     const auth = getAuth();
     const user = auth && auth.user;
     const nav = document.querySelector("nav > div");
@@ -352,7 +357,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         // Put the user menu next to the existing right-hand items (wrapped, so their own styles don't apply to it)
         const right = nav.lastElementChild;
         const box = document.createElement("div");
-        box.className = "flex items-center gap-3 flex-wrap justify-end";
+        box.className = "nav-group flex items-center gap-3 flex-wrap justify-end";
         right.replaceWith(box);
         box.appendChild(right);
         box.insertAdjacentHTML("beforeend", `
@@ -367,7 +372,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         const logo = document.querySelector("nav a[href='index.html']");
         if (logo && user && !location.pathname.endsWith("login.html")) {
             // Everyone picks their own course; it changes only what they see
-            logo.insertAdjacentHTML("afterend", `<label class="flex items-center gap-2 ml-1 sm:ml-3">
+            logo.insertAdjacentHTML("afterend", `<label class="course-pick flex items-center gap-2 ml-1 sm:ml-3">
                 <i class="ph-bold ph-books text-xl hidden sm:inline"></i>${courseSelect(ACTIVE_COURSE, user.role === "faculty", "max-w-[10rem] sm:max-w-none")}</label>`);
         }
         if ($("course-list") && user) renderCourseList(ACTIVE_COURSE);  // home page

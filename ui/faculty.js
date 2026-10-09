@@ -149,7 +149,7 @@ async function loadCourseStats() {
                 onclick="showDetail('${kind}')" title="Show the ${esc(label)}">
             <p class="font-display text-4xl">${esc(n)}</p>
             <p class="text-xs font-bold uppercase">${esc(label)}</p>
-            <p class="text-[10px] font-bold uppercase mt-1 opacity-60 group-hover:opacity-100"><i class="ph-bold ph-eye"></i> View</p>
+            <p class="text-xs font-bold uppercase mt-1 opacity-60 group-hover:opacity-100"><i class="ph-bold ph-eye"></i> View</p>
         </button>`;
     $("course-stats-tiles").innerHTML = `
         <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8 animate-slam">

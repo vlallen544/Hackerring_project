@@ -248,3 +248,41 @@ h1, h2, h3, button {
     text-transform: uppercase;
     color: #4b5563;
 }
+
+/* ---------- Phones ---------- */
+@media (max-width: 639px) {
+    /* Top bar on two rows: logo, role switch, profile and logout; then the course (and student) pickers */
+    .top-bar > div {
+        flex-wrap: wrap;
+        height: auto;
+        min-height: 4rem;
+        padding-top: 0.5rem;
+        padding-bottom: 0.5rem;
+        gap: 0.5rem;
+        justify-content: flex-start;
+    }
+    .top-bar .nav-group { display: contents; }
+    .top-bar .vp-logo { margin-right: auto; }
+    .top-bar .vp-mark { width: 2.5rem; height: 2.5rem; }
+    .top-bar > div:has(.course-pick)::after { content: ""; order: 5; flex-basis: 100%; height: 0; }  /* line break */
+    .top-bar .course-pick,
+    .top-bar .student-pick { order: 6; flex: 1 1 0; min-width: 0; margin: 0; }
+    .top-bar .course-pick select,
+    .top-bar .student-pick select { width: 100% !important; max-width: none; }
+    main { padding-top: calc(var(--nav-h, 4rem) + 1.5rem) !important; }
+    .lesson-nav { top: var(--nav-h, 4rem) !important; }
+
+    .tab-item { font-size: 0.75rem; padding: 0.45rem 0; }
+}
+
+/* ---------- Touch screens: targets big enough for a finger ---------- */
+@media (pointer: coarse) {
+    button.chip, a.chip, label.chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+        min-height: 2.5rem;
+    }
+    .role-switch a { display: inline-flex; align-items: center; min-height: 2.5rem; }
+    .field { min-height: 2.75rem; }
+}

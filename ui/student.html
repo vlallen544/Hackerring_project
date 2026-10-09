@@ -17,7 +17,7 @@
 <body class="bg-slate-100 text-neo-black antialiased selection:bg-neo-pink selection:text-white">
 
     <!-- Top bar: logo, role switch, student picker -->
-    <nav class="fixed w-full z-40 bg-white border-b-4 border-black top-0">
+    <nav class="top-bar fixed w-full z-40 bg-white border-b-4 border-black top-0">
         <div class="px-4 flex justify-between h-16 items-center gap-3">
             <a href="index.html" class="vp-logo flex items-center gap-3" aria-label="VidyaPath home">
                 <img src="logo.png" alt="" class="vp-mark">
@@ -26,11 +26,11 @@
                     <span class="vp-tagline hidden lg:block">Where teaching meets learning</span>
                 </span>
             </a>
-            <div class="flex items-center gap-3">
+            <div class="nav-group flex items-center gap-3">
                 <div class="role-switch flex text-xs">
                     <a href="student.html" class="on">Student</a><a href="faculty.html" class="border-l-0">Faculty</a>
                 </div>
-                <label class="flex items-center gap-2">
+                <label class="student-pick flex items-center gap-2">
                     <select id="student-select" class="field !w-auto !py-1 font-bold uppercase" aria-label="Student"
                             onchange="location.href='student.html?id='+this.value+location.hash"></select>
                 </label>
