@@ -41,6 +41,15 @@ app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], all
 app.mount("/ui", StaticFiles(directory=UI_DIR, html=True), name="ui")  # the VidyaPath web UI
 
 
+@app.middleware("http")
+async def fresh_ui(request: Request, call_next):
+    """Browsers re-check the UI files on every load (cheap: unchanged files answer 304), so a new deploy shows at once."""
+    response = await call_next(request)
+    if request.url.path.startswith("/ui"):
+        response.headers["Cache-Control"] = "no-cache"
+    return response
+
+
 @app.get("/", include_in_schema=False)
 def root():
     return RedirectResponse("/ui/")
