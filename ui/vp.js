@@ -157,12 +157,12 @@ function toast(message, kind = "info") {
 // speak(text, button) reads any text; readAloud(button, targetId) reads what an element shows
 // (or the nearest [data-speak] around the button). Clicking the same button again stops it.
 // --------------------------------------------------------------------------- //
-let SPEECH = null;  // what is playing now: { audio, url, button, label }
+let SPEECH = null;  // what is playing now: { audio, urls, button, label }
 
 function stopSpeaking() {
     if (SPEECH) {
         if (SPEECH.audio) SPEECH.audio.pause();
-        if (SPEECH.url) URL.revokeObjectURL(SPEECH.url);
+        SPEECH.urls.forEach(url => URL.revokeObjectURL(url));
         if (SPEECH.button) SPEECH.button.innerHTML = SPEECH.label;
         SPEECH = null;
     }
@@ -180,33 +180,71 @@ function browserSpeak(text, done) {
     speechSynthesis.speak(u);
 }
 
+// Splits text into pieces of whole sentences. Pieces grow (150, 300, then 350 characters): speech starts quickly, and
+// each piece is made on the server (about 0.4x its playing time) while the one before it plays, so there are no gaps.
+function speechChunks(text) {
+    const sentences = text.match(/.+?(?:[.!?]+["')\]]*(?=\s|$)|$)\s*/g) || [text];  // "2.5" is not a sentence end
+    const chunks = [];
+    let piece = "";
+    for (const sentence of sentences) {
+        if (piece && (piece + sentence).length > ([150, 300][chunks.length] ?? 350)) {
+            chunks.push(piece.trim());
+            piece = "";
+        }
+        piece += sentence;  // a single long sentence stays whole
+    }
+    if (piece.trim()) chunks.push(piece.trim());
+    return chunks;
+}
+
+async function fetchSpeech(text) {
+    const res = await fetch("/api/tts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...authHeaders() },
+        body: JSON.stringify({ text }),
+    });
+    if (!res.ok) throw new Error(`Speech failed (${res.status})`);
+    return res.blob();
+}
+
+// Plays the server's speech piece by piece, fetching the next piece while the current one plays
 async function speak(text, button = null) {
     const again = SPEECH && button && SPEECH.button === button;
     stopSpeaking();
     text = String(text ?? "").replace(/\s+/g, " ").trim();
     if (again || !text) return;  // second click on the playing button: just stop
-    const current = SPEECH = { audio: null, url: null, button, label: button ? button.innerHTML : "" };
+    const current = SPEECH = { audio: null, urls: [], button, label: button ? button.innerHTML : "" };
     const done = () => { if (SPEECH === current) stopSpeaking(); };
     if (button) button.innerHTML = '<i class="ph-bold ph-spinner animate-spin"></i> Loading audio...';
+    const chunks = speechChunks(text);
+    let i = 0;
     try {
-        const res = await fetch("/api/tts", {
-            method: "POST",
-            headers: { "Content-Type": "application/json", ...authHeaders() },
-            body: JSON.stringify({ text }),
-        });
-        if (!res.ok) throw new Error(`Speech failed (${res.status})`);
-        const blob = await res.blob();
-        if (SPEECH !== current) return;  // stopped while the audio was loading
-        current.url = URL.createObjectURL(blob);
-        current.audio = new Audio(current.url);
-        current.audio.onended = done;
-        await current.audio.play();
+        let next = fetchSpeech(chunks[0]);
+        for (; i < chunks.length; i++) {
+            const blob = await next;
+            if (SPEECH !== current) return;  // stopped while loading
+            if (i + 1 < chunks.length) {
+                next = fetchSpeech(chunks[i + 1]);
+                next.catch(() => {});  // a failure is handled when that piece's turn comes
+            }
+            const url = URL.createObjectURL(blob);
+            current.urls.push(url);
+            current.audio = new Audio(url);
+            if (button && i === 0) button.innerHTML = '<i class="ph-bold ph-stop"></i> Stop';
+            await new Promise((resolve, reject) => {
+                current.audio.onended = resolve;
+                current.audio.onerror = reject;
+                current.audio.play().catch(reject);
+            });
+            if (SPEECH !== current) return;
+        }
+        done();
     } catch {
         if (SPEECH !== current) return;
         current.audio = null;
-        browserSpeak(text, done);
+        if (button) button.innerHTML = '<i class="ph-bold ph-stop"></i> Stop';
+        browserSpeak(chunks.slice(i).join(" "), done);  // the rest in the browser's own voice
     }
-    if (button && SPEECH === current) button.innerHTML = '<i class="ph-bold ph-stop"></i> Stop';
 }
 
 // The words a person sees in an element: no buttons, source chips, code, diagrams or form fields

@@ -28,6 +28,9 @@ async def lifespan(app):
     courses.migrate_layout()
     for course in courses.COURSES:  # anyone may open any course: create tables + seed demo students for each
         db.init_db(course)
+    from backend.tools import tts
+
+    tts.warm_up()  # load the read-aloud voice in the background
     yield
 
 
@@ -702,7 +705,7 @@ def list_doubts(student_id: str, user=Depends(auth.current_user)):
 
 
 # --------------------------------------------------------------------------- #
-# Read aloud: any text the UI shows, spoken by pyttsx3 on the server
+# Read aloud: any text the UI shows, spoken on the server (Piper, or pyttsx3 as the fallback)
 # --------------------------------------------------------------------------- #
 class SpeechRequest(BaseModel):
     text: str
@@ -715,10 +718,11 @@ def text_to_speech(body: SpeechRequest, _=Depends(auth.current_user)):
     if not body.text.strip():
         raise HTTPException(400, "Nothing to read aloud")
     try:
-        path = tts.speech_mp3(body.text)
+        path, engine = tts.speech_mp3(body.text)
     except tts.Unavailable as err:
         raise HTTPException(503, str(err))  # the UI then uses the browser's own voice
-    return FileResponse(path, media_type="audio/mpeg", headers={"Cache-Control": "private, max-age=86400"})
+    return FileResponse(path, media_type="audio/mpeg",
+                        headers={"Cache-Control": "private, max-age=86400", "X-Speech-Engine": engine})
 
 
 # --------------------------------------------------------------------------- #
