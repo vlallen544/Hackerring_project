@@ -131,7 +131,7 @@
                     <textarea id="viva-answer" rows="4" class="field mb-2" placeholder="Type or speak your answer..."></textarea>
                     <div class="flex flex-wrap items-center gap-3 mb-4">
                         <button class="btn btn-light" onclick="dictate('viva-answer', this)"><i class="ph-bold ph-microphone"></i> Speak</button>
-                        <button class="btn btn-light" onclick="speak($('viva-question').textContent)"><i class="ph-bold ph-speaker-high"></i> Read aloud</button>
+                        <button class="btn btn-light" onclick="speak($('viva-question').textContent, this)"><i class="ph-bold ph-speaker-high"></i> Read aloud</button>
                     </div>
                     <p class="font-bold uppercase text-sm mb-2">How sure are you? <span class="font-normal normal-case">(1 = guessing, 5 = certain)</span></p>
                     <div id="viva-confidence" class="flex gap-2 mb-6"></div>

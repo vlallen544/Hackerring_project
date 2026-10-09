@@ -79,6 +79,7 @@ const $ = id => document.getElementById(id);
 const VIEW_HOOKS = {};  // view name -> function to run whenever that view is shown
 
 function switchView(name) {
+    stopSpeaking();  // don't keep reading a page the user has left
     document.querySelectorAll(".view-section").forEach(v => {
         const show = v.id === `view-${name}`;
         v.classList.toggle("hidden", !show);
@@ -138,6 +139,83 @@ function toast(message, kind = "info") {
     document.body.appendChild(el);
     setTimeout(() => el.remove(), 4500);
 }
+
+// --------------------------------------------------------------------------- //
+// Read aloud: speech made on the server with pyttsx3 (/api/tts), or the browser's own voice if that fails.
+// speak(text, button) reads any text; readAloud(button, targetId) reads what an element shows
+// (or the nearest [data-speak] around the button). Clicking the same button again stops it.
+// --------------------------------------------------------------------------- //
+let SPEECH = null;  // what is playing now: { audio, url, button, label }
+
+function stopSpeaking() {
+    if (SPEECH) {
+        if (SPEECH.audio) SPEECH.audio.pause();
+        if (SPEECH.url) URL.revokeObjectURL(SPEECH.url);
+        if (SPEECH.button) SPEECH.button.innerHTML = SPEECH.label;
+        SPEECH = null;
+    }
+    if ("speechSynthesis" in window) speechSynthesis.cancel();
+}
+
+function browserSpeak(text, done) {
+    if (!("speechSynthesis" in window)) {
+        done();
+        return toast("Speech is not supported in this browser.", "error");
+    }
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = "en-IN";  // Indian English voice
+    u.onend = done;
+    speechSynthesis.speak(u);
+}
+
+async function speak(text, button = null) {
+    const again = SPEECH && button && SPEECH.button === button;
+    stopSpeaking();
+    text = String(text ?? "").replace(/\s+/g, " ").trim();
+    if (again || !text) return;  // second click on the playing button: just stop
+    const current = SPEECH = { audio: null, url: null, button, label: button ? button.innerHTML : "" };
+    const done = () => { if (SPEECH === current) stopSpeaking(); };
+    if (button) button.innerHTML = '<i class="ph-bold ph-spinner animate-spin"></i> Loading audio...';
+    try {
+        const res = await fetch("/api/tts", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", ...authHeaders() },
+            body: JSON.stringify({ text }),
+        });
+        if (!res.ok) throw new Error(`Speech failed (${res.status})`);
+        const blob = await res.blob();
+        if (SPEECH !== current) return;  // stopped while the audio was loading
+        current.url = URL.createObjectURL(blob);
+        current.audio = new Audio(current.url);
+        current.audio.onended = done;
+        await current.audio.play();
+    } catch {
+        if (SPEECH !== current) return;
+        current.audio = null;
+        browserSpeak(text, done);
+    }
+    if (button && SPEECH === current) button.innerHTML = '<i class="ph-bold ph-stop"></i> Stop';
+}
+
+// The words a person sees in an element: no buttons, source chips, code, diagrams or form fields
+function speakableText(el) {
+    const copy = el.cloneNode(true);
+    copy.querySelectorAll("button, .chip, pre, code, svg, figure, textarea, input, select, .no-read").forEach(n => n.remove());
+    copy.style.cssText = "position: absolute; left: -99999px; top: 0; width: 800px;";
+    document.body.appendChild(copy);  // innerText needs layout to know where lines break
+    const lines = copy.innerText.split(/\n+/).map(s => s.trim()).filter(Boolean);
+    copy.remove();
+    return lines.map(s => (/[.!?:;]$/.test(s) ? s : `${s}.`)).join(" ");  // a pause after each heading or line
+}
+
+function readAloud(button, targetId = "") {
+    const el = targetId ? $(targetId) : button.closest("[data-speak]");
+    if (el) speak(speakableText(el), button);
+}
+
+const readAloudButton = (targetId = "", label = "Read aloud") => `
+    <button class="chip bg-white text-black hover:bg-neo-blue" onclick="readAloud(this${targetId ? `, '${targetId}'` : ""})">
+        <i class="ph-bold ph-speaker-high"></i> ${label}</button>`;
 
 function meter(value, color = "bg-neo-black") {
     const pct = toPercent(Math.max(0, Math.min(1, value ?? 0)));

@@ -16,16 +16,8 @@ if (window.mermaid) mermaid.initialize({
 const sid = () => encodeURIComponent(STUDENT_ID);
 
 // --------------------------------------------------------------------------- //
-// Voice: read questions aloud and dictate answers (Web Speech API, Chrome/Edge)
+// Voice: dictate answers (Web Speech API, Chrome/Edge). Reading aloud is speak()/readAloud() in vp.js.
 // --------------------------------------------------------------------------- //
-function speak(text) {
-    if (!("speechSynthesis" in window)) return toast("Speech is not supported in this browser.", "error");
-    speechSynthesis.cancel();
-    const u = new SpeechSynthesisUtterance(text);
-    u.lang = "en-IN";  // Indian English voice
-    speechSynthesis.speak(u);
-}
-
 function dictate(targetId, button) {
     const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!Recognition) return toast("Voice input needs Chrome or Edge.", "error");
@@ -212,15 +204,15 @@ async function startViva(button) {
 function verdictCard(ev, decision) {
     const color = { correct: "bg-neo-green", partial: "bg-neo-yellow", vague: "bg-neo-blue", incorrect: "bg-neo-red text-white" }[ev.verdict];
     return `
-        <div class="card p-4 animate-slam">
+        <div class="card p-4 animate-slam" data-speak>
             <div class="flex justify-between items-center mb-2">
                 <span class="chip ${color}">${esc(ev.verdict)}</span>
-                <span class="font-display text-xl">${pct(ev.score)}</span>
+                <span class="flex items-center gap-2">${readAloudButton()}<span class="font-display text-xl">${pct(ev.score)}</span></span>
             </div>
             <p class="mb-2">${esc(ev.feedback)}</p>
             ${ev.misconception ? `<p class="text-sm border-2 border-black bg-neo-red/10 p-2 mb-2"><b>MISCONCEPTION:</b> ${esc(ev.misconception)}</p>` : ""}
             ${ev.missing_prerequisite ? `<p class="text-sm"><b>WEAK PREREQUISITE:</b> ${esc(cname(ev.missing_prerequisite))}</p>` : ""}
-            <p class="text-xs font-bold uppercase mt-2 text-gray-500">// Agent: ${esc(decision)}</p>
+            <p class="text-xs font-bold uppercase mt-2 text-gray-500 no-read">// Agent: ${esc(decision)}</p>
         </div>`;
 }
 
@@ -245,8 +237,10 @@ function renderVivaSummary(s) {
     const box = $("viva-summary");
     box.classList.remove("hidden");
     box.innerHTML = `
-        <section class="card p-6 animate-slam">
-            <h2 class="font-display text-3xl uppercase mb-4">Your result</h2>
+        <section class="card p-6 animate-slam" data-speak>
+            <div class="flex flex-wrap justify-between items-center gap-2 mb-4">
+                <h2 class="font-display text-3xl uppercase">Your result</h2>${readAloudButton()}
+            </div>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                 ${s.results.map(r => `
                     <div class="border-4 border-black p-4">
@@ -344,10 +338,12 @@ async function runPrediction(button) {
     await busy(button, "Checking for gaps...", async () => {
         const r = await post(`/api/students/${sid()}/predict`);
         $("path-message").innerHTML = r.actions.length ? `
-            <div class="card p-6 mb-8 bg-neo-yellow animate-slam">
-                <h2 class="font-display text-2xl uppercase mb-2">${r.actions.length} change${r.actions.length > 1 ? "s" : ""} made to your path</h2>
+            <div class="card p-6 mb-8 bg-neo-yellow animate-slam" data-speak>
+                <div class="flex flex-wrap justify-between items-center gap-2 mb-2">
+                    <h2 class="font-display text-2xl uppercase">${r.actions.length} change${r.actions.length > 1 ? "s" : ""} made to your path</h2>${readAloudButton()}
+                </div>
                 ${r.message ? `<p class="text-lg mb-3">${esc(r.message.student_message)}</p>` : ""}
-                <details class="text-sm"><summary class="cursor-pointer font-bold uppercase">Exact reasons</summary>
+                <details class="text-sm"><summary class="cursor-pointer font-bold uppercase no-read">Exact reasons</summary>
                     <ul class="list-disc pl-6 mt-2">${r.actions.map(a => `<li>${esc(a.reason)}</li>`).join("")}</ul></details>
             </div>`
             : `<div class="mb-8 border-4 border-black bg-neo-green p-4 font-bold uppercase animate-slam">No new changes needed right now</div>`;
@@ -490,15 +486,18 @@ async function renderLesson(L) {
                 ${meter(L.material_share_percent / 100, "bg-neo-green")}
                 <p class="text-xs mt-2">Diagrams, walkthrough and code are AI-written illustrations checked against the course's trusted facts.</p>
             </aside>
-            <article class="card p-6 xl:col-span-3">
-                <p class="text-xs font-bold uppercase text-gray-500">// ${esc(cname(L.concept_id))} · lesson #${esc(L.lesson_id)}</p>
+            <article class="card p-6 xl:col-span-3" data-speak>
+                <p class="text-xs font-bold uppercase text-gray-500 no-read">// ${esc(cname(L.concept_id))} · lesson #${esc(L.lesson_id)}</p>
                 <h2 class="font-display text-3xl md:text-4xl uppercase leading-tight mb-3">${esc(L.title)}</h2>
                 ${L.overview ? `<p class="text-lg border-l-8 border-neo-pink pl-4 mb-4">${esc(L.overview)}</p>` : ""}
                 <nav class="flex flex-wrap gap-2 mb-2 sticky top-16 bg-white py-2 z-10 border-b-2 border-black">
                     ${LESSON_SECTIONS.filter(([id]) => present[id]).map(([id, label]) =>
                         `<button class="chip bg-white hover:bg-neo-yellow" onclick="$('ls-${id}').scrollIntoView({behavior: 'smooth'})">${label}</button>`).join("")}
                 </nav>
-                ${L.audio_script ? `<button class="btn mt-4" onclick="speak(CURRENT_LESSON.audio_script)"><i class="ph-bold ph-play"></i> Play audio lesson</button>` : ""}
+                <div class="flex flex-wrap gap-3 mt-4">
+                    ${L.audio_script ? `<button class="btn" onclick="speak(CURRENT_LESSON.audio_script, this)"><i class="ph-bold ph-play"></i> Play audio lesson</button>` : ""}
+                    <button class="btn btn-light" onclick="readAloud(this)"><i class="ph-bold ph-speaker-high"></i> Read lesson aloud</button>
+                </div>
 
                 ${sectionTitle("explain", "Explanation", "ph-book-open")}
                 <div class="space-y-4">${segments}</div>
@@ -615,7 +614,7 @@ function doubtCard(d) {
                                        : '<span class="chip bg-white"><i class="ph-bold ph-prohibit"></i> Not covered in your course</span>'}
                         ${d.concept_id ? `<span class="chip bg-white">${esc(cname(d.concept_id))}</span>` : ""}
                     </span>
-                    <button class="chip bg-white hover:bg-neo-blue" onclick="speak(DOUBTS.find(x => x.id === ${d.id}).answer)">
+                    <button class="chip bg-white hover:bg-neo-blue" onclick="speak(DOUBTS.find(x => x.id === ${d.id}).answer, this)">
                         <i class="ph-bold ph-speaker-high"></i> Read aloud</button>
                 </div>
                 <p class="leading-relaxed whitespace-pre-wrap">${esc(d.answer)}</p>

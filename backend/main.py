@@ -9,7 +9,7 @@ from pathlib import Path
 
 from fastapi import Depends, FastAPI, File, Form, HTTPException, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import RedirectResponse
+from fastapi.responses import FileResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
@@ -684,6 +684,26 @@ def list_doubts(student_id: str, user=Depends(auth.current_user)):
     from backend.agents.doubt import doubt_history
 
     return doubt_history(student_id)
+
+
+# --------------------------------------------------------------------------- #
+# Read aloud: any text the UI shows, spoken by pyttsx3 on the server
+# --------------------------------------------------------------------------- #
+class SpeechRequest(BaseModel):
+    text: str
+
+
+@app.post("/api/tts")
+def text_to_speech(body: SpeechRequest, _=Depends(auth.current_user)):
+    from backend.tools import tts
+
+    if not body.text.strip():
+        raise HTTPException(400, "Nothing to read aloud")
+    try:
+        path = tts.speech_mp3(body.text)
+    except tts.Unavailable as err:
+        raise HTTPException(503, str(err))  # the UI then uses the browser's own voice
+    return FileResponse(path, media_type="audio/mpeg", headers={"Cache-Control": "private, max-age=86400"})
 
 
 # --------------------------------------------------------------------------- #

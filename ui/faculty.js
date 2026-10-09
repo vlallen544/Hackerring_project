@@ -330,13 +330,13 @@ function renderConflict(c) {
             </div>`;
     }).join("");
     return `
-        <section class="card p-6 animate-slam" id="card-${esc(c.id)}">
+        <section class="card p-6 animate-slam" id="card-${esc(c.id)}" data-speak>
             <div class="flex flex-wrap justify-between items-start gap-3 mb-2">
                 <div>
-                    <p class="text-xs font-bold uppercase text-gray-500">// ${esc(c.id)} · ${esc(cname(c.concept_id))} · ${esc(c.type)}</p>
+                    <p class="text-xs font-bold uppercase text-gray-500 no-read">// ${esc(c.id)} · ${esc(cname(c.concept_id))} · ${esc(c.type)}</p>
                     <h2 class="font-display text-2xl uppercase leading-tight">${esc(c.topic)}</h2>
                 </div>
-                <div class="flex gap-2"><span class="chip ${color}">${esc(label)}</span>
+                <div class="flex flex-wrap gap-2">${readAloudButton()}<span class="chip ${color}">${esc(label)}</span>
                     <span class="chip ${c.decided_by === "faculty" ? "bg-neo-blue" : "bg-white"}">by ${esc(c.decided_by)}</span></div>
             </div>
             <p class="mb-4">${esc(c.summary)}</p>
@@ -666,7 +666,7 @@ function renderKit() {
                 <div class="flex flex-wrap gap-2">${tabs.map(([id, label, icon]) => `
                     <button class="chip !px-3 !py-2 ${KIT_TAB === id ? "bg-neo-black text-white" : "bg-white hover:bg-neo-yellow"}"
                             onclick="KIT_TAB='${id}'; renderKit()"><i class="ph-bold ${icon}"></i> ${label}</button>`).join("")}</div>
-                <div class="flex flex-wrap items-center gap-2">${answersToggle}
+                <div class="flex flex-wrap items-center gap-2">${answersToggle}${readAloudButton("kit-section")}
                     <button class="btn" onclick="printKit()"><i class="ph-bold ph-printer"></i> Print</button></div>
             </div>
             ${controls}
