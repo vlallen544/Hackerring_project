@@ -1,10 +1,10 @@
-# Database: SQLite for student state (profiles, mastery, attempts, learning path, risk events).
+# Database: student state (profiles, mastery, attempts, learning path, risk events) in Postgres or SQLite (see sql.py).
 # Course knowledge (knowledge_base.json, trusted_kb.json) stays as JSON files produced by the agents.
 import json
-import sqlite3
 from pathlib import Path
 
-from backend import auth, courses
+from backend import auth, courses, sql
+from backend.sql import ID, NOW
 
 DEFAULT_STUDENTS_FILE = Path("sample_data/students.json")
 
@@ -14,7 +14,7 @@ def _students_file(course=None):
     own = Path(courses.COURSES[course or courses.active_course()]["data_dir"]) / "students.json"
     return own if own.exists() else DEFAULT_STUDENTS_FILE
 
-SCHEMA = """
+SCHEMA = f"""
 CREATE TABLE IF NOT EXISTS students (
     id TEXT PRIMARY KEY,
     name TEXT NOT NULL,
@@ -27,26 +27,26 @@ CREATE TABLE IF NOT EXISTS students (
 CREATE TABLE IF NOT EXISTS mastery (
     student_id TEXT,
     concept_id TEXT,
-    score REAL,                    -- 0.0 to 1.0
-    confidence REAL,               -- student's self-rated confidence, 0.0 to 1.0
+    score DOUBLE PRECISION,        -- 0.0 to 1.0
+    confidence DOUBLE PRECISION,   -- student's self-rated confidence, 0.0 to 1.0
     last_practiced TEXT,           -- ISO date
     PRIMARY KEY (student_id, concept_id)
 );
 
 CREATE TABLE IF NOT EXISTS attempts (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id {ID},
     student_id TEXT,
     concept_id TEXT,
     kind TEXT,                     -- viva / quiz / doubt
     question TEXT,
     answer TEXT,
-    correct REAL,                  -- 0.0 to 1.0
+    correct DOUBLE PRECISION,      -- 0.0 to 1.0
     misconception TEXT,
-    created_at TEXT DEFAULT CURRENT_TIMESTAMP
+    created_at TEXT DEFAULT {NOW}
 );
 
 CREATE TABLE IF NOT EXISTS path_items (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id {ID},
     student_id TEXT,
     position INTEGER,
     concept_id TEXT,
@@ -58,26 +58,26 @@ CREATE TABLE IF NOT EXISTS path_items (
 );
 
 CREATE TABLE IF NOT EXISTS viva_sessions (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id {ID},
     student_id TEXT,
     status TEXT DEFAULT 'active',  -- active / done
     state TEXT,                    -- JSON: question queue, answers, transcript
-    created_at TEXT DEFAULT CURRENT_TIMESTAMP
+    created_at TEXT DEFAULT {NOW}
 );
 
 CREATE TABLE IF NOT EXISTS lessons (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id {ID},
     student_id TEXT,
     concept_id TEXT,
     level TEXT,                    -- foundation / standard / challenge
     format TEXT,                   -- text / audio / visual / practice
     content TEXT,                  -- JSON: segments with provenance, diagram, audio script, practice
     adaptation TEXT,               -- JSON: why this level and format were chosen
-    created_at TEXT DEFAULT CURRENT_TIMESTAMP
+    created_at TEXT DEFAULT {NOW}
 );
 
 CREATE TABLE IF NOT EXISTS lesson_checks (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id {ID},
     student_id TEXT,
     lesson_id INTEGER,
     concept_id TEXT,
@@ -85,62 +85,63 @@ CREATE TABLE IF NOT EXISTS lesson_checks (
     level TEXT,
     question TEXT,
     answer TEXT,
-    score REAL,
-    created_at TEXT DEFAULT CURRENT_TIMESTAMP
+    score DOUBLE PRECISION,
+    created_at TEXT DEFAULT {NOW}
 );
 
 CREATE TABLE IF NOT EXISTS doubts (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id {ID},
     student_id TEXT,
     concept_id TEXT,
     question TEXT,
     answerable INTEGER,            -- 1 if answered from trusted facts, 0 if declined
     answer TEXT,                   -- JSON: answer, citations, example, follow-ups
-    created_at TEXT DEFAULT CURRENT_TIMESTAMP
+    created_at TEXT DEFAULT {NOW}
 );
 
 CREATE TABLE IF NOT EXISTS class_kits (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id {ID},
     concept_id TEXT,
     class_minutes INTEGER,
     content TEXT,                  -- JSON: outline, handout, mistakes, quiz, assignment, class insight
     created_by TEXT,
-    created_at TEXT DEFAULT CURRENT_TIMESTAMP
+    created_at TEXT DEFAULT {NOW}
 );
 
 CREATE TABLE IF NOT EXISTS risk_events (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id {ID},
     student_id TEXT,
     concept_id TEXT,
-    risk REAL,
+    risk DOUBLE PRECISION,
     action TEXT,
     reason TEXT,
-    created_at TEXT DEFAULT CURRENT_TIMESTAMP
+    created_at TEXT DEFAULT {NOW}
 );
 """
 
 
 def get_conn(course=None):
-    path = courses.db_path(course)  # each course keeps its own student progress
-    path.parent.mkdir(exist_ok=True)
-    conn = sqlite3.connect(path)
-    conn.row_factory = sqlite3.Row  # rows behave like dicts
-    return conn
+    course = course or courses.active_course()
+    return sql.connect(courses.db_path(course), schema=f"course_{course}")  # each course keeps its own student progress
 
 
 def init_db(course=None):
     """Creates tables (safe to call every startup), seeds demo students once and adds faculty-created students."""
+    course = course or courses.active_course()
     with get_conn(course) as conn:
-        conn.executescript(SCHEMA)
-        if conn.execute("SELECT COUNT(*) FROM students").fetchone()[0] == 0 and _students_file(course).exists():
+        if sql.POSTGRES:
+            conn.execute(f'CREATE SCHEMA IF NOT EXISTS "course_{course}"')
+        conn.script(SCHEMA)
+        if conn.execute("SELECT 1 FROM students LIMIT 1").fetchone() is None and _students_file(course).exists():
             for s in json.loads(_students_file(course).read_text(encoding="utf-8"))["students"]:
                 conn.execute(
                     "INSERT INTO students (id, name, stated_style, pace, target_role) VALUES (?,?,?,?,?)",
                     (s["id"], s["name"], s["stated_style"], s["pace"], s["target_role"]),
                 )
         for s in auth.registered_students():  # students created by faculty exist in every course
-            conn.execute("INSERT OR IGNORE INTO students (id, name, stated_style, pace, target_role) "
-                         "VALUES (?,?,?,?,?)", (s["id"], s["name"], s["stated_style"], s["pace"], s["target_role"]))
+            conn.execute("INSERT INTO students (id, name, stated_style, pace, target_role) VALUES (?,?,?,?,?) "
+                         "ON CONFLICT (id) DO NOTHING",
+                         (s["id"], s["name"], s["stated_style"], s["pace"], s["target_role"]))
 
 
 def add_student(student):
@@ -156,9 +157,10 @@ def rows(query, params=()):
 
 
 def execute(query, params=()):
-    """Runs a write query. Returns the new row id for INSERTs."""
+    """Runs a write query. Returns the new row id when the query ends with RETURNING id."""
     with get_conn() as conn:
-        return conn.execute(query, params).lastrowid
+        cur = conn.execute(query, params)
+        return cur.fetchone()["id"] if "RETURNING" in query.upper() else None
 
 
 def reset_student_progress():

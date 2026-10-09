@@ -211,7 +211,7 @@ def generate_lesson(student_id, concept_id, level=None, fmt=None, reason=None):
     }
     lesson_id = db.execute(
         "INSERT INTO lessons (student_id, concept_id, level, format, content, adaptation) "
-        "VALUES (?, ?, ?, ?, ?, ?)",
+        "VALUES (?, ?, ?, ?, ?, ?) RETURNING id",
         (student_id, concept_id, level, fmt,
          json.dumps(content, ensure_ascii=False), json.dumps(adaptation, ensure_ascii=False)),
     )

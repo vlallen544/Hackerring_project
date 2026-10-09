@@ -123,7 +123,8 @@ def generate_kit(concept_id, class_minutes=50, created_by="faculty"):
         "class_insight": insight,
         "warnings": warnings,
     }
-    kit_id = db.execute("INSERT INTO class_kits (concept_id, class_minutes, content, created_by) VALUES (?, ?, ?, ?)",
+    kit_id = db.execute("INSERT INTO class_kits (concept_id, class_minutes, content, created_by) VALUES (?, ?, ?, ?) "
+                        "RETURNING id",
                         (concept_id, class_minutes, json.dumps(content, ensure_ascii=False), created_by))
     return {"id": kit_id, **content}
 

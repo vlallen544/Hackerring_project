@@ -4,22 +4,21 @@ import hashlib
 import hmac
 import os
 import secrets
-import sqlite3
+from contextlib import contextmanager
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import jwt
-from dotenv import load_dotenv
 from fastapi import Depends, HTTPException
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
-load_dotenv(Path(__file__).resolve().parents[1] / ".env")
+from backend import sql
 
 AUTH_DB = Path("data/auth.db")
 SECRET_FILE = Path("data/.jwt_secret")  # generated once if JWT_SECRET is not set in .env (gitignored)
 TOKEN_HOURS = 12
 HASH_ITERATIONS = 200_000
-DEFAULT_ADMIN = ("admin", "admin123")  # master faculty login, created on first start
+DEFAULT_ADMIN = ("admin", os.getenv("ADMIN_PASSWORD") or "admin123")  # master faculty login, created on first start
 STUDENT_FIELDS = ("name", "stated_style", "pace", "target_role")
 PROFILE_FIELDS = ("name", "department", "email", "bio", "photo")
 MAX_PHOTO_CHARS = 400_000  # the UI shrinks photos to a small JPEG data URL first
@@ -53,15 +52,14 @@ CREATE TABLE IF NOT EXISTS profiles (
 _schema_ready = False
 
 
+@contextmanager
 def _conn():
     global _schema_ready
-    AUTH_DB.parent.mkdir(exist_ok=True)
-    conn = sqlite3.connect(AUTH_DB)
-    conn.row_factory = sqlite3.Row
-    if not _schema_ready:  # scripts may use accounts before the API's startup ran
-        conn.executescript(SCHEMA)
-        _schema_ready = True
-    return conn
+    with sql.connect(AUTH_DB) as conn:  # Postgres: the public schema
+        if not _schema_ready:  # scripts may use accounts before the API's startup ran
+            conn.script(SCHEMA)
+        yield conn
+    _schema_ready = True  # only once the transaction that created the tables has committed
 
 
 def _secret():
@@ -107,9 +105,8 @@ def _public(user):
 # Accounts
 # --------------------------------------------------------------------------- #
 def init_auth():
-    """Creates the tables and the master faculty login (admin / admin123) if no faculty account exists."""
+    """Creates the tables and the master faculty login (admin / ADMIN_PASSWORD, default admin123) if no faculty account exists."""
     with _conn() as conn:
-        conn.executescript(SCHEMA)
         if not conn.execute("SELECT 1 FROM users WHERE role = 'faculty'").fetchone():
             username, password = DEFAULT_ADMIN
             conn.execute("INSERT INTO users (username, role, password_hash, created_by, created_at) VALUES (?,?,?,?,?)",
@@ -144,8 +141,10 @@ def registered_students():
 
 def register_student(student):
     with _conn() as conn:
-        conn.execute("INSERT OR REPLACE INTO student_registry (id, name, stated_style, pace, target_role) "
-                     "VALUES (?,?,?,?,?)", (student["id"], *(student[f] for f in STUDENT_FIELDS)))
+        conn.execute("INSERT INTO student_registry (id, name, stated_style, pace, target_role) VALUES (?,?,?,?,?) "
+                     "ON CONFLICT (id) DO UPDATE SET name = excluded.name, stated_style = excluded.stated_style, "
+                     "pace = excluded.pace, target_role = excluded.target_role",
+                     (student["id"], *(student[f] for f in STUDENT_FIELDS)))
 
 
 def create_student_login(student_id, password, created_by):
@@ -186,8 +185,9 @@ def save_profile(username, data):
         raise ValueError("Photo must be a small image")
     values = [str(data.get(f) or "").strip()[:2000] if f != "photo" else photo for f in PROFILE_FIELDS]
     with _conn() as conn:
-        conn.execute(f"INSERT OR REPLACE INTO profiles (username, {', '.join(PROFILE_FIELDS)}, updated_at) "
-                     f"VALUES (?, {', '.join('?' * len(PROFILE_FIELDS))}, ?)",
+        conn.execute(f"INSERT INTO profiles (username, {', '.join(PROFILE_FIELDS)}, updated_at) "
+                     f"VALUES (?, {', '.join('?' * len(PROFILE_FIELDS))}, ?) ON CONFLICT (username) DO UPDATE SET "
+                     f"{', '.join(f'{f} = excluded.{f}' for f in (*PROFILE_FIELDS, 'updated_at'))}",
                      (username, *values, datetime.now().isoformat(timespec="seconds")))
     return get_profile(username)
 

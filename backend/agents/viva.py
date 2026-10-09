@@ -161,7 +161,7 @@ def start_viva(student_id, concepts=None):
         "missing_prerequisites": [],
         "transcript": [],
     }
-    session_id = db.execute("INSERT INTO viva_sessions (student_id, state) VALUES (?, ?)",
+    session_id = db.execute("INSERT INTO viva_sessions (student_id, state) VALUES (?, ?) RETURNING id",
                             (student_id, json.dumps(state, ensure_ascii=False)))
     return {"session_id": session_id, "student": student["name"], **_public_question(state)}
 

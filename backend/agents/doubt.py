@@ -63,8 +63,8 @@ def answer_doubt(student_id, question, concept_id=None):
     facts_by_id = {c["id"]: c for c in facts}
     mastery = {r["concept_id"]: r["score"] for r in db.rows("SELECT * FROM mastery WHERE student_id = ?", (student_id,))}
     misconceptions = [r["misconception"] for r in db.rows(
-        "SELECT DISTINCT misconception FROM attempts WHERE student_id = ? AND misconception IS NOT NULL "
-        "ORDER BY id DESC LIMIT 5", (student_id,))]
+        "SELECT misconception FROM attempts WHERE student_id = ? AND misconception IS NOT NULL "
+        "GROUP BY misconception ORDER BY MAX(id) DESC LIMIT 5", (student_id,))]  # the 5 most recent, no repeats
 
     result = chat_json(DOUBT_PROMPT, json.dumps({
         "course": courses.COURSES[courses.active_course()]["title"],
@@ -103,7 +103,7 @@ def answer_doubt(student_id, question, concept_id=None):
         "follow_ups": result.follow_ups[:3],
     }
     doubt_id = db.execute(
-        "INSERT INTO doubts (student_id, concept_id, question, answerable, answer) VALUES (?, ?, ?, ?, ?)",
+        "INSERT INTO doubts (student_id, concept_id, question, answerable, answer) VALUES (?, ?, ?, ?, ?) RETURNING id",
         (student_id, concept, question, int(answerable), json.dumps(payload, ensure_ascii=False)),
     )
     return {"id": doubt_id, "question": question, "concept_id": concept, "answerable": answerable, **payload}
