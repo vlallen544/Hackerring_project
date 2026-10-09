@@ -221,11 +221,12 @@ def answer_viva(session_id, answer, confidence_rating):
         state["current"] = state["queue"].pop(0)
         decision = "Moving to the next concept."
     else:
+        state["summary"] = finish_viva(state)  # kept with the session, so the result can be reopened later
         _save(session_id, state, status="done")
         return {"evaluation": {**evaluation.model_dump(), "score": score, "misconception": misconception,
                                "missing_prerequisite": prereq},
                 "agent_decision": "Viva complete.",
-                "done": True, "summary": finish_viva(state)}
+                "done": True, "summary": state["summary"]}
 
     _save(session_id, state)
     return {"evaluation": {**evaluation.model_dump(), "score": score, "misconception": misconception,
@@ -245,27 +246,59 @@ def finish_viva(state):
         new = concept_score(state["scores"].get(cid, []))
         if new is None:
             continue
-        mastery = round(blend(previous.get(cid), new), 3)
-        conf = round(sum(state["confidences"][cid]) / len(state["confidences"][cid]), 3)
+        result = _result(state, cid, blend(previous.get(cid), new))
         db.execute(
             "INSERT INTO mastery (student_id, concept_id, score, confidence, last_practiced) VALUES (?, ?, ?, ?, ?) "
             "ON CONFLICT(student_id, concept_id) DO UPDATE SET score = excluded.score, "
             "confidence = excluded.confidence, last_practiced = excluded.last_practiced",
-            (sid, cid, mastery, conf, today),
+            (sid, cid, result["mastery"], result["confidence"], today),
         )
-        results.append({
-            "concept_id": cid,
-            "concept_name": state["concept_names"][cid],
-            "mastery": mastery,
-            "band": mastery_band(mastery),
-            "confidence": conf,
-            "calibration": calibration(conf, mastery),
-        })
+        results.append(result)
+    return _summary(state, results)
 
+
+def _result(state, cid, mastery):
+    mastery = round(mastery, 3)
+    conf = round(sum(state["confidences"][cid]) / len(state["confidences"][cid]), 3)
+    return {"concept_id": cid, "concept_name": state["concept_names"][cid], "mastery": mastery,
+            "band": mastery_band(mastery), "confidence": conf, "calibration": calibration(conf, mastery)}
+
+
+def _summary(state, results):
     return {
-        "student_id": sid,
+        "student_id": state["student_id"],
         "results": results,
         "misconceptions": state["misconceptions"],
         "missing_prerequisites": state["missing_prerequisites"],
         "transcript": state["transcript"],
     }
+
+
+# --------------------------------------------------------------------------- #
+# Saved vivas: reopen a result, or resume an unfinished viva
+# --------------------------------------------------------------------------- #
+def viva_history(student_id, limit=20):
+    """The student's vivas, newest first."""
+    rows = db.rows("SELECT id, status, state, created_at FROM viva_sessions WHERE student_id = ? ORDER BY id DESC LIMIT ?",
+                   (student_id, limit))
+    history = []
+    for r in rows:
+        state = json.loads(r["state"])
+        history.append({"id": r["id"], "status": r["status"], "created_at": r["created_at"],
+                        "concepts": [state["concept_names"][c] for c in state["concepts"]],
+                        "answered": len(state["transcript"])})
+    return history
+
+
+def viva_view(session_id):
+    """What a student may see of a viva: the result, or the question to continue with. Never the expected answers."""
+    row, state = _load(session_id)
+    view = {"id": row["id"], "student_id": row["student_id"], "status": row["status"], "created_at": row["created_at"]}
+    if row["status"] == "done":
+        # vivas finished before results were kept: rebuild the result from that viva's own answers
+        view["summary"] = state.get("summary") or _summary(state, [
+            _result(state, cid, score) for cid in state["concepts"]
+            if (score := concept_score(state["scores"].get(cid, []))) is not None])
+    else:
+        view["question"] = _public_question(state)
+    return view

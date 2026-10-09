@@ -558,11 +558,22 @@ def viva_answer(session_id: int, body: VivaAnswer, user=Depends(auth.current_use
 
 @app.get("/api/viva/session/{session_id}")
 def viva_session(session_id: int, user=Depends(auth.current_user)):
+    """A saved viva: its result, or the question to resume with (never the expected answers)."""
     _check_owner(user, "viva_sessions", session_id)
-    found = db.rows("SELECT * FROM viva_sessions WHERE id = ?", (session_id,))
-    if not found:
+    from backend.agents.viva import viva_view
+
+    try:
+        return viva_view(session_id)
+    except ValueError:
         raise HTTPException(404, "Unknown session")
-    return {**found[0], "state": json.loads(found[0]["state"])}
+
+
+@app.get("/api/viva/{student_id}/sessions")
+def viva_sessions(student_id: str, user=Depends(auth.current_user)):
+    auth.check_student_access(user, student_id)
+    from backend.agents.viva import viva_history
+
+    return viva_history(student_id)
 
 
 # --------------------------------------------------------------------------- #
@@ -594,6 +605,14 @@ def tutor_lesson(student_id: str, body: LessonRequest, user=Depends(auth.current
         return generate_lesson(student_id, body.concept_id, body.level, body.format, body.reason)
     except ValueError as err:
         raise HTTPException(400, str(err))
+
+
+@app.get("/api/students/{student_id}/lessons")
+def student_lessons(student_id: str, user=Depends(auth.current_user)):
+    auth.check_student_access(user, student_id)
+    from backend.agents.tutor import lesson_history
+
+    return lesson_history(student_id)
 
 
 @app.get("/api/tutor/lessons/{lesson_id}")

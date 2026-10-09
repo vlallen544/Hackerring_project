@@ -51,6 +51,39 @@ const chosen = name => Number(document.querySelector(`input[name="${name}"]:chec
 // --------------------------------------------------------------------------- //
 // Shortcut used everywhere: open the Lessons step with a topic already chosen
 // --------------------------------------------------------------------------- //
+// Lessons are saved: the path opens the saved lesson for a topic at once, and "Make a fresh lesson" writes a new one
+let SAVED_LESSONS = [];
+
+async function loadSavedLessons() {
+    if (!STUDENT_ID) return;
+    SAVED_LESSONS = await api(`/api/students/${sid()}/lessons`).catch(() => []);
+    $("lesson-saved").innerHTML = SAVED_LESSONS.length ? `
+        <p class="text-xs font-bold uppercase text-gray-500 mb-2">// Your saved lessons (open instantly)</p>
+        <div class="flex flex-wrap gap-2">${SAVED_LESSONS.map(l => `
+            <button class="chip bg-white hover:bg-neo-yellow" onclick="openSavedLesson(${l.id})">
+                <i class="ph-bold ph-book-open"></i> ${esc(cname(l.concept_id))} · ${esc(l.format)} · ${esc(l.created_at.slice(0, 10))}</button>`).join("")}
+        </div>` : "";
+}
+
+async function openSavedLesson(id, { pathItemId = null, fresh = null } = {}) {
+    try {
+        CURRENT_LESSON = await api(`/api/tutor/lessons/${id}`);
+        LESSON_PATH_ITEM = pathItemId;
+        go("lessons");
+        await renderLesson(CURRENT_LESSON);
+        const saved = SAVED_LESSONS.find(l => l.id === id);
+        $("lesson-body").insertAdjacentHTML("afterbegin", `
+            <div class="border-4 border-black bg-white p-3 mb-6 flex flex-wrap items-center justify-between gap-3">
+                <p class="font-bold"><i class="ph-bold ph-floppy-disk"></i> Your saved lesson${saved ? ` from ${esc(saved.created_at.slice(0, 10))}` : ""}</p>
+                ${fresh ? `<button class="btn btn-light" onclick='requestLesson(this, ${esc(JSON.stringify(fresh))})'>
+                    <i class="ph-bold ph-sparkle"></i> Make a fresh lesson</button>` : ""}
+            </div>`);
+        $("lesson-body").scrollIntoView({ behavior: "smooth" });
+    } catch (err) {
+        toast(err.message, "error");
+    }
+}
+
 async function openLesson(conceptId, { format = "", kind = "lesson", pathItemId = null } = {}) {
     go("lessons");
     $("lesson-concept").value = conceptId;
@@ -60,6 +93,10 @@ async function openLesson(conceptId, { format = "", kind = "lesson", pathItemId 
     if (kind === "challenge") Object.assign(override, { level: "challenge", reason: "On the challenge track: all prerequisites are strong." });
     if (kind === "refresher") override.reason = "Refresher added by the Gap Predictor before an upcoming topic.";
     LESSON_PATH_ITEM = pathItemId;
+    if (!SAVED_LESSONS.length) await loadSavedLessons();
+    const saved = SAVED_LESSONS.find(l => l.concept_id === conceptId && (!fmt || l.format === fmt)
+                                        && (kind !== "challenge" || l.level === "challenge"));  // newest first
+    if (saved) return openSavedLesson(saved.id, { pathItemId, fresh: override });
     await requestLesson(document.querySelector("#view-lessons .btn"), override);
 }
 
@@ -191,6 +228,45 @@ function showQuestion(q) {
     $("viva-answer").focus();
 }
 
+// Saved vivas: a finished one reopens its result instantly, an unfinished one can be resumed
+async function loadVivaHistory() {
+    if (!STUDENT_ID) return;
+    const vivas = await api(`/api/viva/${sid()}/sessions`).catch(() => []);
+    $("viva-history").innerHTML = vivas.length ? `
+        <p class="text-xs font-bold uppercase text-gray-500 mb-2">// Your vivas</p>
+        <div class="flex flex-wrap gap-2">${vivas.map(v => v.status === "done"
+            ? `<button class="chip bg-white hover:bg-neo-yellow" onclick="openVivaResult(${v.id})">
+                   <i class="ph-bold ph-chart-bar"></i> Result · ${esc(v.created_at.slice(0, 10))} · ${v.concepts.length} topics</button>`
+            : `<button class="chip bg-neo-yellow hover:bg-white" onclick="resumeViva(${v.id})">
+                   <i class="ph-bold ph-play"></i> Resume · ${esc(v.created_at.slice(0, 10))} · ${v.answered} answer${v.answered === 1 ? "" : "s"} so far</button>`).join("")}
+        </div>` : "";
+}
+
+async function openVivaResult(id) {
+    try {
+        const v = await api(`/api/viva/session/${id}`);
+        $("viva-box").classList.add("hidden");
+        $("viva-start").classList.add("hidden");
+        renderVivaSummary(v.summary);
+        $("viva-summary").scrollIntoView({ behavior: "smooth" });
+    } catch (err) {
+        toast(err.message, "error");
+    }
+}
+
+async function resumeViva(id) {
+    try {
+        const v = await api(`/api/viva/session/${id}`);
+        if (!v.question) return openVivaResult(id);
+        VIVA_SESSION = id;
+        $("viva-feedback").innerHTML = "";
+        $("viva-summary").classList.add("hidden");
+        showQuestion(v.question);
+    } catch (err) {
+        toast(err.message, "error");
+    }
+}
+
 async function startViva(button) {
     await busy(button, "Preparing questions...", async () => {
         const q = await post(`/api/viva/${sid()}/start`);
@@ -227,6 +303,7 @@ async function answerViva(button) {
             VIVA_PROGRESS = null;
             renderVivaSummary(r.summary);
             loadStudent();
+            loadVivaHistory();
         } else {
             showQuestion(r.next);
         }
@@ -329,14 +406,32 @@ async function loadPath() {
         const [radar, path] = await Promise.all([api(`/api/students/${sid()}/gap-radar`), api(`/api/students/${sid()}/path`)]);
         renderRadar(radar);
         renderPath(path);
+        if (!$("path-message").dataset.fresh) renderLastCheck();
     } catch (err) {
         toast(err.message, "error");
     }
 }
 
+// The last "Check for gaps" result, rebuilt from the saved risk events (one check = events within two minutes)
+function renderLastCheck() {
+    const events = (STUDENT && STUDENT.risk_events) || [];
+    if (!events.length) return;
+    const time = e => Date.parse(e.created_at.replace(" ", "T") + "Z");
+    const run = events.filter(e => time(events[0]) - time(e) < 120000);
+    $("path-message").innerHTML = `
+        <div class="card p-6 mb-8 bg-white" data-speak>
+            <div class="flex flex-wrap justify-between items-center gap-2 mb-2">
+                <h2 class="font-display text-2xl uppercase">Last gap check: ${run.length} change${run.length > 1 ? "s" : ""}</h2>${readAloudButton()}
+            </div>
+            <p class="text-xs font-bold uppercase text-gray-500 mb-2 no-read">// ${esc(events[0].created_at.slice(0, 16))} UTC · saved</p>
+            <ul class="list-disc pl-6 text-sm space-y-1">${run.map(e => `<li>${esc(e.reason)}</li>`).join("")}</ul>
+        </div>`;
+}
+
 async function runPrediction(button) {
     await busy(button, "Checking for gaps...", async () => {
         const r = await post(`/api/students/${sid()}/predict`);
+        $("path-message").dataset.fresh = "1";  // keep this result instead of the saved last check
         $("path-message").innerHTML = r.actions.length ? `
             <div class="card p-6 mb-8 bg-neo-yellow animate-slam" data-speak>
                 <div class="flex flex-wrap justify-between items-center gap-2 mb-2">
@@ -382,6 +477,7 @@ async function requestLesson(button, override = {}) {
     await busy(button, "Writing your lesson...", async () => {
         CURRENT_LESSON = await post(`/api/tutor/${sid()}/lesson`, body);
         await renderLesson(CURRENT_LESSON);
+        loadSavedLessons();
     });
     if (!CURRENT_LESSON) $("lesson-body").innerHTML = emptyState("The lesson could not be created. Try again.");
 }
@@ -678,6 +774,8 @@ function doubtAbout(conceptId) {
 // Start
 // --------------------------------------------------------------------------- //
 VIEW_HOOKS.path = loadPath;
+VIEW_HOOKS.viva = loadVivaHistory;
+VIEW_HOOKS.lessons = loadSavedLessons;
 VIEW_HOOKS.doubts = loadDoubts;
 
 const ME = requireRole();  // students see only themselves; faculty can open any student

@@ -218,6 +218,14 @@ def generate_lesson(student_id, concept_id, level=None, fmt=None, reason=None):
             "concept_name": kb["concepts"][concept_id]["name"], "adaptation": adaptation, **content}
 
 
+def lesson_history(student_id, limit=30):
+    """The student's saved lessons, newest first, so they reopen instantly instead of being written again."""
+    rows = db.rows("SELECT id, concept_id, level, format, content, created_at FROM lessons WHERE student_id = ? "
+                   "ORDER BY id DESC LIMIT ?", (student_id, limit))
+    return [{"id": r["id"], "concept_id": r["concept_id"], "level": r["level"], "format": r["format"],
+             "title": json.loads(r["content"]).get("title", ""), "created_at": r["created_at"]} for r in rows]
+
+
 def get_lesson(lesson_id):
     row = _lesson_row(lesson_id)
     return {"lesson_id": row["id"], "student_id": row["student_id"], "concept_id": row["concept_id"],
