@@ -160,40 +160,47 @@ flowchart TD
 
 ```mermaid
 flowchart LR
-    subgraph Browser["Web UI (HTML + Tailwind + vanilla JS)"]
-        FT[Faculty pages]
-        ST[Student pages]
-        V[Voice input<br/>Web Speech API]
+    subgraph WEB["Web UI: HTML, Tailwind, vanilla JS"]
+        FT["Faculty pages"]
+        ST["Student pages"]
+        V["Voice input: Web Speech API"]
     end
 
-    subgraph Railway["Railway (Singapore)"]
-        API[FastAPI<br/>REST API + serves the UI]
-        AG[Agents]
-        CORE[Deterministic engine<br/>trust, mastery, risk, adaptation]
-        TTS[Read aloud<br/>Piper → pyttsx3]
-        PARSE[Parsers<br/>PDF, PPTX]
+    subgraph RW["Railway, Singapore"]
+        API["FastAPI: REST API and the UI"]
+        AG["AI agents"]
+        CORE["Deterministic engine: trust, mastery, risk, adaptation"]
+        AUTO["Autopilot: re-plans paths by itself"]
+        TTS["Read aloud: Piper, pyttsx3 fallback"]
+        PARSE["Parsers: PDF, PPTX"]
     end
 
-    subgraph LLM["LLMs"]
-        M1[Agnes 3.0 Flash<br/>interactive]
-        M2[Claude, optional<br/>heavy extraction]
+    subgraph AI["LLMs"]
+        M1["Agnes 3.0 Flash: interactive"]
+        M2["Claude, optional: heavy extraction"]
     end
 
-    TG[Telegram Bot API<br/>phone nudges]
-
-    subgraph Supabase["Supabase (Singapore)"]
-        PG[(Postgres<br/>accounts, progress,<br/>saved course files)]
-        SS[(Storage<br/>uploaded documents)]
+    subgraph SB["Supabase, Singapore"]
+        PG[("Postgres: accounts, progress, saved course files")]
+        SS[("Storage: uploaded documents")]
     end
 
-    Browser --> API
-    API --> AG --> LLM
+    TG["Telegram Bot API: phone nudges"]
+
+    FT --> API
+    ST --> API
+    V --> ST
+    API --> AG
+    AG --> M1
+    AG --> M2
     API --> CORE
+    API --> AUTO
+    AUTO --> CORE
+    AUTO --> TG
     API --> TTS
     API --> PARSE
     API --> PG
     API --> SS
-    API --> TG
 ```
 
 ### Agents
