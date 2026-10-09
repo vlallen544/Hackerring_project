@@ -729,6 +729,34 @@ def list_doubts(student_id: str, user=Depends(auth.current_user)):
 
 
 # --------------------------------------------------------------------------- #
+# Placement Readiness Forecast (faculty / HOD): job-description skills x student mastery, per role
+# --------------------------------------------------------------------------- #
+class DriveDate(BaseModel):
+    drive_date: str  # YYYY-MM-DD
+
+
+@app.get("/api/placement/forecast")
+def placement_forecast(_=Depends(auth.require_faculty)):
+    from backend import placement
+
+    try:
+        return placement.forecast()
+    except FileNotFoundError:
+        raise HTTPException(404, "Build the course first: the forecast needs its job descriptions.")
+
+
+@app.put("/api/placement/drive-date")
+def placement_drive_date(body: DriveDate, _=Depends(auth.require_faculty)):
+    from backend import placement
+
+    try:
+        placement.set_drive_date(body.drive_date)
+    except ValueError:
+        raise HTTPException(400, "drive_date must be a date like 2026-10-30")
+    return placement.forecast()
+
+
+# --------------------------------------------------------------------------- #
 # Read aloud: any text the UI shows, spoken on the server (Piper, or pyttsx3 as the fallback)
 # --------------------------------------------------------------------------- #
 class SpeechRequest(BaseModel):

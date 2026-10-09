@@ -58,6 +58,11 @@
                 <span class="step-num">6</span>
                 <span>Class kit<span class="side-sub" id="side-kit">Outline, handout, quiz, assignment</span></span>
             </a>
+            <p class="text-xs font-bold uppercase text-gray-500 mt-6 mb-2 px-1">// Placement</p>
+            <a href="#placement" data-view="placement" class="side-item">
+                <span class="step-num">7</span>
+                <span>Readiness<span class="side-sub" id="side-placement">Who is ready for which job role</span></span>
+            </a>
         </nav>
         <div class="mt-8 border-4 border-black p-3 bg-slate-100 text-xs">
             <p class="font-bold uppercase mb-1"><i class="ph-bold ph-lightbulb"></i> How it works</p>
@@ -74,6 +79,7 @@
         <a href="#radar" data-view="radar" class="tab-item"><i class="ph-bold ph-crosshair text-xl"></i>4 Radar</a>
         <a href="#students" data-view="students" class="tab-item"><i class="ph-bold ph-users text-xl"></i>5 Students</a>
         <a href="#kit" data-view="kit" class="tab-item"><i class="ph-bold ph-briefcase text-xl"></i>6 Kit</a>
+        <a href="#placement" data-view="placement" class="tab-item"><i class="ph-bold ph-graduation-cap text-xl"></i>7 Jobs</a>
     </nav>
 
     <main class="pt-24 pb-28 px-4 lg:pl-80 lg:pr-8 max-w-[1500px] min-h-screen">
@@ -200,6 +206,24 @@
             </form>
             <div id="kit-recent" class="mb-8"></div>
             <div id="kit-body"></div>
+        </div>
+
+        <!-- ============================ 7. PLACEMENT ============================ -->
+        <div id="view-placement" class="view-section hidden">
+            <header class="mb-8 border-b-4 border-black pb-6">
+                <p class="text-xs font-bold uppercase text-gray-500">// Step 7: placement</p>
+                <h1 class="font-display text-5xl md:text-6xl uppercase leading-none">Placement<br><span class="text-neo-pink">readiness.</span></h1>
+                <p class="font-bold mt-2 max-w-3xl">For every job role in your course: which students are ready for the drive, which are
+                    on track, which are at risk, and what holds them back. Skills come from your job descriptions, readiness from
+                    each student's measured mastery and planned path.</p>
+            </header>
+            <form class="card p-6 mb-6 flex flex-wrap items-end gap-4" onsubmit="saveDriveDate(event)">
+                <label class="min-w-[200px]"><span class="font-bold uppercase text-sm">Placement drive date</span>
+                    <input id="drive-date" type="date" class="field mt-1" required></label>
+                <button class="btn" id="btn-drive"><i class="ph-bold ph-calendar-check"></i> Update forecast</button>
+                <p id="drive-note" class="text-sm w-full"></p>
+            </form>
+            <div id="placement-body"></div>
         </div>
     </main>
 

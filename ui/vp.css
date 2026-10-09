@@ -286,3 +286,8 @@ h1, h2, h3, button {
     .role-switch a { display: inline-flex; align-items: center; min-height: 2.5rem; }
     .field { min-height: 2.75rem; }
 }
+
+/* "No data" fill: diagonal hatching instead of a colour (placement readiness bar, status chips) */
+.hatch {
+    background: repeating-linear-gradient(45deg, #fff 0 6px, #cbd5e1 6px 9px);
+}

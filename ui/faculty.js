@@ -708,6 +708,125 @@ async function init() {
     initViews("sources");
 }
 
+// --------------------------------------------------------------------------- //
+// 7. Placement Readiness Forecast
+// --------------------------------------------------------------------------- //
+const READY_STATUS = {  // status colours always come with an icon and a label
+    ready: { label: "Ready", icon: "ph-check-circle", fill: "bg-neo-green", text: "" },
+    on_track: { label: "On track", icon: "ph-clock", fill: "bg-neo-yellow", text: "" },
+    at_risk: { label: "At risk", icon: "ph-warning-circle", fill: "bg-neo-red", text: "text-white" },
+    not_assessed: { label: "No viva yet", icon: "ph-question", fill: "hatch", text: "" },
+};
+const STATUS_ORDER = ["ready", "on_track", "at_risk", "not_assessed"];
+
+function statusChip(status, extra = "") {
+    const s = READY_STATUS[status];
+    return `<span class="chip ${s.fill} ${s.text}"><i class="ph-bold ${s.icon}"></i> ${s.label}${extra}</span>`;
+}
+
+function readinessBar(role) {
+    const parts = STATUS_ORDER.filter(k => role.counts[k]).map(k => {
+        const s = READY_STATUS[k], n = role.counts[k], p = role.percent[k];
+        return `<div class="${s.fill} ${s.text} border-2 border-black h-10 flex items-center justify-center gap-1 font-bold text-sm min-w-[2.25rem]"
+                     style="flex: ${n} 1 0" title="${s.label}: ${n} of ${role.total} students (${p}%)">
+                    <i class="ph-bold ${s.icon}"></i>${n}</div>`;
+    }).join("");
+    const legend = STATUS_ORDER.map(k => statusChip(k, ` · ${role.counts[k]} (${role.percent[k]}%)`)).join("");
+    return `<div class="flex gap-[2px] mb-2" role="img" aria-label="${STATUS_ORDER.map(k => `${READY_STATUS[k].label} ${role.counts[k]}`).join(", ")}">${parts}</div>
+            <div class="flex flex-wrap gap-2 mb-6">${legend}</div>`;
+}
+
+function gapAction(g) {
+    if (!g.in_course) return "No topic in this course teaches it: add material for it, or treat it as outside the course.";
+    if (g.coverage === "missing") return `Your notes don't cover ${g.concept_name}: upload material on it (Sources), then Build course.`;
+    if (g.coverage === "outdated") return `Your notes on ${g.concept_name} are outdated: update them so lessons teach the current practice.`;
+    return `Students who are not ready on ${g.concept_name} get it in their path; Class radar shows who needs a refresher.`;
+}
+
+function placementRole(role, days) {
+    const ready = role.percent.ready;
+    const gaps = role.gaps.slice(0, 5).map(g => `
+        <li class="border-2 border-black p-3 bg-white">
+            <div class="flex flex-wrap justify-between gap-2">
+                <b>${esc(g.skill)}</b>
+                <span class="flex flex-wrap gap-1">
+                    ${g.syllabus_gap ? `<span class="chip bg-neo-pink text-white">Syllabus gap · ${esc(g.in_course ? g.coverage : "not in course")}</span>` : ""}
+                    <span class="chip bg-white">${g.students_not_ready} of ${role.total} not ready</span>
+                </span>
+            </div>
+            <p class="text-sm mt-1">${esc(gapAction(g))}</p>
+        </li>`).join("");
+    const skills = role.skills.filter(s => s.in_course);
+    const cell = p => {
+        const s = READY_STATUS[p.status];
+        const m = p.mastery === null || p.mastery === undefined ? "untested" : pct(p.mastery);
+        const when = p.scheduled_for ? ` · ${p.scheduled_for.slice(5)}` : "";
+        return `<td class="p-2 border-t-2 border-black"><span class="chip ${s.fill} ${s.text} !normal-case" title="${s.label}">
+                    <i class="ph-bold ${s.icon}"></i> ${m}${when}</span></td>`;
+    };
+    const table = `
+        <details class="mt-4">
+            <summary class="cursor-pointer font-bold uppercase">Per student (${role.total})</summary>
+            <div class="overflow-x-auto mt-3">
+                <table class="w-full border-4 border-black bg-white text-sm">
+                    <thead class="bg-neo-black text-white"><tr>
+                        <th class="text-left p-2">Student</th><th class="text-left p-2">Status</th><th class="text-left p-2">Readiness</th>
+                        ${skills.map(s => `<th class="text-left p-2">${esc(s.concept_name)}</th>`).join("")}</tr></thead>
+                    <tbody>${role.students.map(st => `<tr>
+                        <td class="p-2 border-t-2 border-black font-bold"><a class="underline" href="student.html?id=${encodeURIComponent(st.id)}">${esc(st.name)}</a></td>
+                        <td class="p-2 border-t-2 border-black">${statusChip(st.status)}</td>
+                        <td class="p-2 border-t-2 border-black font-mono">${st.readiness === null ? "—" : pct(st.readiness)}</td>
+                        ${st.skills.map(cell).join("")}</tr>`).join("")}</tbody>
+                </table>
+            </div>
+            <p class="text-xs mt-2">Readiness: average progress towards ${pct(0.75)} mastery on this role's skills. Dates are when a topic is scheduled in the student's path.</p>
+        </details>`;
+    return `
+        <section class="card p-6 mb-8 animate-slam">
+            <p class="text-xs font-bold uppercase text-gray-500">// Job role from your job descriptions · ${skills.length} course skill${skills.length === 1 ? "" : "s"}</p>
+            <h2 class="font-display text-2xl md:text-3xl uppercase leading-tight mb-3">${esc(role.title)}</h2>
+            <p class="mb-4"><span class="font-display text-5xl">${ready}%</span>
+                <span class="font-bold uppercase">ready</span> · ${role.total} students · drive in ${days} day${days === 1 ? "" : "s"}</p>
+            ${readinessBar(role)}
+            ${gaps ? `<h3 class="font-display text-xl uppercase mb-2">What holds them back</h3><ul class="space-y-2">${gaps}</ul>` : ""}
+            ${table}
+        </section>`;
+}
+
+let PLACEMENT = null;
+
+function renderPlacement(f) {
+    PLACEMENT = f;
+    $("drive-date").value = f.drive_date;
+    $("drive-note").innerHTML = f.drive_date_set
+        ? `Drive on <b>${esc(f.drive_date)}</b> (${f.days_to_drive} days away).`
+        : `No drive date set yet: assuming the end of the course plan, <b>${esc(f.drive_date)}</b>. Set the real date for an accurate forecast.`;
+    const legend = `<p class="text-sm mb-6 max-w-3xl"><b>Ready:</b> ${pct(f.ready_threshold)}+ mastery on every skill the role needs ·
+        <b>On track:</b> the remaining topics are scheduled in the student's path before the drive ·
+        <b>At risk:</b> a needed topic is weak or untested and not scheduled before the drive ·
+        <b>No viva yet:</b> no evidence either way.</p>`;
+    $("placement-body").innerHTML = f.roles.length ? legend + f.roles.map(r => placementRole(r, f.days_to_drive)).join("")
+        : emptyState("No job descriptions in this course yet. Upload one on Sources (type: job description) and press Build course.");
+    const best = f.roles[0];
+    setSide("side-placement", best ? `${best.percent.ready}% ready · ${best.title}` : "Who is ready for which job role");
+}
+
+async function loadPlacement() {
+    try {
+        renderPlacement(await api("/api/placement/forecast"));
+    } catch (err) {
+        $("placement-body").innerHTML = emptyState(err.message);
+    }
+}
+
+async function saveDriveDate(event) {
+    event.preventDefault();
+    await busy($("btn-drive"), "Updating...", async () => {
+        renderPlacement(await api("/api/placement/drive-date", { method: "PUT", body: { drive_date: $("drive-date").value } }));
+        toast("Forecast updated for the new drive date.");
+    });
+}
+
 function setSide(id, text) {
     if ($(id)) $(id).textContent = text;
 }
@@ -715,5 +834,6 @@ function setSide(id, text) {
 VIEW_HOOKS.radar = loadClassRadar;
 VIEW_HOOKS.students = loadStudentAccounts;
 VIEW_HOOKS.kit = loadKitPage;
+VIEW_HOOKS.placement = loadPlacement;
 
 init();

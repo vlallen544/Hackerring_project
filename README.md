@@ -34,7 +34,7 @@ Learners differ in prior knowledge, pace and learning style. Requirements change
 |---|---|
 | **Faculty** (primary) | Material turned into ready-to-use, personalized learning; class insights; hours saved every week |
 | **Students** | Learning at their level and in their style; doubt support; measurable confidence and role readiness |
-| **Placement Officer / HOD** | Syllabus freshness against job descriptions today; batch readiness forecasts planned |
+| **Placement Officer / HOD** | Readiness forecast per job role before the drive; syllabus freshness against job descriptions |
 | **College management** (buyer) | Better outcomes, curriculum evidence, accreditation support |
 
 ---
@@ -73,8 +73,9 @@ Learners differ in prior knowledge, pace and learning style. Requirements change
 - ✅ **Pick your own course** – each user chooses their subject; it changes only what they see
 
 ### 🏢 For Placement Officer / Management
+- ✅ **Placement Readiness Forecast** – for every job role in the course: how many students are ready, on track or at risk for the drive date, what holds them back, and which gaps are in the syllabus itself rather than in the students (pure code: job-description skills × measured mastery × each student's planned path)
 - ✅ Syllabus Freshness Report (above)
-- 🔜 Placement Readiness Forecast, Cost Meter
+- 🔜 Cost Meter
 
 ---
 
@@ -237,6 +238,7 @@ viva_sessions, lessons, lesson_checks, doubts, class_kits, risk_events
 knowledge_base.json   concepts, claims with verified quotes, prerequisite graph, rejected claims
 trusted_kb.json       resolved conflicts, trusted claims, freshness report
 faculty_overrides.json
+placement.json        the placement drive date
 ```
 
 ---
@@ -262,7 +264,8 @@ faculty_overrides.json
 | Deployed on Railway + Supabase | ✅ Live |
 | Supabase Storage for uploaded documents | ✅ Built (active when `SUPABASE_SECRET_KEY` is set; otherwise kept in Postgres) |
 | LangGraph orchestration, SSE streaming | 🔜 Planned |
-| Brief, Change and Insights agents; placement view; cost meter | 🔜 Planned |
+| Placement Readiness Forecast per job role, with drive date and syllabus-gap detection | ✅ Built |
+| Brief, Change and Insights agents; cost meter | 🔜 Planned |
 | `agnes-image-2.5-flash` visuals (diagrams use Mermaid today) | 🔜 Planned |
 
 ---
@@ -278,6 +281,7 @@ Hackerring_project/
 │   ├── db.py                   # student progress tables (one schema / SQLite file per course)
 │   ├── sql.py                  # database connection: Supabase Postgres, or SQLite locally
 │   ├── storage.py              # saves uploads and course files to Supabase, restores them on start
+│   ├── placement.py            # Placement Readiness Forecast (pure code)
 │   ├── models.py               # Pydantic schemas the agents must return
 │   ├── agents/                 # LLM agents
 │   │   ├── knowledge_builder.py
@@ -435,7 +439,7 @@ Every push to the connected branch redeploys automatically. Logins, progress, up
 ## 🗺️ Roadmap
 
 - Voice Brief, change handling with diffs and rollback, Next-Lecture Advisor
-- Placement Readiness Forecast and cost meter
+- Cost meter
 - Peer learning pairs (strong ↔ weak on the same concept)
 - Accreditation evidence export (NAAC / NBA)
 - Offline learner packs for low-connectivity students
