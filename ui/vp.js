@@ -391,7 +391,7 @@ function renderCourseList(course) {
                     <p class="font-display text-xl uppercase leading-tight">${esc(title)}</p>
                     <p class="text-xs font-bold uppercase">${active ? "Your course" : ready ? "Available" : "Not built yet"}</p>
                 </div>
-                ${active ? '<span class="chip bg-neo-black text-white">Open</span>'
+                ${active ? `<a class="btn inline-block" href="${auth ? homeFor(auth.user) : "login.html"}">Open -></a>`
                     : ready || isFaculty ? `<button class="btn" onclick="switchCourse('${esc(id)}')">${ready ? "Switch ->" : "Build and open ->"}</button>`
                     : '<span class="chip bg-white">Ask your faculty</span>'}
             </div>`;
