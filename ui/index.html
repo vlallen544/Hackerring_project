@@ -72,10 +72,10 @@
             const user = auth.user;
             const isFaculty = user.role === "faculty";
             $("home-actions").innerHTML = `
-                ${isFaculty ? `<section class="mb-12">
-                    <p class="text-xs font-bold uppercase text-gray-500 mb-2">// Courses: everything shows the active one</p>
+                <section class="mb-12">
+                    <p class="text-xs font-bold uppercase text-gray-500 mb-2">// Courses: pick the one you are working on (only for you)</p>
                     <div id="course-list" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
-                </section>` : ""}
+                </section>
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
                     <section class="card p-6">
                         <div class="flex items-center gap-3 mb-4">
@@ -92,12 +92,12 @@
                         </div>
                     </section>
                     ${isFaculty ? `<section class="card p-6">
-                        <h2 class="font-display text-2xl uppercase mb-4">Active course</h2>
+                        <h2 class="font-display text-2xl uppercase mb-4">Your course</h2>
                         <div id="course-stats" class="grid grid-cols-3 gap-4"></div>
                     </section>` : ""}
                 </div>`;
-            if (!isFaculty) return;
             if (ACTIVE_COURSE) renderCourseList(ACTIVE_COURSE);
+            if (!isFaculty) return;
             try {
                 const [conflicts, freshness, graph] = await Promise.all([
                     api("/api/course/conflicts"), api("/api/course/freshness"), api("/api/course/graph")]);

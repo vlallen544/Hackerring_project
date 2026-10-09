@@ -1,4 +1,4 @@
-# Switches the active course (each course has its own knowledge base, overrides and student progress).
+# Sets the default course for scripts and new browsers (each course has its own knowledge base, overrides and progress).
 # Builds the course the first time it is used.  Usage: python scripts/switch_course.py dsa   (or dbms)
 import sys
 
@@ -11,7 +11,7 @@ if len(sys.argv) != 2 or sys.argv[1] not in courses.COURSES:
 name = sys.argv[1]
 courses.switch(name)
 db.init_db()
-print(f"Active course: {courses.COURSES[name]['title']} ({name}), sources in {courses.data_dir()}/")
+print(f"Default course: {courses.COURSES[name]['title']} ({name}), sources in {courses.data_dir()}/")
 
 if not courses.is_built():
     from backend.agents.knowledge_builder import build_knowledge  # noqa: E402
@@ -24,4 +24,4 @@ if not courses.is_built():
           f"({len(kb['rejected_claims'])} rejected), {len(trusted['conflicts'])} conflicts, "
           f"freshness {trusted['freshness_report']['score']}%")
 else:
-    print("Already built: restored its saved knowledge base.")
+    print("Already built.")

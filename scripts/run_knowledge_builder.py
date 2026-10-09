@@ -3,7 +3,8 @@ import sys
 from collections import Counter
 
 sys.path.insert(0, ".")
-from backend.agents.knowledge_builder import OUTPUT_FILE, build_knowledge  # noqa: E402
+from backend import courses  # noqa: E402
+from backend.agents.knowledge_builder import build_knowledge  # noqa: E402
 from backend.tools.verify import normalize  # noqa: E402
 
 kb = build_knowledge()
@@ -38,4 +39,4 @@ for label, phrase in planted.items():
     found = any(phrase in q for q in all_quotes)
     print(f"  {'OK  ' if found else 'MISSING'}  {label}")
 
-print(f"\nSaved to {OUTPUT_FILE}")
+print(f"\nSaved to {courses.course_file('knowledge_base.json')}")

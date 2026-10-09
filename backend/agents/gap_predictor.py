@@ -5,14 +5,13 @@ import json
 from datetime import date, timedelta
 from pathlib import Path
 
-from backend import db
+from backend import courses, db
 from backend.engine.adapt import ALTERNATIVE_FORMAT, decide_format, decide_level
 from backend.engine.risk import (RISK_THRESHOLD, STRONG, all_prereqs_strong, concept_risk, own_risk, pace_lag,
                                  risk_band)
 from backend.models import GapNudge
 from backend.tools.agnes_client import chat_json
 
-TRUSTED_FILE = Path("data/trusted_kb.json")
 COURSE_DAYS = 28            # days until the exam / placement drive (demo default)
 
 NUDGE_PROMPT = """You are the Gap Predictor agent of VidyaPath. The system has predicted that a student is likely
@@ -27,7 +26,7 @@ Write student_message in clear, friendly English. Use only the facts given: quot
 
 
 def _kb():
-    return json.loads(TRUSTED_FILE.read_text(encoding="utf-8"))
+    return json.loads(courses.course_file("trusted_kb.json").read_text(encoding="utf-8"))
 
 
 def _student(student_id):

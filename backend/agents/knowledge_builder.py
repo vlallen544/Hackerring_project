@@ -5,13 +5,13 @@ from pathlib import Path
 
 import networkx as nx
 
+from backend import courses
 from backend.models import KnowledgeExtraction, PrerequisiteMap
 from backend.tools import llm
 from backend.tools.llm import heavy_json, heavy_model, heavy_provider
 from backend.tools.parsers import chunks_to_prompt, file_sha256, load_sources
 from backend.tools.verify import find_quote_anywhere, quote_exists
 
-OUTPUT_FILE = Path("data/knowledge_base.json")
 # Everything goes into ONE extraction call, so the input is capped (larger books need a page range).
 # Claude reads much more per call than Agnes.
 MAX_BUILD_WORDS = {"claude": 80000, "agnes": 20000}
@@ -152,6 +152,7 @@ def build_knowledge(data_dir="sample_data"):
         "removed_cycle_edges": removed_edges,
     }
 
-    OUTPUT_FILE.parent.mkdir(exist_ok=True)
-    OUTPUT_FILE.write_text(json.dumps(knowledge_base, indent=2, ensure_ascii=False), encoding="utf-8")
+    output = courses.course_file("knowledge_base.json")
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_text(json.dumps(knowledge_base, indent=2, ensure_ascii=False), encoding="utf-8")
     return knowledge_base

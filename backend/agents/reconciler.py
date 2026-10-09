@@ -1,14 +1,11 @@
 # Source Reconciler agent: finds conflicting/outdated claims, decides what to trust, builds the Syllabus Freshness Report
 import json
-from pathlib import Path
 
+from backend import courses
 from backend.engine.trust import CLOSE_CALL_MARGIN, UNRELIABLE_THRESHOLD, explain, score_side
 from backend.models import ReconcilerOutput
 from backend.tools.llm import heavy_json, heavy_model
 
-KB_FILE = Path("data/knowledge_base.json")
-OVERRIDES_FILE = Path("data/faculty_overrides.json")
-OUTPUT_FILE = Path("data/trusted_kb.json")
 
 SYSTEM_PROMPT = """You are the Source Reconciler agent of VidyaPath, a learning platform for college faculty.
 You receive claims extracted from a course's sources (faculty notes, textbook, web articles, job descriptions).
@@ -44,11 +41,12 @@ TASK 2 - INDUSTRY SKILLS. List the skills the job descriptions ask for that belo
 
 
 def _load_overrides():
-    return json.loads(OVERRIDES_FILE.read_text(encoding="utf-8")) if OVERRIDES_FILE.exists() else {}
+    path = courses.course_file("faculty_overrides.json")
+    return json.loads(path.read_text(encoding="utf-8")) if path.exists() else {}
 
 
 def reconcile():
-    kb = json.loads(KB_FILE.read_text(encoding="utf-8"))
+    kb = json.loads(courses.course_file("knowledge_base.json").read_text(encoding="utf-8"))
     sources_by_id = {s["id"]: s for s in kb["sources"]}
     claims_by_id = {c["id"]: c for c in kb["claims"]}
 
@@ -160,7 +158,7 @@ def reconcile():
             "outdated": [s["skill"] for s in skills if s["faculty_coverage"] == "outdated"],
         },
     }
-    OUTPUT_FILE.write_text(json.dumps(trusted_kb, indent=2, ensure_ascii=False), encoding="utf-8")
+    courses.course_file("trusted_kb.json").write_text(json.dumps(trusted_kb, indent=2, ensure_ascii=False), encoding="utf-8")
     return trusted_kb
 
 
@@ -168,4 +166,4 @@ def set_faculty_override(conflict_id, winning_side_index):
     """Faculty control: force which side of a conflict is trusted, then re-run reconcile()."""
     overrides = _load_overrides()
     overrides[conflict_id] = winning_side_index
-    OVERRIDES_FILE.write_text(json.dumps(overrides, indent=2), encoding="utf-8")
+    courses.course_file("faculty_overrides.json").write_text(json.dumps(overrides, indent=2), encoding="utf-8")

@@ -8,7 +8,6 @@ from backend import courses, db
 from backend.models import DoubtAnswer
 from backend.tools.agnes_client import chat_json
 
-TRUSTED_FILE = Path("data/trusted_kb.json")
 MAX_FACTS = 120           # large courses (PDF books): send the most relevant facts only
 HISTORY_LIMIT = 30
 
@@ -29,7 +28,7 @@ Answer using ONLY the TRUSTED FACTS given. They are the course's verified facts.
 
 
 def _kb():
-    return json.loads(TRUSTED_FILE.read_text(encoding="utf-8"))
+    return json.loads(courses.course_file("trusted_kb.json").read_text(encoding="utf-8"))
 
 
 def _words(text):

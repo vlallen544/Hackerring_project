@@ -7,7 +7,7 @@ from contextlib import asynccontextmanager
 from datetime import datetime
 from pathlib import Path
 
-from fastapi import Depends, FastAPI, File, Form, HTTPException, Request, UploadFile
+from fastapi import Depends, FastAPI, File, Form, Header, HTTPException, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
@@ -16,8 +16,6 @@ from pydantic import BaseModel
 from backend import auth, courses, db
 from backend.tools.parsers import SUPPORTED_SUFFIXES, file_sha256, inspect_file, page_texts
 
-KB_FILE = Path("data/knowledge_base.json")
-TRUSTED_FILE = Path("data/trusted_kb.json")
 SOURCE_TYPES = {"faculty_notes", "textbook", "job_description", "web_link"}
 MAX_UPLOAD_MB = 30
 LARGE_SOURCE_WORDS = 8000  # above this, suggest a page range (the whole course must stay under the build limit)
@@ -27,11 +25,18 @@ UI_DIR = Path("ui")
 @asynccontextmanager
 async def lifespan(app):
     auth.init_auth()  # accounts + the master faculty login
-    db.init_db()  # create tables + seed demo students on startup
+    courses.migrate_layout()
+    for course in courses.COURSES:  # anyone may open any course: create tables + seed demo students for each
+        db.init_db(course)
     yield
 
 
-app = FastAPI(title="VidyaPath API", lifespan=lifespan)
+async def use_request_course(x_course: str | None = Header(None)):
+    """Each user picks their own course; the UI sends it as X-Course. Async, so it is set before the endpoint runs."""
+    courses.use(x_course)
+
+
+app = FastAPI(title="VidyaPath API", lifespan=lifespan, dependencies=[Depends(use_request_course)])
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 app.mount("/ui", StaticFiles(directory=UI_DIR, html=True), name="ui")  # the VidyaPath web UI
 
@@ -219,10 +224,11 @@ def remove_student_login(student_id: str, _=Depends(auth.require_faculty)):
 
 @app.get("/api/course")
 def course_info():
-    """Which course is active (switch with: python scripts/switch_course.py <name>)."""
+    """The course this request is for (the X-Course header, else the default) and which courses are ready to use."""
     name = courses.active_course()
     return {"id": name, "title": courses.COURSES[name]["title"], "built": courses.is_built(),
-            "available": {k: v["title"] for k, v in courses.COURSES.items()}}
+            "available": {k: v["title"] for k, v in courses.COURSES.items()},
+            "built_courses": [k for k in courses.COURSES if courses.is_built(k)]}
 
 
 class CourseSwitch(BaseModel):
@@ -231,12 +237,11 @@ class CourseSwitch(BaseModel):
 
 @app.post("/api/course/switch")
 def switch_course(body: CourseSwitch, _=Depends(auth.require_faculty)):
-    """Makes another course active. Builds it first if it has never been built (about a minute)."""
-    try:
-        courses.switch(body.course)
-    except ValueError as err:
-        raise HTTPException(400, str(err))
-    db.init_db()  # each course has its own student database
+    """Prepares a course for use: builds it first if it has never been built (about a minute).
+    Which course a user sees is their own choice (X-Course); this does not change anyone else's course."""
+    if body.course not in courses.COURSES:
+        raise HTTPException(400, f"Unknown course '{body.course}'. Choose one of: {', '.join(courses.COURSES)}")
+    courses.use(body.course)
     if not courses.is_built():
         from backend.agents.knowledge_builder import build_knowledge
         from backend.agents.reconciler import reconcile
@@ -266,8 +271,9 @@ def _find_source(source_id):
 def list_sources(_=Depends(auth.require_faculty)):
     """Every source with tracking info: pages, words, whether it is in the current knowledge base, claims from it."""
     meta = _read_meta()
-    kb = json.loads(KB_FILE.read_text(encoding="utf-8")) if KB_FILE.exists() else None
-    trusted = json.loads(TRUSTED_FILE.read_text(encoding="utf-8")) if TRUSTED_FILE.exists() else None
+    kb_file, trusted_file = courses.course_file("knowledge_base.json"), courses.course_file("trusted_kb.json")
+    kb = json.loads(kb_file.read_text(encoding="utf-8")) if kb_file.exists() else None
+    trusted = json.loads(trusted_file.read_text(encoding="utf-8")) if trusted_file.exists() else None
     built_from = (kb or {}).get("built_from")
     built_ids = {s["id"] for s in (kb or {}).get("sources", [])}
     out = []
@@ -406,7 +412,7 @@ def build_course(_=Depends(auth.require_faculty)):
 @app.get("/api/course/graph")
 def course_graph(user=Depends(auth.current_user)):
     """Prerequisite graph in a shape React Flow (or any graph library) can use directly."""
-    kb = _load(TRUSTED_FILE)
+    kb = _load(courses.course_file("trusted_kb.json"))
     order = {cid: i for i, cid in enumerate(kb["learning_order"])}
     return {
         "nodes": [
@@ -424,7 +430,7 @@ def course_graph(user=Depends(auth.current_user)):
 @app.get("/api/course/claims")
 def course_claims(status: str | None = None, concept_id: str | None = None, _=Depends(auth.require_faculty)):
     """Filter with ?status=trusted|outdated|superseded|unreliable|needs_review and/or ?concept_id=..."""
-    claims = _load(TRUSTED_FILE)["claims"]
+    claims = _load(courses.course_file("trusted_kb.json"))["claims"]
     if status:
         claims = [c for c in claims if c["status"] == status]
     if concept_id:
@@ -435,12 +441,12 @@ def course_claims(status: str | None = None, concept_id: str | None = None, _=De
 @app.get("/api/course/rejected-claims")
 def rejected_claims(_=Depends(auth.require_faculty)):
     """Claims whose quotes could not be found in the sources (hallucinations caught)."""
-    return _load(KB_FILE)["rejected_claims"]
+    return _load(courses.course_file("knowledge_base.json"))["rejected_claims"]
 
 
 @app.get("/api/course/conflicts")
 def course_conflicts(_=Depends(auth.require_faculty)):
-    return _load(TRUSTED_FILE)["conflicts"]
+    return _load(courses.course_file("trusted_kb.json"))["conflicts"]
 
 
 class Override(BaseModel):
@@ -452,7 +458,7 @@ def override_conflict(conflict_id: str, body: Override, _=Depends(auth.require_f
     """Faculty control: choose which side of a conflict is trusted."""
     from backend.agents.reconciler import reconcile, set_faculty_override
 
-    conflicts = {c["id"]: c for c in _load(TRUSTED_FILE)["conflicts"]}
+    conflicts = {c["id"]: c for c in _load(courses.course_file("trusted_kb.json"))["conflicts"]}
     if conflict_id not in conflicts:
         raise HTTPException(404, "Unknown conflict")
     if not 0 <= body.winning_side < len(conflicts[conflict_id]["sides"]):
@@ -463,7 +469,7 @@ def override_conflict(conflict_id: str, body: Override, _=Depends(auth.require_f
 
 @app.get("/api/course/freshness")
 def freshness_report(_=Depends(auth.require_faculty)):
-    return _load(TRUSTED_FILE)["freshness_report"]
+    return _load(courses.course_file("trusted_kb.json"))["freshness_report"]
 
 
 # --------------------------------------------------------------------------- #

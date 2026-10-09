@@ -8,7 +8,6 @@ from backend import courses, db
 from backend.models import ClassKit
 from backend.tools.llm import heavy_json
 
-TRUSTED_FILE = Path("data/trusted_kb.json")
 WEAK = 0.45  # same "weak" threshold as the mastery bands
 
 KIT_PROMPT = """You are the Class-Ready Kit agent of VidyaPath. A faculty member is teaching ONE topic tomorrow in a
@@ -29,7 +28,7 @@ or vendors that are not in the trusted facts. Never write fact ids like (claim_5
 
 
 def _kb():
-    return json.loads(TRUSTED_FILE.read_text(encoding="utf-8"))
+    return json.loads(courses.course_file("trusted_kb.json").read_text(encoding="utf-8"))
 
 
 def class_insight(concept_id):

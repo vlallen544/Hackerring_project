@@ -6,12 +6,11 @@ from pathlib import Path
 
 import networkx as nx
 
-from backend import db
+from backend import courses, db
 from backend.engine.mastery import blend, calibration, concept_score, confidence_to_unit, mastery_band
 from backend.models import AnswerEvaluation, QuestionReviews, VivaOpeners
 from backend.tools.agnes_client import chat_json
 
-TRUSTED_FILE = Path("data/trusted_kb.json")
 MAX_CONCEPTS = 4            # concepts tested per viva (keeps the demo short)
 MAX_FOLLOW_UPS = 1          # extra probing questions allowed per concept
 
@@ -59,7 +58,7 @@ Write feedback and the follow-up question in clear, simple English. Be encouragi
 # Helpers
 # --------------------------------------------------------------------------- #
 def _kb():
-    return json.loads(TRUSTED_FILE.read_text(encoding="utf-8"))
+    return json.loads(courses.course_file("trusted_kb.json").read_text(encoding="utf-8"))
 
 
 def _trusted_facts(kb, concept_id):

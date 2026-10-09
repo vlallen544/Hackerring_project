@@ -2,7 +2,8 @@
 import sys
 
 sys.path.insert(0, ".")
-from backend.agents.reconciler import OUTPUT_FILE, reconcile  # noqa: E402
+from backend import courses  # noqa: E402
+from backend.agents.reconciler import reconcile  # noqa: E402
 from backend.tools.verify import normalize  # noqa: E402
 
 kb = reconcile()
@@ -40,4 +41,4 @@ for label, phrase, should_be_trusted in checks:
     ok = all((c["status"] == "trusted") == should_be_trusted for c in matches)
     print(f"  {'OK  ' if ok else 'FAIL'}  {label}  [{', '.join(c['status'] for c in matches)}]")
 
-print(f"\nSaved to {OUTPUT_FILE}")
+print(f"\nSaved to {courses.course_file('trusted_kb.json')}")

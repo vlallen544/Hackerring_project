@@ -12,7 +12,6 @@ from backend.models import AnswerEvaluation, TutorLesson
 from backend.tools.agnes_client import chat_json
 from backend.tools.llm import heavy_json
 
-TRUSTED_FILE = Path("data/trusted_kb.json")
 CHECK_WEIGHT = 0.3  # one practice answer moves mastery less than a full viva
 
 LEVEL_GUIDE = {
@@ -71,7 +70,7 @@ SCORE_RANGE = {"correct": (0.75, 1.0), "partial": (0.40, 0.74), "vague": (0.15, 
 
 
 def _kb():
-    return json.loads(TRUSTED_FILE.read_text(encoding="utf-8"))
+    return json.loads(courses.course_file("trusted_kb.json").read_text(encoding="utf-8"))
 
 
 def _student(student_id):

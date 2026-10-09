@@ -18,9 +18,21 @@ function clearAuth() {
     try { localStorage.removeItem(AUTH_KEY); } catch { /* ignore */ }
 }
 
+// Each user picks their own course; it is remembered in this browser and sent with every request
+const COURSE_KEY = "vp-course";
+
+function getCourse() {
+    try { return localStorage.getItem(COURSE_KEY) || ""; } catch { return ""; }
+}
+
+function setCourse(id) {
+    try { localStorage.setItem(COURSE_KEY, id); } catch { /* storage blocked: the default course is used */ }
+}
+
 function authHeaders() {
     const auth = getAuth();
-    return auth && auth.token ? { Authorization: `Bearer ${auth.token}` } : {};
+    const course = getCourse();
+    return { ...(auth && auth.token ? { Authorization: `Bearer ${auth.token}` } : {}), ...(course ? { "X-Course": course } : {}) };
 }
 
 const homeFor = user => (user.role === "faculty" ? "faculty.html" : "student.html");
@@ -257,7 +269,12 @@ function emptyState(text) {
 }
 
 // Course switcher next to the logo on every page: every view then shows the chosen course
+// Switching changes only this user's course. A course that was never built is built first (faculty only, about a minute).
 async function switchCourse(courseId) {
+    if (ACTIVE_COURSE && ACTIVE_COURSE.built_courses.includes(courseId)) {
+        setCourse(courseId);
+        return location.reload();  // every page re-reads the chosen course's data
+    }
     const overlay = document.createElement("div");
     overlay.className = "fixed inset-0 z-50 bg-black/60 flex items-center justify-center";
     overlay.innerHTML = `<div class="card p-8 text-center font-bold uppercase animate-slam">
@@ -267,18 +284,21 @@ async function switchCourse(courseId) {
     document.body.appendChild(overlay);
     try {
         await post("/api/course/switch", { course: courseId });
-        location.reload();  // every page re-reads the active course's data
+        setCourse(courseId);
+        location.reload();
     } catch (err) {
         overlay.remove();
         toast(err.message, "error");
     }
 }
 
-function courseSelect(course, extraClass = "") {
+// Faculty see every course (an unbuilt one is built on first use); students see the courses that are ready
+function courseSelect(course, isFaculty, extraClass = "") {
+    const ids = Object.keys(course.available).filter(id => isFaculty || course.built_courses.includes(id) || id === course.id);
     return `<select class="field !w-auto !py-1 !text-xs font-bold uppercase bg-neo-blue ${extraClass}" aria-label="Course"
                     title="Switch course" onchange="switchCourse(this.value)">
-        ${Object.entries(course.available).map(([id, title]) =>
-            `<option value="${esc(id)}" ${id === course.id ? "selected" : ""}>${esc(title)}</option>`).join("")}
+        ${ids.map(id => `<option value="${esc(id)}" ${id === course.id ? "selected" : ""}>${esc(course.available[id])}${
+            course.built_courses.includes(id) ? "" : " (not built yet)"}</option>`).join("")}
     </select>`;
 }
 
@@ -305,28 +325,32 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
     try {
         ACTIVE_COURSE = await api("/api/course");
+        if (getCourse() && getCourse() !== ACTIVE_COURSE.id) setCourse(ACTIVE_COURSE.id);  // a course that no longer exists
         const logo = document.querySelector("nav a[href='index.html']");
-        if (logo && !location.pathname.endsWith("login.html")) {
-            // Only faculty can switch the course; everyone else sees which course is active
-            logo.insertAdjacentHTML("afterend", user && user.role === "faculty"
-                ? `<label class="hidden md:flex items-center gap-2 ml-3"><i class="ph-bold ph-books text-xl"></i>${courseSelect(ACTIVE_COURSE)}</label>`
-                : `<span class="chip bg-neo-blue ml-3 hidden md:inline-block">${esc(ACTIVE_COURSE.title)}</span>`);
+        if (logo && user && !location.pathname.endsWith("login.html")) {
+            // Everyone picks their own course; it changes only what they see
+            logo.insertAdjacentHTML("afterend", `<label class="flex items-center gap-2 ml-1 sm:ml-3">
+                <i class="ph-bold ph-books text-xl hidden sm:inline"></i>${courseSelect(ACTIVE_COURSE, user.role === "faculty", "max-w-[10rem] sm:max-w-none")}</label>`);
         }
-        if ($("course-list") && user && user.role === "faculty") renderCourseList(ACTIVE_COURSE);  // home page
+        if ($("course-list") && user) renderCourseList(ACTIVE_COURSE);  // home page
     } catch { /* older backend without /api/course */ }
 });
 
 function renderCourseList(course) {
+    const auth = getAuth();
+    const isFaculty = auth && auth.user.role === "faculty";
     $("course-list").innerHTML = Object.entries(course.available).map(([id, title]) => {
         const active = id === course.id;
+        const ready = course.built_courses.includes(id);
         return `
             <div class="border-4 border-black p-4 ${active ? "bg-neo-yellow shadow-brutal-sm" : "bg-white"} flex flex-wrap justify-between items-center gap-3">
                 <div>
                     <p class="font-display text-xl uppercase leading-tight">${esc(title)}</p>
-                    <p class="text-xs font-bold uppercase">${active ? "Active course" : "Available"}</p>
+                    <p class="text-xs font-bold uppercase">${active ? "Your course" : ready ? "Available" : "Not built yet"}</p>
                 </div>
-                ${active ? '<span class="chip bg-neo-black text-white">Active</span>'
-                    : `<button class="btn" onclick="switchCourse('${esc(id)}')">Switch -></button>`}
+                ${active ? '<span class="chip bg-neo-black text-white">Open</span>'
+                    : ready || isFaculty ? `<button class="btn" onclick="switchCourse('${esc(id)}')">${ready ? "Switch ->" : "Build and open ->"}</button>`
+                    : '<span class="chip bg-white">Ask your faculty</span>'}
             </div>`;
     }).join("");
 }
