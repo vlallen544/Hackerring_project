@@ -310,7 +310,7 @@ placement.json        the placement drive date
 | Read aloud on every AI output (Piper neural voice, pyttsx3 fallback, chunked playback) | ✅ Built |
 | JWT login: faculty admin, faculty-created student accounts, access control, profile page | ✅ Built |
 | PDF / PPTX upload with page ranges, text preview and build tracking | ✅ Built |
-| Four demo courses; each user picks their own course | ✅ Built |
+| Six demo courses, including two on modern AI (Agentic AI Systems, AI-Assisted Software Engineering); each user picks their own course | ✅ Built |
 | Claude for heavy extraction and reconciliation, with automatic fallback to Agnes | ✅ Built (needs Anthropic credits) |
 | Supabase Postgres for logins and progress; uploads and course builds survive deploys | ✅ Built |
 | Deployed on Railway + Supabase | ✅ Live |
@@ -357,6 +357,8 @@ Hackerring_project/
 ├── sample_data_dsa/            # DSA demo course
 ├── sample_data_os/             # Operating Systems demo course
 ├── sample_data_oop/            # OOP with Java demo course
+├── sample_data_agentic/        # Agentic AI Systems demo course
+├── sample_data_aicoding/       # AI-Assisted Software Engineering (Vibe Coding) demo course
 ├── data/courses/<course>/      # built knowledge base, trusted facts, faculty overrides
 ├── scripts/                    # runners and checks for each agent, default course
 ├── docs/screenshots/           # README screenshots
@@ -400,7 +402,7 @@ With `DATABASE_URL` empty, everything is stored locally (SQLite in `data/`), whi
 - Login tokens last 12 hours. After 5 wrong passwords, a username is locked for 5 minutes for that address.
 
 ### Courses and demo data
-Four demo courses are included, each with planted conflicts and an answer key (`expected_results.md`):
+Six demo courses are included, each with planted conflicts and an answer key (`expected_results.md`):
 
 | Course | Sources |
 |---|---|
@@ -408,6 +410,8 @@ Four demo courses are included, each with planted conflicts and an answer key (`
 | Data Structures and Algorithms | `sample_data_dsa/` |
 | Operating Systems | `sample_data_os/` |
 | Object-Oriented Programming with Java | `sample_data_oop/` |
+| Agentic AI Systems (LLMs, tool calling, MCP, RAG, multi-agent, evals; JDs: AI Agent Engineer, Applied AI Engineer) | `sample_data_agentic/` |
+| AI-Assisted Software Engineering (Vibe Coding) (coding agents, reviewing and testing AI code, security; JDs: AI-native Software Engineer, Developer Productivity) | `sample_data_aicoding/` |
 
 Every user picks their course from the dropdown next to the logo (or on the home page); the choice is remembered in their browser and changes only what they see. Each course keeps its own knowledge base, overrides and student progress. Faculty can build a course that was never built (about a minute) or press **Build course** after changing sources. Use **Reset student progress** on the faculty page before a demo.
 

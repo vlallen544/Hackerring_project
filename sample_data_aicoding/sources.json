@@ -1,0 +1,15 @@
+{
+  "authority_defaults": {
+    "faculty_notes": 0.9,
+    "textbook": 0.85,
+    "job_description": 0.7,
+    "web_link": 0.4
+  },
+  "sources": [
+    { "id": "faculty_notes_aicoding", "file": "sources/faculty_notes_aicoding.md", "title": "AI-Assisted Software Engineering Lecture Notes (Prof. N. Iyer)", "type": "faculty_notes", "year": 2023 },
+    { "id": "textbook_aicoding_2025", "file": "sources/textbook_aicoding_2025.md", "title": "Software Engineering with AI Agents", "type": "textbook", "year": 2025 },
+    { "id": "web_vibe_coding_2025", "file": "sources/web_vibe_coding_2025.md", "title": "Vibe Coding: Ship 10x Faster Without Reading Code (blog)", "type": "web_link", "year": 2025 },
+    { "id": "jd_ai_native_swe", "file": "sources/jd_ai_native_swe.md", "title": "JD: Software Engineer, AI-Native Product Team", "type": "job_description", "year": 2026 },
+    { "id": "jd_devprod_ai_tooling", "file": "sources/jd_devprod_ai_tooling.md", "title": "JD: Developer Productivity Engineer, AI Tooling", "type": "job_description", "year": 2026 }
+  ]
+}

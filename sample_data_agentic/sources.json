@@ -1,0 +1,15 @@
+{
+  "authority_defaults": {
+    "faculty_notes": 0.9,
+    "textbook": 0.85,
+    "job_description": 0.7,
+    "web_link": 0.4
+  },
+  "sources": [
+    { "id": "faculty_notes_agentic", "file": "sources/faculty_notes_agentic.md", "title": "Agentic AI Systems Lecture Notes (Dr. K. Menon)", "type": "faculty_notes", "year": 2023 },
+    { "id": "textbook_agentic_2025", "file": "sources/textbook_agentic_2025.md", "title": "Building Agentic AI Systems, 2nd Ed.", "type": "textbook", "year": 2025 },
+    { "id": "web_agents_hype_2023", "file": "sources/web_agents_hype_2023.md", "title": "AI Agents Will Replace Every App (blog)", "type": "web_link", "year": 2023 },
+    { "id": "jd_ai_agent_engineer", "file": "sources/jd_ai_agent_engineer.md", "title": "JD: AI Agent Engineer, Payments Platform", "type": "job_description", "year": 2026 },
+    { "id": "jd_applied_ai_platform", "file": "sources/jd_applied_ai_platform.md", "title": "JD: Applied AI Engineer, LLM Platform Team", "type": "job_description", "year": 2026 }
+  ]
+}

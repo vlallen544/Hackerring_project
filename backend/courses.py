@@ -13,6 +13,9 @@ COURSES = {
     "dsa": {"title": "Data Structures and Algorithms", "data_dir": "sample_data_dsa", "db": "vidyapath_dsa.db"},
     "os": {"title": "Operating Systems", "data_dir": "sample_data_os", "db": "vidyapath_os.db"},
     "oop": {"title": "Object-Oriented Programming with Java", "data_dir": "sample_data_oop", "db": "vidyapath_oop.db"},
+    "agentic": {"title": "Agentic AI Systems", "data_dir": "sample_data_agentic", "db": "vidyapath_agentic.db"},
+    "aicoding": {"title": "AI-Assisted Software Engineering (Vibe Coding)", "data_dir": "sample_data_aicoding",
+                 "db": "vidyapath_aicoding.db"},
 }
 DEFAULT_COURSE = "dbms"
 ACTIVE_FILE = Path("data/active_course.json")  # the default course
