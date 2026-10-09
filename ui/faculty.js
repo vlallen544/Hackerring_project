@@ -717,7 +717,7 @@ async function init() {
 }
 
 // --------------------------------------------------------------------------- //
-// 7. Placement Readiness Forecast
+// 7. Placement Forecast
 // --------------------------------------------------------------------------- //
 const READY_STATUS = {  // status colours always come with an icon and a label
     ready: { label: "Ready", icon: "ph-check-circle", fill: "bg-neo-green", text: "" },

@@ -36,7 +36,7 @@ Learners differ in prior knowledge, pace and learning style. Requirements change
 |---|---|
 | **Faculty** (primary) | Material turned into ready-to-use, personalized learning; class insights; hours saved every week |
 | **Students** | Learning at their level and in their style; doubt support; measurable confidence and role readiness |
-| **Placement Officer / HOD** | Readiness forecast per job role before the drive; syllabus freshness against job descriptions |
+| **Placement Officer / HOD** | Placement forecast per job role before the drive; syllabus freshness against job descriptions |
 | **College management** (buyer) | Better outcomes, curriculum evidence, accreditation support |
 
 ---
@@ -72,8 +72,8 @@ Screenshots from the live site (Operating Systems course).
 **5. Class-Ready Kit:** outline, a handout built from the faculty's own material (with sources), a multi-level quiz and an assignment, tuned to the class's mistakes.
 ![Class-ready kit handout](docs/screenshots/faculty-kit.png)
 
-**6. Placement Readiness:** for each job role: ready / on track / at risk for the drive, and what holds students back. Syllabus gaps are told apart from student gaps.
-![Placement readiness forecast](docs/screenshots/faculty-placement.png)
+**6. Placement Forecast:** for each job role: ready / on track / at risk for the drive, and what holds students back. Syllabus gaps are told apart from student gaps.
+![Placement forecast](docs/screenshots/faculty-placement.png)
 
 ### 🧑‍🎓 Student
 
@@ -124,7 +124,7 @@ Every page works on phones: two-row top bar, bottom tab bar, touch-sized buttons
 - ✅ **Phone nudges (Telegram)** – the student gets a message on their phone when the agents add a refresher or move a topic to the challenge track, when a viva or practice answer shows a mix-up (with what fixes it), and the day before a lesson they haven't opened (9:00–21:00 only). Opt-in by scanning a QR code; one message per real change, each reminder at most once; every message logged as sent or failed; faculty see who is connected
 
 ### 🏢 For Placement Officer / Management
-- ✅ **Placement Readiness Forecast** – for every job role in the course: how many students are ready, on track or at risk for the drive date, what holds them back, and which gaps are in the syllabus itself rather than in the students (pure code: job-description skills × measured mastery × each student's planned path)
+- ✅ **Placement Forecast** – for every job role in the course: how many students are ready, on track or at risk for the drive date, what holds them back, and which gaps are in the syllabus itself rather than in the students (pure code: job-description skills × measured mastery × each student's planned path)
 - ✅ Syllabus Freshness Report (above)
 - 🔜 Cost Meter
 
@@ -197,7 +197,7 @@ flowchart LR
 | **Gap Predictor** | Builds each student's path; acts on code-computed risk to add refreshers or a challenge track | ✅ |
 | **Doubt Agent** | Answers grounded only in the trusted knowledge base | ✅ |
 | **Kit Agent** | Class-Ready Kit tuned to the class's mastery and misconceptions | ✅ |
-| Brief, Change, Insights agents | Voice brief, re-planning with diffs, next-lecture advice, readiness forecast | 🔜 |
+| Brief, Change, Insights agents | Voice brief, re-planning with diffs, next-lecture advice | 🔜 |
 
 ### Design principles
 - **LLM for understanding and generation, code for numbers.** Trust scores, mastery, risk and lesson level / format are computed deterministically in Python (`backend/engine/`), so results are consistent and explainable.
@@ -321,7 +321,7 @@ placement.json        the placement drive date
 | Deployed on Railway + Supabase | ✅ Live |
 | Supabase Storage for uploaded documents | ✅ Built (active when `SUPABASE_SECRET_KEY` is set; otherwise kept in Postgres) |
 | LangGraph orchestration, SSE streaming | 🔜 Planned |
-| Placement Readiness Forecast per job role, with drive date and syllabus-gap detection | ✅ Built |
+| Placement Forecast per job role, with drive date and syllabus-gap detection | ✅ Built |
 | Phone nudges via a Telegram bot (path changes, viva and practice mix-ups, due-tomorrow reminders), opt-in with a QR code | ✅ Built (needs `TELEGRAM_BOT_TOKEN`) |
 | Brief, Change and Insights agents; cost meter | 🔜 Planned |
 | `agnes-image-2.5-flash` visuals (diagrams use Mermaid today) | 🔜 Planned |
@@ -339,7 +339,7 @@ Hackerring_project/
 │   ├── db.py                   # student progress tables (one schema / SQLite file per course)
 │   ├── sql.py                  # database connection: Supabase Postgres, or SQLite locally
 │   ├── storage.py              # saves uploads and course files to Supabase, restores them on start
-│   ├── placement.py            # Placement Readiness Forecast (pure code)
+│   ├── placement.py            # Placement Forecast (pure code)
 │   ├── notify.py               # phone nudges through a Telegram bot
 │   ├── autopilot.py            # runs the Gap Predictor by itself (after activity, daily) and messages the phone
 │   ├── models.py               # Pydantic schemas the agents must return
