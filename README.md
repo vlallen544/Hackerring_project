@@ -68,7 +68,7 @@ Learners differ in prior knowledge, pace and learning style. Requirements change
 - ✅ **Personalized Lessons** – adapted to level and learning style, with explanations, diagrams, step-by-step walkthroughs, code, complexity tables and practice
 - ✅ **Provenance Highlighting** – 🟩 from faculty material (with source and page) · 🟦 AI-added explanation
 - ✅ **Doubt Assistant** – ask by voice or text; answers only from trusted material, with citations; declines when the course doesn't cover it
-- ✅ **Proactive Refreshers** – inserted before a predicted gap appears
+- ✅ **Proactive Refreshers** – inserted before a predicted gap appears. The Gap Predictor runs by itself: after every viva and practice answer, and once a day for every student (risk grows as practice fades), so nobody has to press a button
 - ✅ **Read aloud** – every AI output (viva questions, feedback, lessons, doubt answers) can be played with a natural voice
 - ✅ **Pick your own course** – each user chooses their subject; it changes only what they see
 - ✅ **Phone nudges (Telegram)** – the student gets a message on their phone when the agents add a refresher or move a topic to the challenge track, when a viva or practice answer shows a mix-up (with what fixes it), and the day before a lesson they haven't opened (9:00–21:00 only). Opt-in by scanning a QR code; one message per real change, each reminder at most once; every message logged as sent or failed; faculty see who is connected
@@ -286,6 +286,7 @@ Hackerring_project/
 │   ├── storage.py              # saves uploads and course files to Supabase, restores them on start
 │   ├── placement.py            # Placement Readiness Forecast (pure code)
 │   ├── notify.py               # phone nudges through a Telegram bot
+│   ├── autopilot.py            # runs the Gap Predictor by itself (after activity, daily) and messages the phone
 │   ├── models.py               # Pydantic schemas the agents must return
 │   ├── agents/                 # LLM agents
 │   │   ├── knowledge_builder.py

@@ -162,6 +162,13 @@ def send(student_id, kind, text, course=None, link_path=None):
         return {"status": "failed", "error": str(e)[:300]}
 
 
+def claim(ref):
+    """True the first time a ref is claimed, False ever after (also across restarts and servers)."""
+    with _conn() as conn:
+        return conn.execute("INSERT INTO sent_once (ref) VALUES (?) ON CONFLICT (ref) DO NOTHING RETURNING ref",
+                            (ref,)).fetchone() is not None
+
+
 def send_once(ref, student_id, kind, text, course=None, link_path=None):
     """Like send(), but a given ref is sent at most once, even across restarts or two servers running at once."""
     if not configured():
@@ -170,10 +177,7 @@ def send_once(ref, student_id, kind, text, course=None, link_path=None):
         link = conn.execute("SELECT chat_id FROM phone_links WHERE student_id = ?", (student_id,)).fetchone()
     if not link or not link["chat_id"]:
         return {"status": "not_linked"}  # not claimed: if they connect later, they can still get it
-    with _conn() as conn:
-        claimed = conn.execute("INSERT INTO sent_once (ref) VALUES (?) ON CONFLICT (ref) DO NOTHING RETURNING ref",
-                               (ref,)).fetchone()
-    if not claimed:
+    if not claim(ref):
         return {"status": "already_sent"}
     result = send(student_id, kind, text, course, link_path)
     if result["status"] != "sent":  # let the next attempt try again
@@ -236,18 +240,18 @@ def run_reminders(now=None):
     return sent
 
 
-def start_reminders():
-    """Checks every half hour in the background; does nothing until a bot token is set."""
-    if not configured():
-        return
+def start_background():
+    """Every half hour: the autopilot's daily gap check for each student, then due-tomorrow reminders (with a bot)."""
+    from backend import autopilot
 
     def loop():
         time.sleep(60)  # let the server finish starting
         while True:
-            try:
-                run_reminders()
-            except Exception as e:  # never let the loop die
-                print(f"Reminder check failed: {e}", file=sys.stderr)
+            for job in (autopilot.daily_sweep, run_reminders):
+                try:
+                    job()
+                except Exception as e:  # never let the loop die
+                    print(f"{job.__name__} failed: {e}", file=sys.stderr)
             time.sleep(REMINDER_EVERY_SECONDS)
 
-    threading.Thread(target=loop, daemon=True, name="nudge-reminders").start()
+    threading.Thread(target=loop, daemon=True, name="vidyapath-background").start()

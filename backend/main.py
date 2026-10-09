@@ -13,7 +13,7 @@ from fastapi.responses import FileResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from backend import auth, courses, db, notify, sql, storage
+from backend import auth, autopilot, courses, db, notify, sql, storage
 from backend.tools.parsers import SUPPORTED_SUFFIXES, file_sha256, inspect_file, page_texts
 
 SOURCE_TYPES = {"faculty_notes", "textbook", "job_description", "web_link"}
@@ -33,7 +33,7 @@ async def lifespan(app):
     from backend.tools import tts
 
     tts.warm_up()  # load the read-aloud voice in the background
-    notify.start_reminders()  # "your lesson is tomorrow" messages, when a Telegram bot is set up
+    notify.start_background()  # the autopilot's daily gap check, and "your lesson is tomorrow" messages
     yield
 
 
@@ -555,8 +555,10 @@ def viva_answer(session_id: int, body: VivaAnswer, user=Depends(auth.current_use
         result = answer_viva(session_id, body.answer, body.confidence)
     except ValueError as err:
         raise HTTPException(400, str(err))
-    if result["done"] and result["summary"]["misconceptions"]:
-        result["phone"] = _nudge_misconceptions(result["summary"])
+    if result["done"]:
+        if result["summary"]["misconceptions"]:
+            result["phone"] = _nudge_misconceptions(result["summary"])
+        autopilot.after_activity(result["summary"]["student_id"])  # re-plan the path in the background
     return result
 
 
@@ -566,7 +568,7 @@ def _nudge_misconceptions(summary):
     student = db.rows("SELECT name FROM students WHERE id = ?", (summary["student_id"],))
     lines = "\n".join(f"- {names.get(m['concept_id'], m['concept_id'])}: {m['misconception']}" for m in found)
     text = (f"Hi {student[0]['name'] if student else ''}, your viva showed a mix-up worth fixing early:\n{lines}\n"
-            "Open My path and press Check for gaps: the agents will plan a short refresher before it matters.")
+            "The agents are planning a short refresher in your path before it matters.")
     return notify.send(summary["student_id"], "misconception", text, courses.active_course(), "/ui/student.html#path")
 
 
@@ -653,6 +655,7 @@ def tutor_check(lesson_id: int, body: PracticeAnswer, user=Depends(auth.current_
         raise HTTPException(400, str(err))
     if result["evaluation"]["misconception"]:
         result["phone"] = _nudge_practice(lesson_id, result)
+    autopilot.after_activity(db.rows("SELECT student_id FROM lessons WHERE id = ?", (lesson_id,))[0]["student_id"])
     return result
 
 
@@ -702,16 +705,10 @@ def student_gap_radar(student_id: str, user=Depends(auth.current_user)):
 def student_predict(student_id: str, user=Depends(auth.current_user)):
     """Predicts gaps and redesigns the path. Call after a viva or a practice check."""
     auth.check_student_access(user, student_id)
-    from backend.agents.gap_predictor import predict_and_redesign
-
     try:
-        result = predict_and_redesign(student_id)
+        return autopilot.predict(student_id)  # the phone gets the message when the path changed
     except ValueError as err:
         raise HTTPException(404, str(err))
-    if result["actions"] and result["message"]:  # only a real change reaches the phone; repeat checks add nothing
-        result["phone"] = notify.send(student_id, "path_change", result["message"]["student_message"],
-                                      courses.active_course(), "/ui/student.html#path")
-    return result
 
 
 @app.post("/api/students/{student_id}/path/{item_id}/complete")
