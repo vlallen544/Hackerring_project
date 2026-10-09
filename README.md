@@ -71,6 +71,7 @@ Learners differ in prior knowledge, pace and learning style. Requirements change
 - ✅ **Proactive Refreshers** – inserted before a predicted gap appears
 - ✅ **Read aloud** – every AI output (viva questions, feedback, lessons, doubt answers) can be played with a natural voice
 - ✅ **Pick your own course** – each user chooses their subject; it changes only what they see
+- ✅ **Phone nudges (Telegram)** – when the agents add a refresher, move a topic to the challenge track or find a mix-up in a viva, the student gets the message on their phone. Opt-in by scanning a QR code; every message is logged as sent or failed
 
 ### 🏢 For Placement Officer / Management
 - ✅ **Placement Readiness Forecast** – for every job role in the course: how many students are ready, on track or at risk for the drive date, what holds them back, and which gaps are in the syllabus itself rather than in the students (pure code: job-description skills × measured mastery × each student's planned path)
@@ -222,6 +223,7 @@ users (username, role, password_hash, student_id)     -- faculty and student log
 student_registry (id, name, stated_style, pace, target_role)
 profiles (username, name, department, email, bio, photo)
 saved_files (path, content, in_storage)                -- files restored to disk on start
+phone_links (student_id, chat_id), nudges (student_id, kind, text, status)  -- phone nudges and their log
 ```
 
 **Postgres, one schema per course** (`course_dbms`, `course_dsa`, `course_os`, `course_oop`)
@@ -265,6 +267,7 @@ placement.json        the placement drive date
 | Supabase Storage for uploaded documents | ✅ Built (active when `SUPABASE_SECRET_KEY` is set; otherwise kept in Postgres) |
 | LangGraph orchestration, SSE streaming | 🔜 Planned |
 | Placement Readiness Forecast per job role, with drive date and syllabus-gap detection | ✅ Built |
+| Phone nudges via a Telegram bot (path changes, viva mix-ups), opt-in with a QR code | ✅ Built (needs `TELEGRAM_BOT_TOKEN`) |
 | Brief, Change and Insights agents; cost meter | 🔜 Planned |
 | `agnes-image-2.5-flash` visuals (diagrams use Mermaid today) | 🔜 Planned |
 
@@ -282,6 +285,7 @@ Hackerring_project/
 │   ├── sql.py                  # database connection: Supabase Postgres, or SQLite locally
 │   ├── storage.py              # saves uploads and course files to Supabase, restores them on start
 │   ├── placement.py            # Placement Readiness Forecast (pure code)
+│   ├── notify.py               # phone nudges through a Telegram bot
 │   ├── models.py               # Pydantic schemas the agents must return
 │   ├── agents/                 # LLM agents
 │   │   ├── knowledge_builder.py
@@ -386,6 +390,10 @@ PIPER_VOICE=en_US-lessac-medium       # any voice from huggingface.co/rhasspy/pi
 PIPER_SPEAKER=                        # for multi-speaker voices, e.g. en_US-l2arctic-medium + SVBI
 TTS_SPEED=1.05                        # above 1 is slower
 TTS_THREADS=0                         # 0 = the CPUs the container may use
+
+# Phone nudges (optional): bot token from @BotFather; empty = feature hidden
+TELEGRAM_BOT_TOKEN=
+PUBLIC_URL=https://<your-domain>      # links in the messages
 ```
 
 **Which model does what:** the heavy tasks (Knowledge Builder, prerequisite mapping, Source Reconciler, detailed lessons and Class-Ready Kits) run on Claude when `ANTHROPIC_API_KEY` is set, otherwise on Agnes (`backend/tools/llm.py`). The Viva, practice grading, Doubt Assistant and Gap Predictor messages run on Agnes. If a Claude call fails, the heavy task falls back to Agnes automatically.

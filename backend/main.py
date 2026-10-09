@@ -13,7 +13,7 @@ from fastapi.responses import FileResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from backend import auth, courses, db, sql, storage
+from backend import auth, courses, db, notify, sql, storage
 from backend.tools.parsers import SUPPORTED_SUFFIXES, file_sha256, inspect_file, page_texts
 
 SOURCE_TYPES = {"faculty_notes", "textbook", "job_description", "web_link"}
@@ -551,9 +551,22 @@ def viva_answer(session_id: int, body: VivaAnswer, user=Depends(auth.current_use
     if not body.answer.strip():
         raise HTTPException(400, "Answer is empty")
     try:
-        return answer_viva(session_id, body.answer, body.confidence)
+        result = answer_viva(session_id, body.answer, body.confidence)
     except ValueError as err:
         raise HTTPException(400, str(err))
+    if result["done"] and result["summary"]["misconceptions"]:
+        result["phone"] = _nudge_misconceptions(result["summary"])
+    return result
+
+
+def _nudge_misconceptions(summary):
+    names = {r["concept_id"]: r["concept_name"] for r in summary["results"]}
+    found = summary["misconceptions"][:2]
+    student = db.rows("SELECT name FROM students WHERE id = ?", (summary["student_id"],))
+    lines = "\n".join(f"- {names.get(m['concept_id'], m['concept_id'])}: {m['misconception']}" for m in found)
+    text = (f"Hi {student[0]['name'] if student else ''}, your viva showed a mix-up worth fixing early:\n{lines}\n"
+            "Open My path and press Check for gaps: the agents will plan a short refresher before it matters.")
+    return notify.send(summary["student_id"], "misconception", text, courses.active_course(), "/ui/student.html#path")
 
 
 @app.get("/api/viva/session/{session_id}")
@@ -672,9 +685,13 @@ def student_predict(student_id: str, user=Depends(auth.current_user)):
     from backend.agents.gap_predictor import predict_and_redesign
 
     try:
-        return predict_and_redesign(student_id)
+        result = predict_and_redesign(student_id)
     except ValueError as err:
         raise HTTPException(404, str(err))
+    if result["actions"] and result["message"]:  # only a real change reaches the phone; repeat checks add nothing
+        result["phone"] = notify.send(student_id, "path_change", result["message"]["student_message"],
+                                      courses.active_course(), "/ui/student.html#path")
+    return result
 
 
 @app.post("/api/students/{student_id}/path/{item_id}/complete")
@@ -726,6 +743,55 @@ def list_doubts(student_id: str, user=Depends(auth.current_user)):
     from backend.agents.doubt import doubt_history
 
     return doubt_history(student_id)
+
+
+# --------------------------------------------------------------------------- #
+# Phone nudges (Telegram): students connect their phone; agents message them when their path changes
+# --------------------------------------------------------------------------- #
+def _notify_call(fn, *args):
+    if not notify.configured():
+        raise HTTPException(503, "Phone nudges are not set up: add TELEGRAM_BOT_TOKEN on the server.")
+    try:
+        return fn(*args)
+    except ValueError as err:
+        raise HTTPException(400, str(err))
+    except RuntimeError as err:  # Telegram said no (bad token, network...)
+        raise HTTPException(502, f"Telegram: {err}")
+
+
+@app.get("/api/notify/{student_id}")
+def notify_status(student_id: str, user=Depends(auth.current_user)):
+    auth.check_student_access(user, student_id)
+    return notify.status(student_id)
+
+
+@app.post("/api/notify/{student_id}/link")
+def notify_link(student_id: str, user=Depends(auth.current_user)):
+    auth.check_student_access(user, student_id)
+    return _notify_call(notify.start_link, student_id)
+
+
+@app.post("/api/notify/{student_id}/verify")
+def notify_verify(student_id: str, user=Depends(auth.current_user)):
+    auth.check_student_access(user, student_id)
+    found = db.rows("SELECT name FROM students WHERE id = ?", (student_id,))
+    return _notify_call(notify.finish_link, student_id, found[0]["name"] if found else student_id)
+
+
+@app.post("/api/notify/{student_id}/test")
+def notify_test(student_id: str, user=Depends(auth.current_user)):
+    auth.check_student_access(user, student_id)
+    result = notify.send(student_id, "test", "Test from VidyaPath: phone nudges are working.", courses.active_course())
+    if result["status"] != "sent":
+        raise HTTPException(400, result.get("error") or "Connect your phone first")
+    return notify.status(student_id)
+
+
+@app.delete("/api/notify/{student_id}")
+def notify_unlink(student_id: str, user=Depends(auth.current_user)):
+    auth.check_student_access(user, student_id)
+    notify.unlink(student_id)
+    return notify.status(student_id)
 
 
 # --------------------------------------------------------------------------- #

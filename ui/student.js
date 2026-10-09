@@ -302,6 +302,7 @@ async function answerViva(button) {
             $("viva-box").classList.add("hidden");
             VIVA_PROGRESS = null;
             renderVivaSummary(r.summary);
+            if (r.phone && r.phone.status === "sent") toast("The mix-ups found were sent to your phone.");
             loadStudent();
             loadVivaHistory();
         } else {
@@ -412,6 +413,97 @@ async function loadPath() {
     }
 }
 
+// --------------------------------------------------------------------------- //
+// Phone nudges (Telegram): connect once; the agents then message the phone when the path changes
+// --------------------------------------------------------------------------- //
+const NUDGE_KIND = { path_change: "Path changed", misconception: "Mix-up found", welcome: "Connected", test: "Test" };
+
+function phoneResult(phone) {
+    if (!phone || phone.status === "not_configured") return "";
+    if (phone.status === "sent") return `<p class="mt-3 font-bold"><i class="ph-bold ph-device-mobile"></i> Sent to your phone ✓</p>`;
+    if (phone.status === "not_linked") return `<p class="mt-3 text-sm"><i class="ph-bold ph-device-mobile"></i> Connect your phone below to get this as a message.</p>`;
+    return `<p class="mt-3 text-sm"><i class="ph-bold ph-warning"></i> Could not reach your phone (${esc(phone.error || "unknown error")}). Your path is updated anyway.</p>`;
+}
+
+async function loadPhone() {
+    if (!STUDENT_ID) return;
+    const st = await api(`/api/notify/${sid()}`).catch(() => null);
+    if (!st || !st.configured) return ($("phone-card").innerHTML = "");
+    const item = n => `
+            <li class="border-2 border-black p-2 bg-white text-sm">
+                <span class="chip ${n.status === "sent" ? "bg-neo-green" : "bg-neo-red text-white"}">${n.status === "sent" ? "✓ Sent" : "✕ Failed"}</span>
+                <span class="chip bg-white">${esc(NUDGE_KIND[n.kind] || n.kind)}</span>
+                <span class="text-xs text-gray-500">${esc(n.created_at.slice(0, 16))} UTC</span>
+                <p class="mt-1 whitespace-pre-wrap">${esc(n.text)}</p>
+                ${n.error ? `<p class="text-xs mt-1">${esc(n.error)}</p>` : ""}
+            </li>`;
+    const older = st.recent.slice(3);
+    const log = st.recent.length ? `
+        <p class="text-xs font-bold uppercase text-gray-500 mt-4 mb-2">// Recent messages</p>
+        <ul class="space-y-2">${st.recent.slice(0, 3).map(item).join("")}</ul>
+        ${older.length ? `<details class="mt-2"><summary class="cursor-pointer text-sm font-bold uppercase">Older messages (${older.length})</summary>
+            <ul class="space-y-2 mt-2">${older.map(item).join("")}</ul></details>` : ""}` : "";
+    $("phone-card").innerHTML = st.linked ? `
+        <section class="card p-6 mb-8">
+            <div class="flex flex-wrap justify-between items-center gap-3">
+                <p class="font-display text-xl uppercase"><i class="ph-bold ph-device-mobile"></i> Phone connected ✓</p>
+                <span class="flex flex-wrap gap-2">
+                    <button class="btn btn-light" onclick="testPhone(this)"><i class="ph-bold ph-paper-plane-tilt"></i> Send test</button>
+                    <button class="btn btn-light" onclick="unlinkPhone(this)">Disconnect</button>
+                </span>
+            </div>
+            <p class="text-sm mt-1">The agents message you on Telegram when they change your path or spot a mix-up.</p>
+            ${log}
+        </section>` : `
+        <section class="card p-6 mb-8">
+            <p class="font-display text-xl uppercase mb-1"><i class="ph-bold ph-device-mobile"></i> Get nudges on your phone</p>
+            <p class="text-sm mb-4">Connect Telegram once. When the agents add a refresher or spot a mix-up, you get a message,
+                without opening VidyaPath. You can disconnect any time.</p>
+            <div id="phone-steps"><button class="btn" onclick="linkPhone(this)"><i class="ph-bold ph-telegram-logo"></i> Connect Telegram</button></div>
+            ${log}
+        </section>`;
+}
+
+async function linkPhone(button) {
+    await busy(button, "Creating your link...", async () => {
+        const r = await post(`/api/notify/${sid()}/link`);
+        $("phone-steps").innerHTML = `
+            <div class="flex flex-wrap gap-6 items-start">
+                <div id="phone-qr" class="bg-white p-2 border-4 border-black" aria-label="QR code that opens the Telegram bot"></div>
+                <ol class="list-decimal pl-6 space-y-2 flex-1 min-w-[220px]">
+                    <li>Scan the code with your phone, or <a class="underline font-bold" href="${esc(r.url)}" target="_blank" rel="noopener">open @${esc(r.bot)}</a>.</li>
+                    <li>In Telegram, tap <b>Start</b>.</li>
+                    <li><button class="btn mt-1" onclick="verifyPhone(this)"><i class="ph-bold ph-check"></i> I've pressed Start</button></li>
+                </ol>
+            </div>`;
+        if (window.QRCode) new QRCode($("phone-qr"), { text: r.url, width: 148, height: 148 });
+        else $("phone-qr").remove();
+    });
+}
+
+async function verifyPhone(button) {
+    await busy(button, "Checking...", async () => {
+        await post(`/api/notify/${sid()}/verify`);
+        toast("Phone connected. Check Telegram for a welcome message.");
+        loadPhone();
+    });
+}
+
+async function testPhone(button) {
+    await busy(button, "Sending...", async () => {
+        await post(`/api/notify/${sid()}/test`);
+        toast("Test message sent.");
+        loadPhone();
+    });
+}
+
+async function unlinkPhone(button) {
+    await busy(button, "Disconnecting...", async () => {
+        await api(`/api/notify/${sid()}`, { method: "DELETE" });
+        loadPhone();
+    });
+}
+
 // The last "Check for gaps" result, rebuilt from the saved risk events (one check = events within two minutes)
 function renderLastCheck() {
     const events = (STUDENT && STUDENT.risk_events) || [];
@@ -440,11 +532,13 @@ async function runPrediction(button) {
                 ${r.message ? `<p class="text-lg mb-3">${esc(r.message.student_message)}</p>` : ""}
                 <details class="text-sm"><summary class="cursor-pointer font-bold uppercase no-read">Exact reasons</summary>
                     <ul class="list-disc pl-6 mt-2">${r.actions.map(a => `<li>${esc(a.reason)}</li>`).join("")}</ul></details>
+                <div class="no-read">${phoneResult(r.phone)}</div>
             </div>`
             : `<div class="mb-8 border-4 border-black bg-neo-green p-4 font-bold uppercase animate-slam">No new changes needed right now</div>`;
         renderRadar(r.gap_radar);
         renderPath(r.path);
         loadStudent();
+        if (r.phone) loadPhone();
     });
 }
 
@@ -773,7 +867,7 @@ function doubtAbout(conceptId) {
 // --------------------------------------------------------------------------- //
 // Start
 // --------------------------------------------------------------------------- //
-VIEW_HOOKS.path = loadPath;
+VIEW_HOOKS.path = () => { loadPath(); loadPhone(); };
 VIEW_HOOKS.viva = loadVivaHistory;
 VIEW_HOOKS.lessons = loadSavedLessons;
 VIEW_HOOKS.doubts = loadDoubts;
