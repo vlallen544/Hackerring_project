@@ -27,7 +27,9 @@ Learners differ in prior knowledge, pace and learning style. Requirements change
 
 ## 💡 Our Solution
 
-**VidyaPath** is a B2B platform for colleges. Faculty upload their existing material. A team of AI agents builds a trusted knowledge base, resolves outdated or conflicting sources (including against current industry job requirements), and creates personalized learning paths for each student. The system predicts who will fall behind and fixes their path *before* the gap appears, and gives faculty a class-ready kit tuned to what their class keeps getting wrong.
+**VidyaPath** is a multi-agent AI learning platform for colleges. Faculty upload their existing material (notes, textbooks, job descriptions; PDF, PPT and more). A team of AI agents builds a trusted knowledge base, resolves outdated or conflicting sources (including against current industry job requirements), and creates personalized learning paths for each student. The system predicts who will fall behind and fixes their path *before* the gap appears, **by itself**, and tells the student on their **phone (Telegram)**. Faculty get a class-ready kit tuned to what their class keeps getting wrong, and a **Placement Forecast** of who is ready for which job role.
+
+Six demo courses are included: DBMS, DSA, Operating Systems, OOP with Java, and two on modern AI: **Agentic AI Systems** and **AI-Assisted Software Engineering (Vibe Coding)**.
 
 > *"Colleges teach from their own material; recruiters test against today's industry. VidyaPath closes that gap, one student at a time, with the educator in control."*
 
@@ -46,7 +48,7 @@ Learners differ in prior knowledge, pace and learning style. Requirements change
 | Objective | How VidyaPath solves it | What you see in the app |
 |---|---|---|
 | **1. Adaptive content** | The Voice Viva diagnoses prior knowledge and confidence → student profile → the Tutor Agent adapts level and format (text / audio / visual / practice). Learning style is *learned* from which formats actually improve practice scores. | Two students, same topic, different lessons; a failed practice question offers a re-teach in another format |
-| **2. Gap prediction & proactive redesign** | Code computes a risk score per upcoming concept from prerequisite weakness, forgetting, pace lag and misconceptions. At or above the threshold, the Gap Predictor inserts a refresher before the topic (switching format if one already failed) or moves strong students to a challenge track, with a visible reason. | Gap Radar per student and per class; *"Check for gaps"* adds refreshers with their exact reasons |
+| **2. Gap prediction & proactive redesign** | Code computes a risk score per upcoming concept from prerequisite weakness, forgetting, pace lag and misconceptions. At or above the threshold, the Gap Predictor inserts a refresher before the topic (switching format if one already failed) or moves strong students to a challenge track, with a visible reason. | After every viva and practice answer, and once a day, the path re-plans **by itself**; refreshers appear with their exact reasons, the student's phone gets a message, and faculty see the Class Gap Radar |
 | **3. Conflict & trust resolution** | The Source Reconciler compares faculty notes, textbooks, web articles and industry job descriptions; trust is scored on recency, authority, cross-source agreement and specificity, then explained. Faculty can override any decision. | Conflicts board with trust scores and reasons; **Syllabus Freshness Report** |
 
 ---
@@ -120,6 +122,7 @@ Every page works on phones: two-row top bar, bottom tab bar, touch-sized buttons
 - ✅ **Doubt Assistant** – ask by voice or text; answers only from trusted material, with citations; declines when the course doesn't cover it
 - ✅ **Proactive Refreshers** – inserted before a predicted gap appears. The Gap Predictor runs by itself: after every viva and practice answer, and once a day for every student (risk grows as practice fades), so nobody has to press a button
 - ✅ **Read aloud** – every AI output (viva questions, feedback, lessons, doubt answers) can be played with a natural voice
+- ✅ **Saved results** – past vivas reopen their result instantly and an unfinished viva can be resumed; saved lessons open instantly instead of being written again; My path shows the last gap check and its reasons
 - ✅ **Pick your own course** – each user chooses their subject; it changes only what they see
 - ✅ **Phone nudges (Telegram)** – the student gets a message on their phone when the agents add a refresher or move a topic to the challenge track, when a viva or practice answer shows a mix-up (with what fixes it), and the day before a lesson they haven't opened (9:00–21:00 only). Opt-in by scanning a QR code; one message per real change, each reminder at most once; every message logged as sent or failed; faculty see who is connected
 
@@ -143,8 +146,12 @@ flowchart TD
     I --> J[8. Adaptive lessons<br/>Objective 1]
     J <--> J2[Doubt Assistant]
     J --> K[9. Gap prediction & path redesign<br/>Objective 2]
+    P[New viva or practice answer,<br/>and once a day] -->|autopilot| K
+    K -->|path changed| N[Telegram message<br/>to the student's phone]
     K -->|continuous loop| H
     K --> L[Class Gap Radar for faculty]
+    I --> PF[Placement Forecast<br/>job-description skills x mastery]
+    E --> PF
 ```
 
 ---
@@ -172,6 +179,8 @@ flowchart LR
         M2[Claude, optional<br/>heavy extraction]
     end
 
+    TG[Telegram Bot API<br/>phone nudges]
+
     subgraph Supabase["Supabase (Singapore)"]
         PG[(Postgres<br/>accounts, progress,<br/>saved course files)]
         SS[(Storage<br/>uploaded documents)]
@@ -184,6 +193,7 @@ flowchart LR
     API --> PARSE
     API --> PG
     API --> SS
+    API --> TG
 ```
 
 ### Agents
@@ -197,6 +207,9 @@ flowchart LR
 | **Gap Predictor** | Builds each student's path; acts on code-computed risk to add refreshers or a challenge track | ✅ |
 | **Doubt Agent** | Answers grounded only in the trusted knowledge base | ✅ |
 | **Kit Agent** | Class-Ready Kit tuned to the class's mastery and misconceptions | ✅ |
+| **Autopilot** (code) | Runs the Gap Predictor by itself after every viva and practice answer and once a day | ✅ |
+| **Notifier** (code) | Sends the agents' messages to the student's phone (Telegram) and logs them | ✅ |
+| **Placement Forecast** (code) | Job-description skills x measured mastery x each student's path, per job role | ✅ |
 | Brief, Change, Insights agents | Voice brief, re-planning with diffs, next-lecture advice | 🔜 |
 
 ### Design principles
@@ -237,6 +250,7 @@ Absolute claims ("always", "never") are penalized. Source authority defaults are
 | **Database** | **Supabase Postgres** (one schema per course for student progress, logins in `public`); local SQLite files when `DATABASE_URL` is empty |
 | **File persistence** | Uploaded documents, source lists, built course data and faculty overrides are saved to Supabase (Postgres, or Supabase Storage for documents) and restored on every start, because Railway's disk is wiped on each deploy |
 | **Auth** | JWT (HS256, 12 h) in an HttpOnly / Secure / SameSite=Strict cookie, server-side revocation (session ids + per-account versions), server-checked pages, salted PBKDF2 password hashes, per-student access control |
+| **Notifications** | Telegram Bot API: opt-in with a QR code, one message per real path change, due-tomorrow reminders (9:00–21:00) |
 | **Hosting** | Railway (Railpack build, `railpack.json` + `railway.json`), Supabase, both in Singapore |
 | **Reliability** | Rate limiting, retry with exponential backoff and a response cache for Agnes (`backend/tools/agnes_client.py`) |
 
@@ -279,9 +293,11 @@ student_registry (id, name, stated_style, pace, target_role)
 profiles (username, name, department, email, bio, photo)
 saved_files (path, content, in_storage)                -- files restored to disk on start
 phone_links (student_id, chat_id), nudges (student_id, kind, text, status)  -- phone nudges and their log
+sent_once (ref)                                        -- reminders / daily checks done, so each happens once
+token_versions (username, version), revoked_tokens (jti, expires_at)  -- sign-out-everywhere and logout
 ```
 
-**Postgres, one schema per course** (`course_dbms`, `course_dsa`, `course_os`, `course_oop`)
+**Postgres, one schema per course** (`course_dbms`, `course_dsa`, `course_os`, `course_oop`, `course_agentic`, `course_aicoding`)
 ```
 students (id, name, stated_style, learned_style, pace, target_role)
 mastery (student, concept, score, confidence, last_practiced)
@@ -466,7 +482,7 @@ PUBLIC_URL=https://<your-domain>      # links in the messages
 
 1. **Supabase:** create a project (Singapore). Copy the **Session pooler** connection string from **Connect** (the direct one is IPv6-only and unreachable from Railway). Tables are created automatically on first start.
 2. **Railway:** New Project → Deploy from GitHub → pick the repo and branch; region **Southeast Asia (Singapore)**. Railpack builds it using `railpack.json` (start command, `espeak-ng`) and checks `/health`.
-3. **Variables** (Railway → Variables): `DATABASE_URL`, `JWT_SECRET`, `AGNES_API_KEY`, optionally `ANTHROPIC_API_KEY`, `ADMIN_PASSWORD`, `SUPABASE_URL` + `SUPABASE_SECRET_KEY`. Enter only the value in the value box: no `NAME=` prefix, no quotes.
+3. **Variables** (Railway → Variables): `DATABASE_URL`, `JWT_SECRET`, `AGNES_API_KEY`, optionally `ANTHROPIC_API_KEY`, `ADMIN_PASSWORD`, `SUPABASE_URL` + `SUPABASE_SECRET_KEY`, and for phone nudges `TELEGRAM_BOT_TOKEN` (from @BotFather) + `PUBLIC_URL` (the site's address). Enter only the value in the value box: no `NAME=` prefix, no quotes.
 4. **Networking:** Generate Domain (port 8080).
 5. **Check:** `https://<your-domain>/health` must say `"database": "postgres"`. On Railway the server refuses to start without Postgres, because its disk is wiped on every deploy.
 
@@ -476,15 +492,16 @@ Every push to the connected branch redeploys automatically. Logins, progress, up
 
 ## 🎬 Demo Scenario
 
-**Subject:** DBMS (3rd-year CSE) · **Target role:** Data Analyst
+**Subject:** Operating Systems or Agentic AI Systems · a student's phone connected to the Telegram bot beforehand
 
-1. Faculty opens **Sources**: lecture notes, a textbook chapter, a 2016 web tutorial and two job descriptions → **Build course**
-2. **Conflicts:** the outdated web claim is detected and resolved with trust scores and reasons; faculty overrides one decision → **Syllabus Freshness Report**
+1. Faculty opens **Sources**: lecture notes, a textbook, an old web article and two job descriptions → **Build course**
+2. **Conflicts:** outdated and wrong claims are detected and resolved with trust scores and reasons; faculty overrides one decision → **Syllabus Freshness Report** shows what the syllabus is missing for today's jobs
 3. A student takes the **Voice Viva** → follow-up on a vague answer → misconception + confidence calibration
-4. Two students get **different personalized lessons** on the same topic, with provenance highlighting, read aloud
-5. The student asks a **doubt** → grounded answer with citations, or a polite decline when it isn't in the course
-6. **Check for gaps** → a refresher is added before a risky topic, with the reason
-7. Faculty opens **Class Radar** and generates a **Class-Ready Kit** that targets the class's misconception
+4. Without anyone pressing a button, the **autopilot** re-plans the path: a refresher appears before the risky topic, and **the student's phone buzzes** with the reason
+5. Two students get **different personalized lessons** on the same topic, with provenance highlighting, read aloud
+6. The student asks a **doubt** → grounded answer with citations, or a polite decline when it isn't in the course
+7. Faculty opens **Class Radar** and a **Class-Ready Kit** that targets the class's misconception
+8. **Placement Forecast:** who is ready for each job role; moving the drive date earlier turns "on track" into "at risk"
 
 ---
 
