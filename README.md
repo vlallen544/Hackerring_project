@@ -6,6 +6,8 @@
 
 **Live:** <https://hackerringproject-production.up.railway.app> · backend on Railway, data in Supabase
 
+![VidyaPath home page](docs/screenshots/home.png)
+
 ---
 
 ## 📌 Problem Statement (HR26-AI-01)
@@ -46,6 +48,54 @@ Learners differ in prior knowledge, pace and learning style. Requirements change
 | **1. Adaptive content** | The Voice Viva diagnoses prior knowledge and confidence → student profile → the Tutor Agent adapts level and format (text / audio / visual / practice). Learning style is *learned* from which formats actually improve practice scores. | Two students, same topic, different lessons; a failed practice question offers a re-teach in another format |
 | **2. Gap prediction & proactive redesign** | Code computes a risk score per upcoming concept from prerequisite weakness, forgetting, pace lag and misconceptions. At or above the threshold, the Gap Predictor inserts a refresher before the topic (switching format if one already failed) or moves strong students to a challenge track, with a visible reason. | Gap Radar per student and per class; *"Check for gaps"* adds refreshers with their exact reasons |
 | **3. Conflict & trust resolution** | The Source Reconciler compares faculty notes, textbooks, web articles and industry job descriptions; trust is scored on recency, authority, cross-source agreement and specificity, then explained. Faculty can override any decision. | Conflicts board with trust scores and reasons; **Syllabus Freshness Report** |
+
+---
+
+## 📸 Product Tour
+
+Screenshots from the live site (Operating Systems course).
+
+### 👩‍🏫 Faculty
+
+**1. Sources:** notes, a textbook, an old web article and job descriptions. One AI call reads them all; every claim's quote is checked against the real page, and made-up quotes are rejected.
+![Course sources with verified claims](docs/screenshots/faculty-sources.png)
+
+**2. Conflicts (Objective 3):** where sources disagree, code scores each side on recency, authority, agreement and specificity, explains the decision, and the teacher can overrule it.
+![Conflicts board with trust scores](docs/screenshots/faculty-conflicts.png)
+
+**3. Syllabus Freshness:** the course compared with today's job descriptions: covered, outdated and missing skills.
+![Syllabus freshness report](docs/screenshots/faculty-freshness.png)
+
+**4. Class Radar (Objective 2):** which students are at risk on which upcoming topic, before the class reaches it.
+![Class gap radar](docs/screenshots/faculty-radar.png)
+
+**5. Class-Ready Kit:** outline, a handout built from the faculty's own material (with sources), a multi-level quiz and an assignment, tuned to the class's mistakes.
+![Class-ready kit handout](docs/screenshots/faculty-kit.png)
+
+**6. Placement Readiness:** for each job role: ready / on track / at risk for the drive, and what holds students back. Syllabus gaps are told apart from student gaps.
+![Placement readiness forecast](docs/screenshots/faculty-placement.png)
+
+### 🧑‍🎓 Student
+
+**7. Voice Viva:** an adaptive spoken interview; the result shows mastery per topic, misconceptions and confidence calibration (here: over-confident).
+![Viva result](docs/screenshots/student-viva.png)
+
+**8. My path (Objective 2):** topics in order, refreshers added before predicted gaps with the reason, and phone nudges on Telegram.
+![Learning path with gap radar and phone nudges](docs/screenshots/student-path.png)
+
+**9. Adaptive lesson (Objective 1):** level and format chosen in code with the reasons shown; every part marked *from faculty material* (with source and page) or *AI-added*; read aloud with a natural voice.
+![Personalised lesson with provenance](docs/screenshots/student-lesson.png)
+
+![Lesson diagrams](docs/screenshots/student-lesson-diagram.png)
+
+**10. Doubt Assistant:** answers only from trusted course material, with citations, and declines when the course doesn't cover the question.
+![Doubt assistant](docs/screenshots/student-doubts.png)
+
+### 📱 On a phone
+
+Every page works on phones: two-row top bar, bottom tab bar, touch-sized buttons.
+
+![Student home and learning path on a phone](docs/screenshots/mobile.png)
 
 ---
 
@@ -309,6 +359,7 @@ Hackerring_project/
 ├── sample_data_oop/            # OOP with Java demo course
 ├── data/courses/<course>/      # built knowledge base, trusted facts, faculty overrides
 ├── scripts/                    # runners and checks for each agent, default course
+├── docs/screenshots/           # README screenshots
 ├── frontend/                   # early Next.js prototype (not used by the running app)
 ├── railway.json, railpack.json # Railway build and start configuration
 ├── .python-version             # Python 3.14
