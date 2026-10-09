@@ -71,7 +71,7 @@ Learners differ in prior knowledge, pace and learning style. Requirements change
 - ✅ **Proactive Refreshers** – inserted before a predicted gap appears
 - ✅ **Read aloud** – every AI output (viva questions, feedback, lessons, doubt answers) can be played with a natural voice
 - ✅ **Pick your own course** – each user chooses their subject; it changes only what they see
-- ✅ **Phone nudges (Telegram)** – when the agents add a refresher, move a topic to the challenge track or find a mix-up in a viva, the student gets the message on their phone. Opt-in by scanning a QR code; every message is logged as sent or failed
+- ✅ **Phone nudges (Telegram)** – the student gets a message on their phone when the agents add a refresher or move a topic to the challenge track, when a viva or practice answer shows a mix-up (with what fixes it), and the day before a lesson they haven't opened (9:00–21:00 only). Opt-in by scanning a QR code; one message per real change, each reminder at most once; every message logged as sent or failed; faculty see who is connected
 
 ### 🏢 For Placement Officer / Management
 - ✅ **Placement Readiness Forecast** – for every job role in the course: how many students are ready, on track or at risk for the drive date, what holds them back, and which gaps are in the syllabus itself rather than in the students (pure code: job-description skills × measured mastery × each student's planned path)
@@ -267,7 +267,7 @@ placement.json        the placement drive date
 | Supabase Storage for uploaded documents | ✅ Built (active when `SUPABASE_SECRET_KEY` is set; otherwise kept in Postgres) |
 | LangGraph orchestration, SSE streaming | 🔜 Planned |
 | Placement Readiness Forecast per job role, with drive date and syllabus-gap detection | ✅ Built |
-| Phone nudges via a Telegram bot (path changes, viva mix-ups), opt-in with a QR code | ✅ Built (needs `TELEGRAM_BOT_TOKEN`) |
+| Phone nudges via a Telegram bot (path changes, viva and practice mix-ups, due-tomorrow reminders), opt-in with a QR code | ✅ Built (needs `TELEGRAM_BOT_TOKEN`) |
 | Brief, Change and Insights agents; cost meter | 🔜 Planned |
 | `agnes-image-2.5-flash` visuals (diagrams use Mermaid today) | 🔜 Planned |
 

@@ -416,7 +416,7 @@ async function loadPath() {
 // --------------------------------------------------------------------------- //
 // Phone nudges (Telegram): connect once; the agents then message the phone when the path changes
 // --------------------------------------------------------------------------- //
-const NUDGE_KIND = { path_change: "Path changed", misconception: "Mix-up found", welcome: "Connected", test: "Test" };
+const NUDGE_KIND = { path_change: "Path changed", misconception: "Mix-up found", reminder: "Due tomorrow", welcome: "Connected", test: "Test" };
 
 function phoneResult(phone) {
     if (!phone || phone.status === "not_configured") return "";

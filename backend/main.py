@@ -33,6 +33,7 @@ async def lifespan(app):
     from backend.tools import tts
 
     tts.warm_up()  # load the read-aloud voice in the background
+    notify.start_reminders()  # "your lesson is tomorrow" messages, when a Telegram bot is set up
     yield
 
 
@@ -647,9 +648,28 @@ def tutor_check(lesson_id: int, body: PracticeAnswer, user=Depends(auth.current_
     if not body.answer.strip():
         raise HTTPException(400, "Answer is empty")
     try:
-        return check_practice(lesson_id, body.question_index, body.answer, body.confidence)
+        result = check_practice(lesson_id, body.question_index, body.answer, body.confidence)
     except ValueError as err:
         raise HTTPException(400, str(err))
+    if result["evaluation"]["misconception"]:
+        result["phone"] = _nudge_practice(lesson_id, result)
+    return result
+
+
+def _nudge_practice(lesson_id, result):
+    """A mix-up in practice: tell the student what fixes it. The same mix-up on the same topic is sent only once."""
+    lesson = db.rows("SELECT l.student_id, l.concept_id, s.name FROM lessons l JOIN students s ON s.id = l.student_id "
+                     "WHERE l.id = ?", (lesson_id,))[0]
+    kb = json.loads(courses.course_file("knowledge_base.json").read_text(encoding="utf-8"))
+    topic = kb["concepts"].get(lesson["concept_id"], {}).get("name", lesson["concept_id"])
+    m, step = result["evaluation"]["misconception"], result["next_step"]
+    fix = (f"Open the lesson and press Re-teach as {step['format']} for a {step['level']} lesson that clears it up."
+           if step["action"] == "reteach" else "Have another go at the practice question when you're ready.")
+    course = courses.active_course()
+    return notify.send_once(f"practice:{course}:{lesson['student_id']}:{lesson['concept_id']}:{m.strip().lower()[:120]}",
+                            lesson["student_id"], "misconception",
+                            f"Hi {lesson['name']}, in your {topic} practice we noticed a mix-up: {m}\n{fix}",
+                            course, "/ui/student.html#lessons")
 
 
 # --------------------------------------------------------------------------- #
@@ -757,6 +777,11 @@ def _notify_call(fn, *args):
         raise HTTPException(400, str(err))
     except RuntimeError as err:  # Telegram said no (bad token, network...)
         raise HTTPException(502, f"Telegram: {err}")
+
+
+@app.get("/api/notify")
+def notify_overview(_=Depends(auth.require_faculty)):
+    return notify.overview()
 
 
 @app.get("/api/notify/{student_id}")

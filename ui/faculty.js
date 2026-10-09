@@ -458,8 +458,15 @@ async function loadClassRadar() {
 // --------------------------------------------------------------------------- //
 async function loadStudentAccounts() {
     try {
-        const students = await api("/api/faculty/students");
+        const [students, phones] = await Promise.all([api("/api/faculty/students"), api("/api/notify").catch(() => null)]);
         const withLogin = students.filter(s => s.login).length;
+        const phone = s => {  // phone nudges: shown only when a Telegram bot is set up
+            if (!phones || !phones.configured) return "";
+            const p = phones.students[s.id];
+            const last = p && p.last ? ` · last: ${esc(p.last.kind.replace("_", " "))} ${p.last.status === "sent" ? "✓" : "✕"} ${esc(p.last.created_at.slice(5, 16))}` : "";
+            return p && p.linked ? `<span class="chip bg-neo-blue"><i class="ph-bold ph-device-mobile"></i> Phone connected${last}</span>`
+                                 : `<span class="chip bg-white"><i class="ph-bold ph-device-mobile-slash"></i> No phone${last}</span>`;
+        };
         setSide("side-students", `${students.length} students · ${withLogin} can log in`);
         $("student-accounts").innerHTML = students.length ? students.map(s => `
             <div class="card p-4 flex flex-wrap justify-between items-center gap-3">
@@ -470,6 +477,7 @@ async function loadStudentAccounts() {
                 <div class="flex flex-wrap items-center gap-2">
                     ${s.login ? `<span class="chip bg-neo-green"><i class="ph-bold ph-key"></i> Login: ${esc(s.login)}</span>`
                               : '<span class="chip bg-white">No login yet</span>'}
+                    ${phone(s)}
                     <button class="chip bg-white hover:bg-neo-yellow" onclick="setStudentPassword(this, '${esc(s.id)}', ${Boolean(s.login)})">
                         ${s.login ? "Reset password" : "Create login"}</button>
                     ${s.login ? `<button class="chip bg-white hover:bg-neo-red hover:text-white" onclick="removeLogin(this, '${esc(s.id)}')">Remove login</button>` : ""}
