@@ -1,7 +1,7 @@
 # Source Reconciler agent: finds conflicting/outdated claims, decides what to trust, builds the Syllabus Freshness Report
 import json
 
-from backend import courses
+from backend import courses, storage
 from backend.engine.trust import CLOSE_CALL_MARGIN, UNRELIABLE_THRESHOLD, explain, score_side
 from backend.models import ReconcilerOutput
 from backend.tools.llm import heavy_json, heavy_model
@@ -159,6 +159,7 @@ def reconcile():
         },
     }
     courses.course_file("trusted_kb.json").write_text(json.dumps(trusted_kb, indent=2, ensure_ascii=False), encoding="utf-8")
+    storage.save(courses.course_file("trusted_kb.json"))
     return trusted_kb
 
 
@@ -167,3 +168,4 @@ def set_faculty_override(conflict_id, winning_side_index):
     overrides = _load_overrides()
     overrides[conflict_id] = winning_side_index
     courses.course_file("faculty_overrides.json").write_text(json.dumps(overrides, indent=2), encoding="utf-8")
+    storage.save(courses.course_file("faculty_overrides.json"))

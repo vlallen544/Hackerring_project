@@ -13,7 +13,7 @@ from fastapi.responses import FileResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from backend import auth, courses, db
+from backend import auth, courses, db, storage
 from backend.tools.parsers import SUPPORTED_SUFFIXES, file_sha256, inspect_file, page_texts
 
 SOURCE_TYPES = {"faculty_notes", "textbook", "job_description", "web_link"}
@@ -24,6 +24,7 @@ UI_DIR = Path("ui")
 
 @asynccontextmanager
 async def lifespan(app):
+    storage.restore()  # uploads, source lists and built course data saved in Supabase (Railway's disk is wiped on deploy)
     auth.init_auth()  # accounts + the master faculty login
     courses.migrate_layout()
     for course in courses.COURSES:  # anyone may open any course: create tables + seed demo students for each
@@ -269,6 +270,7 @@ def _read_meta():
 
 def _write_meta(meta):
     _sources_json().write_text(json.dumps(meta, indent=2, ensure_ascii=False), encoding="utf-8")
+    storage.save(_sources_json())
 
 
 def _find_source(source_id):
@@ -362,6 +364,7 @@ async def upload_source(
              "page_range": page_range.strip() or None, "sha256": sha, "size_bytes": len(data),
              "uploaded_at": datetime.now().isoformat(timespec="seconds"), **info}
     meta["sources"] = [s for s in meta["sources"] if s["id"] != source_id] + [entry]  # replace if re-uploaded
+    storage.save(dest)  # the file first: a saved source list never points at a file that wasn't saved
     _write_meta(meta)
 
     warnings = []
@@ -394,6 +397,7 @@ def delete_source(source_id: str, _=Depends(auth.require_faculty)):
     meta["sources"] = [s for s in meta["sources"] if s["id"] != source_id]
     _write_meta(meta)
     (courses.data_dir() / src["file"]).unlink(missing_ok=True)
+    storage.delete(courses.data_dir() / src["file"])
     return {"deleted": source_id, "message": "Removed. Press Build course to update the knowledge base."}
 
 

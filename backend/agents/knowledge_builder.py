@@ -5,7 +5,7 @@ from pathlib import Path
 
 import networkx as nx
 
-from backend import courses
+from backend import courses, storage
 from backend.models import KnowledgeExtraction, PrerequisiteMap
 from backend.tools import llm
 from backend.tools.llm import heavy_json, heavy_model, heavy_provider
@@ -155,4 +155,5 @@ def build_knowledge(data_dir="sample_data"):
     output = courses.course_file("knowledge_base.json")
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(json.dumps(knowledge_base, indent=2, ensure_ascii=False), encoding="utf-8")
+    storage.save(output)
     return knowledge_base

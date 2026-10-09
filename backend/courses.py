@@ -6,6 +6,8 @@ import shutil
 from contextvars import ContextVar
 from pathlib import Path
 
+from backend import storage
+
 COURSES = {
     "dbms": {"title": "Database Management Systems", "data_dir": "sample_data", "db": "vidyapath.db"},
     "dsa": {"title": "Data Structures and Algorithms", "data_dir": "sample_data_dsa", "db": "vidyapath_dsa.db"},
@@ -62,6 +64,7 @@ def switch(name):
         raise ValueError(f"Unknown course '{name}'. Choose one of: {', '.join(COURSES)}")
     ACTIVE_FILE.parent.mkdir(exist_ok=True)
     ACTIVE_FILE.write_text(json.dumps({"course": name}), encoding="utf-8")
+    storage.save(ACTIVE_FILE)
 
 
 def migrate_layout():
