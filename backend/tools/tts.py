@@ -26,6 +26,7 @@ SPEED = float(os.getenv("TTS_SPEED", "1.05"))  # Piper length scale: above 1 is 
 VOICES_URL = "https://huggingface.co/rhasspy/piper-voices/resolve/main"
 VOICES_DIR = Path(tempfile.gettempdir()) / "vidyapath_voices"  # downloaded once per server (about 60 MB)
 RETRY_SECONDS = 300  # after Piper fails to start, use pyttsx3 for this long before trying again
+THREADS = int(os.getenv("TTS_THREADS", "0"))  # 0 = the CPUs this container may actually use
 
 # pyttsx3 (the fallback)
 RATE = int(os.getenv("TTS_RATE", "160"))  # words per minute (pyttsx3 default 200 is fast for lessons)
@@ -120,11 +121,36 @@ def _piper_voice():
                     path = VOICES_DIR / f"{PIPER_VOICE}{ext}"
                     if not path.exists():
                         _download(_voice_url(PIPER_VOICE) + ext, path)
-                _piper = PiperVoice.load(str(VOICES_DIR / f"{PIPER_VOICE}.onnx"))
+                _piper = _with_threads(PiperVoice.load(str(VOICES_DIR / f"{PIPER_VOICE}.onnx")))
             except Exception as e:
                 _piper_failed_at = time.time()
                 print(f"Piper voice {PIPER_VOICE} unavailable, using pyttsx3: {e}", file=sys.stderr)
     return _piper
+
+
+def _cpu_limit():
+    """CPUs this container may use. os.cpu_count() is the whole host (often dozens on Railway); the cgroup quota is the
+    real limit, and running more threads than it allows makes onnxruntime many times slower."""
+    try:
+        quota, period = Path("/sys/fs/cgroup/cpu.max").read_text().split()
+        if quota != "max":
+            return max(1, int(int(quota) / int(period)))
+    except (OSError, ValueError):
+        pass
+    return len(os.sched_getaffinity(0)) if hasattr(os, "sched_getaffinity") else (os.cpu_count() or 1)
+
+
+def _with_threads(voice):
+    """Piper's own session uses one thread per host CPU; replace it with one sized to this container."""
+    import onnxruntime
+
+    options = onnxruntime.SessionOptions()
+    options.intra_op_num_threads = THREADS or min(_cpu_limit(), 8)
+    options.inter_op_num_threads = 1
+    voice.session = onnxruntime.InferenceSession(str(VOICES_DIR / f"{PIPER_VOICE}.onnx"), sess_options=options,
+                                                 providers=["CPUExecutionProvider"])
+    print(f"Piper voice {PIPER_VOICE} ready with {options.intra_op_num_threads} thread(s)", file=sys.stderr)
+    return voice
 
 
 def _speaker_id(voice):
